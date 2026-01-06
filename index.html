@@ -2,14 +2,13 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>제조팀 업무 게시판 (전체 시트 연동형)</title>
+    <title>제조팀 업무 게시판 (업무 공유형)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #f1f5f9; height: 100vh; display: flex; flex-direction: column; overflow: hidden; font-family: 'Pretendard', sans-serif; }
         .main-container { display: flex; flex: 1; gap: 15px; padding: 15px; width: 100%; box-sizing: border-box; }
         .column { width: 33.33%; display: flex; flex-direction: column; gap: 15px; }
         .card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 15px; display: flex; flex-direction: column; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        /* 제목 폰트 크기 통일 */
         .card-title { font-size: 1.25rem; font-weight: 800; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 10px; }
         textarea { width: 100% !important; flex: 1; padding: 10px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 1.1rem; resize: none; overflow-y: auto; line-height: 1.6; color: #1e293b; font-weight: 500; outline: none; }
         .ot-box { display: flex; flex-direction: column; align-items: center; background: #334155; padding: 5px; border-radius: 8px; width: 85px; }
@@ -23,7 +22,7 @@
             <h1 class="text-2xl font-black text-[#fbbf24]">제조팀 업무 게시판</h1>
             <div class="flex items-center gap-4 text-sm font-bold text-slate-400 mt-1">
                 <span id="clockDisplay">로딩 중...</span>
-                <span id="weatherDisplay" class="text-sky-400 font-bold">🌡️ <span id="temp">--</span>°C | <span id="desc">날씨 데이터 확인 중...</span></span>
+                <span id="weatherDisplay" class="text-sky-400 font-bold">🌡️ <span id="temp">--</span>°C | <span id="desc">날씨 정보 확인 중...</span></span>
             </div>
         </div>
         <div class="flex items-center gap-4">
@@ -44,12 +43,12 @@
         </div>
         <div class="column">
             <div class="card" style="height: 66.6%; border-top: 6px solid #3b82f6;">
-                <h2 class="card-title italic text-blue-600">✅ 실시간 업무 리스트</h2>
-                <textarea id="todoSheet" class="bg-blue-50/50" readonly placeholder="스프레드시트 G열에 입력하세요."></textarea>
+                <h2 class="card-title italic text-blue-600">✅ 업무 공유</h2>
+                <textarea id="todoSheet" class="bg-blue-50/50" readonly></textarea>
             </div>
             <div class="card" style="height: 33.3%; border-top: 6px solid #ef4444;">
                 <h2 class="card-title text-red-600">🚨 긴급 진행 건</h2>
-                <textarea id="urgent" class="bg-red-50" readonly placeholder="스프레드시트 H열에 입력하세요."></textarea>
+                <textarea id="urgent" class="bg-red-50" readonly></textarea>
             </div>
         </div>
         <div class="column">
@@ -65,13 +64,11 @@
     <script>
         const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTmOR1Hvcso4G0weHKCXvPpy9enUYo2mX0NIECrY7TDbjDfR_hf1fEBBUBM0qY1Pd8pL1HFFfqex88Z/pub?output=csv';
 
-        // 1. 데이터 클리닝 및 줄바꿈(//) 변환
         const clean = (str) => {
             if (!str) return "";
             return str.replace(/^"|"$/g, '').trim().split('//').join('\n');
         };
 
-        // 2. 시트 데이터 로드
         async function loadData() {
             try {
                 const res = await fetch(`${SHEET_URL}&t=${Date.now()}`);
@@ -79,50 +76,52 @@
                 const rows = text.split('\r\n');
                 if (rows.length < 2) return;
 
-                // 콤마 기준 분리 (따옴표 내부 무시 정규식)
                 const data = rows[1].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
 
-                // 순서 배정: 상단(A,B,C), 좌측(D,E,F), 중앙(G,H), 우측(I,J,K,L)
                 document.getElementById('otBBT').value = clean(data[0]);
                 document.getElementById('otInsert').value = clean(data[1]);
                 document.getElementById('otRetouch').value = clean(data[2]);
-
                 document.getElementById('notice').value = clean(data[3]);
                 document.getElementById('attendance').value = clean(data[4]);
                 document.getElementById('delivery').value = clean(data[5]);
-
                 document.getElementById('todoSheet').value = clean(data[6]);
                 document.getElementById('urgent').value = clean(data[7]);
-
                 document.getElementById('share1').value = clean(data[8]);
                 document.getElementById('share2').value = clean(data[9]);
                 document.getElementById('share3').value = clean(data[10]);
                 document.getElementById('share4').value = clean(data[11]);
-
-            } catch (e) { console.error("데이터 갱신 중..."); }
+            } catch (e) { console.error("데이터 로드 실패"); }
         }
 
-        // 3. 날씨 개선 (HTTPS 보안 강화형)
+        // 날씨 로직 보강
         async function getWeather() {
             const api_key = '895284fb2d2c1d87c4676455964815b9';
             try {
+                // 천안 날씨 호출
                 const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=Cheonan&appid=${api_key}&units=metric&lang=kr`);
+                if (!res.ok) throw new Error('Network response was not ok');
                 const data = await res.json();
-                if(data.main) {
+                
+                if(data.main && data.weather) {
                     document.getElementById('temp').innerText = Math.round(data.main.temp);
                     document.getElementById('desc').innerText = data.weather[0].description + " (천안)";
                 }
             } catch (e) { 
-                document.getElementById('desc').innerText = "날씨 재연결 시도 중...";
-                setTimeout(getWeather, 10000); 
+                console.error("Weather error:", e);
+                document.getElementById('desc').innerText = "날씨 정보 업데이트 대기 중...";
+                // 30초 후 재시도
+                setTimeout(getWeather, 30000);
             }
         }
 
         function init() {
-            setInterval(() => { document.getElementById('clockDisplay').innerText = new Date().toLocaleString(); }, 1000);
+            setInterval(() => { 
+                const now = new Date();
+                document.getElementById('clockDisplay').innerText = now.toLocaleDateString() + " " + now.toLocaleTimeString(); 
+            }, 1000);
             loadData();
             getWeather();
-            setInterval(loadData, 30000); // 30초마다 자동 갱신
+            setInterval(loadData, 30000); 
         }
         window.onload = init;
     </script>
