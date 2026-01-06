@@ -52,12 +52,14 @@
                 <ul id="todoList" class="flex-1 overflow-y-auto space-y-2"></ul>
             </div>
             <div class="card" style="height: 40%;">
-                <h2 class="card-title text-slate-500 text-sm">🔗 생산 시스템 링크</h2>
-                <div class="grid grid-cols-2 gap-3 h-full pb-2">
-                    <div class="link-btn">📅 생산 일정</div><div class="link-btn">🚚 자재 입고</div>
-                    <div class="link-btn">🛠️ A/S 현황</div><div class="link-btn">📄 기타 보고서</div>
-                </div>
-            </div>
+    <h2 class="card-title text-slate-500 text-sm">🔗 생산 시스템 링크</h2>
+    <div class="grid grid-cols-2 gap-3 h-full pb-2">
+        <a href="여기에_생산일정_주소" target="_blank" class="link-btn">📅 <span>생산 일정</span></a>
+        <a href="여기에_자재입고_주소" target="_blank" class="link-btn">🚚 <span>자재 입고</span></a>
+        <a href="여기에_AS현황_주소" target="_blank" class="link-btn">🛠️ <span>A/S 현황</span></a>
+        <a href="여기에_보고서_주소" target="_blank" class="link-btn">📄 <span>기타 보고서</span></a>
+    </div>
+</div>
         </div>
         <div class="column">
             <div class="grid grid-cols-2 grid-rows-2 gap-4 h-full">
@@ -103,25 +105,36 @@
         }
 
         // 4. 시트 연동 (Mixed Content 에러 방지)
-        async function loadData() {
-            try {
-                const res = await fetch(SHEET_URL + "&cache=" + Date.now());
-                const text = await res.text();
-                const rows = text.split('\n').map(r => r.split(','));
-                if (rows[1]) {
-                    document.getElementById('notice').value = rows[1][0] || '';
-                    document.getElementById('attendance').value = rows[1][1] || '';
-                    document.getElementById('delivery').value = rows[1][2] || '';
-                    document.getElementById('share1').value = rows[1][3] || '';
-                    document.getElementById('share2').value = rows[1][4] || '';
-                    document.getElementById('share3').value = rows[1][5] || '';
-                    document.getElementById('share4').value = rows[1][6] || '';
-                    if(rows[1][7]) document.getElementById('otBBT').value = rows[1][7].trim();
-                    if(rows[1][8]) document.getElementById('otInsert').value = rows[1][8].trim();
-                    if(rows[1][9]) document.getElementById('otRetouch').value = rows[1][9].trim();
-                }
-            } catch (e) { console.error("데이터 동기화 중..."); }
-        }
+       async function loadSheetData() {
+    // 팀장님 시트의 CSV 주소
+    const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTmOR1Hvcso4G0weHKCXvPpy9enUYo2mX0NIECrY7TDbjDfR_hf1fEBBUBM0qY1Pd8pL1HFFfqex88Z/pub?output=csv';
+    
+    try {
+        const response = await fetch(`${SHEET_CSV_URL}&t=${Date.now()}`);
+        const csvText = await response.text();
+        
+        // 데이터를 한 줄씩 나눈 뒤, 첫 번째 데이터 행(index 1)을 가져옵니다.
+        const rows = csvText.split('\r\n'); // 줄바꿈 기준 분리
+        if (rows.length < 2) return; 
+
+        // 콤마로 분리하되, 따옴표로 묶인 문장은 하나로 처리하는 정규식 적용
+        const data = rows[1].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || rows[1].split(',');
+
+        // 각 칸에 값 넣기 (따옴표 제거 포함)
+        const clean = (str) => str ? str.replace(/^"|"$/g, '').trim() : "";
+
+        document.getElementById('notice').value = clean(data[0]);     // A열: 공지
+        document.getElementById('attendance').value = clean(data[1]); // B열: 근태
+        document.getElementById('delivery').value = clean(data[2]);   // C열: 납품
+        document.getElementById('share1').value = clean(data[3]);     // D열: 인원현황
+        document.getElementById('share2').value = clean(data[4]);     // E열: 설비이슈
+        document.getElementById('share3').value = clean(data[5]);     // F열: 품질이슈
+        document.getElementById('share4').value = clean(data[6]);     // G열: 기타
+
+    } catch (error) {
+        console.error('시트 연동 에러:', error);
+    }
+}
 
         window.onload = () => {
             updateClock();
