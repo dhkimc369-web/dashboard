@@ -2,62 +2,71 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>제조팀 업무 게시판 (업무 공유형)</title>
+    <title>제조팀 업무 게시판 (강조 효과형)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #f1f5f9; height: 100vh; display: flex; flex-direction: column; overflow: hidden; font-family: 'Pretendard', sans-serif; }
         .main-container { display: flex; flex: 1; gap: 15px; padding: 15px; width: 100%; box-sizing: border-box; }
-        .column { width: 33.33%; display: flex; flex-direction: column; gap: 15px; }
+        .column { display: flex; flex-direction: column; gap: 15px; }
         .card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 15px; display: flex; flex-direction: column; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        .card-title { font-size: 1.25rem; font-weight: 800; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 10px; }
-        textarea { width: 100% !important; flex: 1; padding: 10px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 1.1rem; resize: none; overflow-y: auto; line-height: 1.6; color: #1e293b; font-weight: 500; outline: none; }
-        .ot-box { display: flex; flex-direction: column; align-items: center; background: #334155; padding: 5px; border-radius: 8px; width: 85px; }
-        .ot-input { width: 100%; height: 35px; background: white; color: black; font-size: 1.5rem; font-weight: 900; text-align: center; border: 2px solid #fbbf24; border-radius: 6px; outline: none; }
+        .card-title { font-size: 1.3rem; font-weight: 800; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 10px; }
+        textarea { width: 100% !important; flex: 1; padding: 10px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 1.15rem; resize: none; overflow-y: auto; line-height: 1.6; color: #1e293b; font-weight: 500; outline: none; }
+        
+        .ot-box { display: flex; flex-direction: column; align-items: center; background: #334155; padding: 5px; border-radius: 8px; width: 95px; position: relative; transition: all 0.5s; }
+        .ot-input { width: 100%; height: 40px; background: white; color: black; font-size: 1.8rem; font-weight: 900; text-align: center; border: 2px solid #fbbf24; border-radius: 6px; outline: none; }
+
+        /* 폭죽 및 강조 애니메이션 */
+        .max-highlight { transform: scale(1.1); background: #7c3aed !important; border: 2px solid #fbbf24; z-index: 10; box-shadow: 0 0 20px #fbbf24; }
+        .max-highlight::after { content: '🎉'; position: absolute; top: -15px; font-size: 1.5rem; animation: firework 0.8s infinite alternate; }
+        @keyframes firework { 0% { transform: translateY(0); } 100% { transform: translateY(-10px); } }
+
+        /* 전광판 애니메이션 */
+        @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+        .marquee-container { flex: 1; margin: 0 40px; overflow: hidden; white-space: nowrap; }
+        .marquee-text { display: inline-block; font-size: 1.6rem; font-weight: 700; color: #fbbf24; animation: marquee 15s linear infinite; }
     </style>
 </head>
 <body>
 
-    <header class="flex justify-between items-center bg-[#1e293b] text-white p-4 shadow-xl">
-        <div>
-            <h1 class="text-2xl font-black text-[#fbbf24]">제조팀 업무 게시판</h1>
-            <div class="flex items-center gap-4 text-sm font-bold text-slate-400 mt-1">
-                <span id="clockDisplay">로딩 중...</span>
-                <span id="weatherDisplay" class="text-sky-400 font-bold">🌡️ <span id="temp">--</span>°C | <span id="desc">날씨 정보 확인 중...</span></span>
-            </div>
+    <header class="flex justify-between items-center bg-[#1e293b] text-white p-5 shadow-xl">
+        <div style="min-width: 380px;">
+            <h1 class="text-3xl font-black text-[#fbbf24]">제조팀 업무 게시판</h1>
+            <div id="clockDisplay" class="text-xl font-bold text-slate-300 mt-1">로딩 중...</div>
         </div>
+
+        <div class="marquee-container">
+            <div id="scrollingNotice" class="marquee-text">현장 데이터 동기화 중...</div>
+        </div>
+
         <div class="flex items-center gap-4">
-            <div class="flex gap-2 bg-[#0f172a] p-2 rounded-lg border border-slate-700 items-center">
-                <span class="text-xs font-black text-[#fbbf24] mr-1">🌙 연장 인원</span>
-                <div class="ot-box"><span class="text-[10px] text-white mb-1">BBT</span><input type="text" id="otBBT" class="ot-input" readonly></div>
-                <div class="ot-box"><span class="text-[10px] text-white mb-1">인서트</span><input type="text" id="otInsert" class="ot-input" readonly></div>
-                <div class="ot-box"><span class="text-[10px] text-white mb-1">리터치</span><input type="text" id="otRetouch" class="ot-input" readonly></div>
+            <div class="flex gap-3 bg-[#0f172a] p-3 rounded-lg border border-slate-700 items-center">
+                <span class="text-sm font-black text-[#fbbf24] mr-2">🌙 연장 인원</span>
+                <div id="box-otBBT" class="ot-box"><span class="text-[11px] text-white mb-1 font-bold">BBT</span><input type="text" id="otBBT" class="ot-input" readonly></div>
+                <div id="box-otInsert" class="ot-box"><span class="text-[11px] text-white mb-1 font-bold">인서트</span><input type="text" id="otInsert" class="ot-input" readonly></div>
+                <div id="box-otRetouch" class="ot-box"><span class="text-[11px] text-white mb-1 font-bold">리터치</span><input type="text" id="otRetouch" class="ot-input" readonly></div>
             </div>
         </div>
     </header>
 
-    <div class="main-container">
-        <div class="column">
-            <div class="card" style="height: 33.3%"><h2 class="card-title text-red-500">📢 공지 사항</h2><textarea id="notice" readonly></textarea></div>
-            <div class="card" style="height: 33.3%"><h2 class="card-title text-blue-500">👥 근태 현황</h2><textarea id="attendance" readonly></textarea></div>
-            <div class="card" style="height: 33.3%"><h2 class="card-title text-green-500">📦 납품 목록</h2><textarea id="delivery" readonly></textarea></div>
-        </div>
-        <div class="column">
-            <div class="card" style="height: 66.6%; border-top: 6px solid #3b82f6;">
-                <h2 class="card-title italic text-blue-600">✅ 업무 공유</h2>
-                <textarea id="todoSheet" class="bg-blue-50/50" readonly></textarea>
+    <div class="main-container flex-col">
+        <div class="flex flex-1 gap-4" style="height: 65%;">
+            <div class="column w-1/3">
+                <div class="card h-1/2"><h2 class="card-title text-red-500">📢 공지 사항</h2><textarea id="notice" readonly></textarea></div>
+                <div class="card h-1/2"><h2 class="card-title text-blue-500">👥 근태 현황</h2><textarea id="attendance" readonly></textarea></div>
             </div>
-            <div class="card" style="height: 33.3%; border-top: 6px solid #ef4444;">
-                <h2 class="card-title text-red-600">🚨 긴급 진행 건</h2>
-                <textarea id="urgent" class="bg-red-50" readonly></textarea>
+            <div class="column w-1/3">
+                <div class="card h-full border-top" style="border-top: 6px solid #3b82f6;"><h2 class="card-title text-blue-600 italic">✅ 업무 공유</h2><textarea id="todoSheet" class="bg-blue-50/50" readonly></textarea></div>
+            </div>
+            <div class="column w-1/3">
+                <div class="card h-1/2"><h2 class="card-title text-green-500">📦 금일 납품 목록</h2><textarea id="delivery" readonly></textarea></div>
+                <div class="card h-1/2 border-top" style="border-top: 6px solid #ef4444;"><h2 class="card-title text-red-600">🚨 긴급 진행 건</h2><textarea id="urgent" class="bg-red-50" readonly></textarea></div>
             </div>
         </div>
-        <div class="column">
-            <div class="grid grid-cols-2 grid-rows-2 gap-4 h-full">
-                <div class="card"><h2 class="card-title text-purple-600">📊 인원 현황</h2><textarea id="share1" readonly></textarea></div>
-                <div class="card"><h2 class="card-title text-orange-600">🔧 설비 이슈</h2><textarea id="share2" readonly></textarea></div>
-                <div class="card"><h2 class="card-title text-teal-600">⚠️ 품질 이슈</h2><textarea id="share3" readonly></textarea></div>
-                <div class="card"><h2 class="card-title text-pink-600">💡 기타</h2><textarea id="share4" readonly></textarea></div>
-            </div>
+
+        <div class="flex gap-4" style="height: 35%;">
+            <div class="card w-1/3"><h2 class="card-title text-purple-600">📊 BBT</h2><textarea id="shareBBT" readonly></textarea></div>
+            <div class="card w-1/3"><h2 class="card-title text-orange-600">🔧 인서트</h2><textarea id="shareInsert" readonly></textarea></div>
+            <div class="card w-1/3"><h2 class="card-title text-teal-600">⚠️ 리터치</h2><textarea id="shareRetouch" readonly></textarea></div>
         </div>
     </div>
 
@@ -75,55 +84,51 @@
                 const text = await res.text();
                 const rows = text.split('\r\n');
                 if (rows.length < 2) return;
-
                 const data = rows[1].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
 
-                document.getElementById('otBBT').value = clean(data[0]);
-                document.getElementById('otInsert').value = clean(data[1]);
-                document.getElementById('otRetouch').value = clean(data[2]);
-                document.getElementById('notice').value = clean(data[3]);
-                document.getElementById('attendance').value = clean(data[4]);
-                document.getElementById('delivery').value = clean(data[5]);
-                document.getElementById('todoSheet').value = clean(data[6]);
-                document.getElementById('urgent').value = clean(data[7]);
-                document.getElementById('share1').value = clean(data[8]);
-                document.getElementById('share2').value = clean(data[9]);
-                document.getElementById('share3').value = clean(data[10]);
-                document.getElementById('share4').value = clean(data[11]);
-            } catch (e) { console.error("데이터 로드 실패"); }
-        }
-
-        // 날씨 로직 보강
-        async function getWeather() {
-            const api_key = '895284fb2d2c1d87c4676455964815b9';
-            try {
-                // 천안 날씨 호출
-                const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=Cheonan&appid=${api_key}&units=metric&lang=kr`);
-                if (!res.ok) throw new Error('Network response was not ok');
-                const data = await res.json();
+                // 연장 인원 및 애니메이션
+                const bbt = parseInt(clean(data[0])) || 0;
+                const ins = parseInt(clean(data[1])) || 0;
+                const ret = parseInt(clean(data[2])) || 0;
                 
-                if(data.main && data.weather) {
-                    document.getElementById('temp').innerText = Math.round(data.main.temp);
-                    document.getElementById('desc').innerText = data.weather[0].description + " (천안)";
-                }
-            } catch (e) { 
-                console.error("Weather error:", e);
-                document.getElementById('desc').innerText = "날씨 정보 업데이트 대기 중...";
-                // 30초 후 재시도
-                setTimeout(getWeather, 30000);
-            }
+                document.getElementById('otBBT').value = bbt;
+                document.getElementById('otInsert').value = ins;
+                document.getElementById('otRetouch').value = ret;
+
+                // 최대값 찾기 및 강조
+                const boxes = [
+                    {val: bbt, id: 'box-otBBT'},
+                    {val: ins, id: 'box-otInsert'},
+                    {val: ret, id: 'box-otRetouch'}
+                ];
+                const maxVal = Math.max(bbt, ins, ret);
+                boxes.forEach(box => {
+                    const el = document.getElementById(box.id);
+                    el.classList.remove('max-highlight');
+                    if (box.val === maxVal && maxVal > 0) el.classList.add('max-highlight');
+                });
+
+                document.getElementById('scrollingNotice').innerText = clean(data[3]).replace(/\n/g, " | ");
+                document.getElementById('notice').value = clean(data[4]);
+                document.getElementById('attendance').value = clean(data[5]);
+                document.getElementById('delivery').value = clean(data[6]);
+                document.getElementById('todoSheet').value = clean(data[7]);
+                document.getElementById('urgent').value = clean(data[8]);
+                document.getElementById('shareBBT').value = clean(data[9]);
+                document.getElementById('shareInsert').value = clean(data[10]);
+                document.getElementById('shareRetouch').value = clean(data[11]);
+            } catch (e) { console.error("데이터 갱신 중..."); }
         }
 
         function init() {
-            setInterval(() => { 
+            setInterval(() => {
                 const now = new Date();
-                document.getElementById('clockDisplay').innerText = now.toLocaleDateString() + " " + now.toLocaleTimeString(); 
+                document.getElementById('clockDisplay').innerText = now.toLocaleString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit' });
             }, 1000);
             loadData();
-            getWeather();
-            setInterval(loadData, 30000); 
+            setInterval(loadData, 30000);
         }
         window.onload = init;
     </script>
 </body>
-</html>
+</html>n: column; align-items: center; background: #334155; padding: 5px; border-radius: 8px; width:
