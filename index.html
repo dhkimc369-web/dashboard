@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>제조팀 업무 게시판 (저장기능 강화)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #f1f5f9; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        .main-container { display: flex; flex: 1; gap: 15px; padding: 15px; width: 100%; box-sizing: border-box; }
+        .column { width: 33.33%; display: flex; flex-direction: column; gap: 15px; }
+        .card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 15px; display: flex; flex-direction: column; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .card-title { font-size: 1.2rem; font-weight: 800; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 10px; }
+        textarea { width: 100% !important; flex: 1; padding: 10px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 1.1rem; resize: none; }
+        .ot-input { width: 80px; height: 40px; background: white; color: black; font-size: 1.5rem; font-weight: 900; text-align: center; border: 3px solid #fbbf24; border-radius: 6px; }
+    </style>
+</head>
+<body>
+
+    <header class="flex justify-between items-center bg-[#1e293b] text-white p-4">
+        <div>
+            <h1 class="text-2xl font-black text-[#fbbf24]">제조팀 업무 게시판</h1>
+            <div class="flex items-center gap-4 text-sm font-bold text-slate-400">
+                <span id="clockDisplay">시간 로딩 중...</span>
+                <span id="weatherDisplay" class="text-sky-400">🌡️ <span id="temp">--</span>°C | <span id="desc">날씨 확인 불가(보안)</span></span>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <button onclick="localStorage.clear(); location.reload();" class="bg-red-500 px-3 py-1 rounded text-xs font-bold">전체 초기화</button>
+            <div class="flex gap-2 bg-[#0f172a] p-2 rounded-lg border border-slate-700 items-center">
+                <input type="number" id="otBBT" oninput="saveInputs()" class="ot-input" value="0">
+                <input type="number" id="otInsert" oninput="saveInputs()" class="ot-input" value="0">
+                <input type="number" id="otRetouch" oninput="saveInputs()" class="ot-input" value="0">
+            </div>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <div class="column">
+            <div class="card" style="height: 33%"><h2 class="card-title text-red-500">📢 공지 사항</h2><textarea id="notice" oninput="saveInputs()"></textarea></div>
+            <div class="card" style="height: 33%"><h2 class="card-title text-blue-500">👥 근태 현황</h2><textarea id="attendance" oninput="saveInputs()"></textarea></div>
+            <div class="card" style="height: 33%"><h2 class="card-title text-green-500">📦 납품 목록</h2><textarea id="delivery" oninput="saveInputs()"></textarea></div>
+        </div>
+        <div class="column">
+            <div class="card h-full" style="border-top: 5px solid #3b82f6;">
+                <h2 class="card-title">✅ 실시간 업무 리스트</h2>
+                <div class="flex gap-2 mb-4">
+                    <input type="text" id="todoInput" class="flex-1 p-2 border rounded-lg" placeholder="내용 입력...">
+                    <button onclick="addTodo()" class="bg-blue-600 text-white px-4 rounded font-bold">등록</button>
+                </div>
+                <ul id="todoList" class="flex-1 overflow-y-auto space-y-2"></ul>
+            </div>
+        </div>
+        <div class="column">
+            <div class="grid grid-cols-2 grid-rows-2 gap-4 h-full">
+                <div class="card"><h2 class="card-title text-purple-500 text-xs">📊 인원 현황</h2><textarea id="share1" oninput="saveInputs()"></textarea></div>
+                <div class="card"><h2 class="card-title text-orange-500 text-xs">🔧 설비 이슈</h2><textarea id="share2" oninput="saveInputs()"></textarea></div>
+                <div class="card"><h2 class="card-title text-teal-500 text-xs">⚠️ 품질 이슈</h2><textarea id="share3" oninput="saveInputs()"></textarea></div>
+                <div class="card"><h2 class="card-title text-pink-500 text-xs">💡 기타</h2><textarea id="share4" oninput="saveInputs()"></textarea></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ★ 구글 시트 주소 (반드시 따옴표와 output=csv 확인)
+        const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTmOR1Hvcso4G0weHKCXvPpy9enUYo2mX0NIECrY7TDbjDfR_hf1fEBBUBM0qY1Pd8pL1HFFfqex88Z/pub?output=csv';
+
+        // 1. 데이터 저장 (로컬 저장소 활용)
+        function saveInputs() {
+            const data = {
+                notice: document.getElementById('notice').value,
+                attendance: document.getElementById('attendance').value,
+                delivery: document.getElementById('delivery').value,
+                share: [document.getElementById('share1').value, document.getElementById('share2').value, document.getElementById('share3').value, document.getElementById('share4').value],
+                ot: [document.getElementById('otBBT').value, document.getElementById('otInsert').value, document.getElementById('otRetouch').value]
+            };
+            localStorage.setItem('mfg_data', JSON.stringify(data));
+        }
+
+        // 2. 데이터 불러오기
+        function loadSavedData() {
+            const saved = JSON.parse(localStorage.getItem('mfg_data'));
+            if (saved) {
+                document.getElementById('notice').value = saved.notice || '';
+                document.getElementById('attendance').value = saved.attendance || '';
+                document.getElementById('delivery').value = saved.delivery || '';
+                saved.share.forEach((val, i) => document.getElementById('share' + (i+1)).value = val);
+                saved.ot.forEach((val, i) => {
+                    const ids = ['otBBT', 'otInsert', 'otRetouch'];
+                    document.getElementById(ids[i]).value = val;
+                });
+            }
+            // 업무 리스트 로드
+            const savedTodos = JSON.parse(localStorage.getItem('mfg_todos')) || [];
+            savedTodos.forEach(todo => renderTodo(todo.text, todo.done));
+        }
+
+        // 3. 할 일 추가 및 렌더링
+        function addTodo() {
+            const input = document.getElementById('todoInput');
+            if (!input.value.trim()) return;
+            renderTodo(input.value, false);
+            saveTodos();
+            input.value = '';
+        }
+
+        function renderTodo(text, done) {
+            const li = document.createElement('li');
+            li.className = "flex items-center justify-between p-2 bg-slate-50 border rounded";
+            li.innerHTML = `
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" onchange="saveTodos()" ${done ? 'checked' : ''} class="w-5 h-5">
+                    <span class="${done ? 'line-through text-slate-400' : ''}">${text}</span>
+                </div>
+                <button onclick="this.parentElement.remove(); saveTodos();" class="text-red-500">✕</button>`;
+            document.getElementById('todoList').prepend(li);
+        }
+
+        function saveTodos() {
+            const todos = Array.from(document.querySelectorAll('#todoList li')).map(li => ({
+                text: li.querySelector('span').innerText,
+                done: li.querySelector('input').checked
+            }));
+            localStorage.setItem('mfg_todos', JSON.stringify(todos));
+        }
+
+        // 4. 날씨 (에러 시 전체가 멈추지 않도록 독립 실행)
+        async function fetchWeather() {
+            try {
+                const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=Cheonan&appid=895284fb2d2c1d87c4676455964815b9&units=metric&lang=kr`);
+                const data = await res.json();
+                document.getElementById('temp').innerText = Math.round(data.main.temp);
+                document.getElementById('desc').innerText = data.weather[0].description;
+            } catch (e) { console.log("로컬 보안 정책으로 날씨를 가져올 수 없습니다."); }
+        }
+
+        // 5. 구글 시트 연동 (로컬에서는 차단될 확률 높음)
+        async function loadSheet() {
+            try {
+                const res = await fetch(SHEET_CSV_URL);
+                const csv = await res.text();
+                // ... (시트 파싱 로직)
+            } catch (e) { console.log("로컬 보안 정책으로 시트 연동이 차단되었습니다."); }
+        }
+
+        window.onload = () => {
+            loadSavedData();
+            fetchWeather();
+            setInterval(() => document.getElementById('clockDisplay').innerText = new Date().toLocaleString(), 1000);
+        };
+    </script>
+</body>
+</html>
