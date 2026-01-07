@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>제조팀 업무 게시판 (인덱스 보정형)</title>
+    <title>제조팀 업무 게시판 (강조 효과 복구형)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #f1f5f9; height: 100vh; display: flex; flex-direction: column; overflow: hidden; font-family: 'Pretendard', sans-serif; }
@@ -15,28 +15,25 @@
         .scroll-box::-webkit-scrollbar { width: 4px; }
         .scroll-box::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
 
-        .scroll-content { padding: 12px; font-size: 1.1rem; line-height: 1.6; color: #1e293b; font-weight: 500; white-space: pre-wrap; position: relative; }
-        .animate-scroll { animation: scrollLoop 25s linear infinite alternate; }
+        .scroll-content { padding: 12px; font-size: 1.1rem; line-height: 1.6; color: #1e293b; font-weight: 600; white-space: pre-wrap; position: relative; }
+        .animate-scroll { animation: scrollLoop 30s linear infinite alternate; }
         .scroll-box:hover .animate-scroll { animation-play-state: paused; }
         @keyframes scrollLoop { 0% { transform: translateY(0); } 100% { transform: translateY(calc(-100% + 150px)); } }
 
-        .status-img { width: 100%; height: auto; border-radius: 4px; object-fit: contain; }
-
-        .ot-box { display: flex; flex-direction: column; align-items: center; background: #334155; padding: 5px; border-radius: 8px; width: 95px; position: relative; }
+        /* 강조 애니메이션 스타일 복구 */
+        .ot-box { display: flex; flex-direction: column; align-items: center; background: #334155; padding: 5px; border-radius: 8px; width: 95px; position: relative; transition: all 0.3s ease; }
         .ot-input { width: 100%; height: 40px; background: white; color: black; font-size: 1.8rem; font-weight: 900; text-align: center; border: 2px solid #fbbf24; border-radius: 6px; outline: none; }
-        .max-highlight { transform: scale(1.1); background: #7c3aed !important; box-shadow: 0 0 20px #fbbf24; }
-        .max-highlight::after { content: '🎉'; position: absolute; top: -15px; font-size: 1.5rem; animation: firework 0.8s infinite alternate; }
         
+        .max-highlight { transform: scale(1.1); background: #7c3aed !important; box-shadow: 0 0 20px #fbbf24; z-index: 10; }
+        .max-highlight::after { content: '🎉'; position: absolute; top: -15px; font-size: 1.5rem; animation: firework 0.8s infinite alternate; }
+        @keyframes firework { 0% { transform: translateY(0); } 100% { transform: translateY(-10px); } }
+
         @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
         .marquee-container { flex: 1; margin: 0 40px; overflow: hidden; white-space: nowrap; }
         .marquee-text { display: inline-block; font-size: 1.6rem; font-weight: 700; color: #fbbf24; animation: marquee 15s linear infinite; }
-        #alertBanner { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 85%; background: rgba(239, 68, 68, 0.98); color: white; padding: 60px; border-radius: 30px; text-align: center; font-size: 5.5rem; font-weight: 900; z-index: 2000; box-shadow: 0 0 150px rgba(0,0,0,0.7); animation: blink 0.8s infinite; }
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
     </style>
 </head>
 <body>
-
-    <div id="alertBanner">메시지 알람</div>
 
     <header class="flex justify-between items-center bg-[#1e293b] text-white p-5 shadow-xl">
         <div style="min-width: 380px;">
@@ -79,96 +76,85 @@
 
     <script>
         const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTmOR1Hvcso4G0weHKCXvPpy9enUYo2mX0NIECrY7TDbjDfR_hf1fEBBUBM0qY1Pd8pL1HFFfqex88Z/pub?output=csv';
-        let alertConfig = { msg: "", start: 0, end: 0 };
 
-        const clean = (str) => {
-            if (!str) return "";
-            return str.replace(/^"|"$/g, '').trim().split('//').join('\n');
-        };
-
-        function updateScrollAnimation(elementId) {
-            const content = document.getElementById(elementId);
-            const container = content.parentElement;
-            if (content.scrollHeight > container.clientHeight) {
-                content.classList.add('animate-scroll');
-            } else {
-                content.classList.remove('animate-scroll');
+        function parseCSV(text) {
+            const rows = [];
+            let currentRow = [];
+            let currentField = '';
+            let inQuotes = false;
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                const nextChar = text[i+1];
+                if (inQuotes) {
+                    if (char === '"' && nextChar === '"') { currentField += '"'; i++; }
+                    else if (char === '"') { inQuotes = false; }
+                    else { currentField += char; }
+                } else {
+                    if (char === '"') { inQuotes = true; }
+                    else if (char === ',') { currentRow.push(currentField); currentField = ''; }
+                    else if (char === '\r' || char === '\n') {
+                        if (currentField || currentRow.length > 0) {
+                            currentRow.push(currentField);
+                            rows.push(currentRow);
+                            currentRow = [];
+                            currentField = '';
+                        }
+                        if (char === '\r' && nextChar === '\n') i++;
+                    } else { currentField += char; }
+                }
             }
+            if (currentField || currentRow.length > 0) { currentRow.push(currentField); rows.push(currentRow); }
+            return rows;
         }
 
         async function loadData() {
             try {
                 const res = await fetch(`${SHEET_URL}&t=${Date.now()}`);
                 const text = await res.text();
-                const rows = text.split('\n');
-                
-                // 보정된 데이터 추출 함수 (행 번호와 연동)
+                const dataRows = parseCSV(text);
+
                 const getVal = (rowNum) => {
-                    const idx = rowNum - 1; // 배열은 0부터 시작하므로 행번호-1
-                    if(!rows[idx]) return "";
-                    let parts = rows[idx].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
-                    return parts.length > 1 ? clean(parts[1]) : "";
+                    const row = dataRows[rowNum - 1];
+                    return row && row[1] ? row[1].trim() : "";
                 };
 
-                // 1~3행: 연장 인원
-                const v1 = parseInt(getVal(1)) || 0;
-                const v2 = parseInt(getVal(2)) || 0;
-                const v3 = parseInt(getVal(3)) || 0;
-                document.getElementById('otBBT').value = v1;
-                document.getElementById('otInsert').value = v2;
-                document.getElementById('otRetouch').value = v3;
+                // 연장 인원 업데이트
+                const v1 = getVal(1); document.getElementById('otBBT').value = v1;
+                const v2 = getVal(2); document.getElementById('otInsert').value = v2;
+                const v3 = getVal(3); document.getElementById('otRetouch').value = v3;
+                
+                // 강조 애니메이션 로직 복구
+                const nums = [parseInt(v1)||0, parseInt(v2)||0, parseInt(v3)||0];
+                const max = Math.max(...nums);
+                ['box-otBBT', 'box-otInsert', 'box-otRetouch'].forEach((id, i) => {
+                    const el = document.getElementById(id);
+                    el.classList.remove('max-highlight');
+                    if (nums[i] === max && max > 0) {
+                        el.classList.add('max-highlight');
+                    }
+                });
 
-                // 4행: 전광판
                 document.getElementById('scrollingNotice').innerText = getVal(4).replace(/\n/g, " | ");
-
-                // 5~8행: 상단 박스
                 document.getElementById('notice').innerText = getVal(5);
                 document.getElementById('attendance').innerText = getVal(6);
                 document.getElementById('delivery').innerText = getVal(7);
                 document.getElementById('todoSheet').innerText = getVal(8);
-
-                // 9행: 진행 현황 (이미지 체크)
-                const statusData = getVal(9);
-                const statusList = document.getElementById('statusList');
-                if (statusData.startsWith('http')) {
-                    statusList.innerHTML = `<img src="${statusData}" class="status-img">`;
-                } else {
-                    statusList.innerText = statusData;
-                }
-
-                // 10~12행: 하단 상세 (보정 핵심!)
+                document.getElementById('statusList').innerText = getVal(9);
                 document.getElementById('shareBBT').innerText = getVal(10);
                 document.getElementById('shareInsert').innerText = getVal(11);
                 document.getElementById('shareRetouch').innerText = getVal(12);
 
-                // 높이 체크 (애니메이션)
-                ['notice', 'attendance', 'delivery', 'todoSheet', 'statusList', 'shareBBT', 'shareInsert', 'shareRetouch'].forEach(id => updateScrollAnimation(id));
+                ['notice', 'attendance', 'delivery', 'todoSheet', 'statusList', 'shareBBT', 'shareInsert', 'shareRetouch'].forEach(id => {
+                    const el = document.getElementById(id);
+                    el.classList.toggle('animate-scroll', el.scrollHeight > el.parentElement.clientHeight);
+                });
 
-                // 13~15행: 팝업 설정
-                alertConfig.msg = getVal(13);
-                alertConfig.start = parseInt(getVal(14).replace(":", "")) || 0;
-                alertConfig.end = parseInt(getVal(15).replace(":", "")) || 0;
-
-            } catch (e) { console.error("데이터 로드 실패"); }
-        }
-
-        function checkSmartAlert() {
-            const now = new Date();
-            const currentTime = now.getHours() * 100 + now.getMinutes();
-            const alertEl = document.getElementById('alertBanner');
-            if (alertConfig.msg && currentTime >= alertConfig.start && currentTime <= alertConfig.end) {
-                alertEl.innerText = alertConfig.msg;
-                alertEl.style.display = 'block';
-            } else {
-                alertEl.style.display = 'none';
-            }
+            } catch (e) { console.error("데이터 로드 실패", e); }
         }
 
         function init() {
             setInterval(() => {
-                const now = new Date();
-                document.getElementById('clockDisplay').innerText = now.toLocaleString('ko-KR');
-                checkSmartAlert();
+                document.getElementById('clockDisplay').innerText = new Date().toLocaleString('ko-KR');
             }, 1000);
             loadData();
             setInterval(loadData, 30000);
