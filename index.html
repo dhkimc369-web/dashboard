@@ -9,7 +9,7 @@
         body { background-color: #f1f5f9; height: 100vh; display: flex; flex-direction: column; overflow: hidden; font-family: 'Pretendard', sans-serif; }
 
         /* 헤더 섹션 */
-        header { background: #1a2a3a; padding: 10px 25px; display: flex; align-items: center; justify-content: space-between; color: white; border-bottom: 4px solid #f39c12; }
+        header { background: #1a2a3a; padding: 10px 25px; display: flex; align-items: center; justify-content: space-between; color: white; border-bottom: 4px solid #f39c12; flex-shrink: 0; }
         .logo-group h1 { font-size: 1.4rem; font-weight: 900; color: #f39c12; letter-spacing: -0.5px; }
         #clock { font-size: 0.85rem; color: #94a3b8; }
         
@@ -17,38 +17,51 @@
         .marquee-text { display: inline-block; font-size: 1.05rem; font-weight: 700; color: #fbbf24; animation: marquee 18s linear infinite; }
         @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
 
-        /* 상단 연장 인원 숫자 박스 */
         .ot-group { display: flex; gap: 10px; }
-        .ot-card { background: #ffffff; padding: 4px 12px; border-radius: 6px; display: flex; flex-direction: column; align-items: center; min-width: 80px; position: relative; }
+        .ot-card { background: #ffffff; padding: 4px 12px; border-radius: 6px; display: flex; flex-direction: column; align-items: center; min-width: 80px; }
         .ot-card label { font-size: 11px; font-weight: 800; color: #64748b; }
         .ot-card input { width: 50px; border: none; text-align: center; font-size: 1.4rem; font-weight: 900; color: #1e293b; outline: none; background: transparent; }
-        .max-highlight { background: #f59e0b !important; box-shadow: 0 0 15px rgba(245, 158, 11, 0.6); }
+        .max-highlight { background: #f59e0b !important; }
 
-        /* 8개 메인 박스 그리드 (4열 2행) */
-        .main-grid { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 12px; padding: 15px; overflow-y: auto; }
+        /* 메인 그리드 */
+        .main-grid { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 12px; padding: 15px; position: relative; }
         
-        .card { background: white; border-radius: 10px; border: 1px solid #e2e8f0; cursor: pointer; transition: all 0.3s; display: flex; flex-direction: column; height: auto; min-height: 120px; }
-        .card-header { padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; border-radius: 9px 9px 0 0; color: white; }
-        .card-title { font-size: 0.95rem; font-weight: 800; }
-        .expand-label { font-size: 0.65rem; background: rgba(0,0,0,0.15); padding: 1px 5px; border-radius: 4px; }
+        /* 카드 디자인 및 확대 애니메이션 */
+        .card { background: white; border-radius: 10px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative; overflow: hidden; }
+        .card-header { padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; color: white; cursor: pointer; flex-shrink: 0; }
+        .card-title { font-size: 1rem; font-weight: 800; }
+        .expand-btn { font-size: 0.7rem; background: rgba(0,0,0,0.2); padding: 2px 8px; border-radius: 4px; pointer-events: none; }
 
-        .card-body { padding: 12px; overflow: hidden; background: #fff; flex: 1; }
-        .card.expanded { grid-column: span 2; grid-row: span 2; z-index: 10; position: relative; height: 100%; }
-        .card.expanded .card-body { overflow-y: auto; }
-        .content-area { font-size: 1rem; line-height: 1.5; color: #334155; white-space: pre-wrap; }
+        .card-body { padding: 15px; overflow-y: auto; flex: 1; background: #fff; font-size: 1.1rem; line-height: 1.6; color: #334155; }
+        .content-area { white-space: pre-wrap; }
 
-        /* 파트별 테마 색상 */
-        .bg-red { background-color: #ef4444; }
-        .bg-blue { background-color: #3b82f6; }
-        .bg-green { background-color: #10b981; }
-        .bg-purple { background-color: #8b5cf6; }
-        .bg-orange { background-color: #f59e0b; }
-        .bg-teal { background-color: #14b8a6; }
-        .bg-slate { background-color: #64748b; }
-        .bg-indigo { background-color: #6366f1; }
+        /* 확대(Full Screen) 효과 */
+        .card.expanded {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90vw;
+            height: 85vh;
+            z-index: 9999;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            border: 2px solid #fff;
+        }
+
+        /* 배경 어둡게 */
+        #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 9998; }
+        body.has-expanded #overlay { display: block; }
+
+        /* 테마 색상 */
+        .bg-red { background-color: #ef4444; } .bg-blue { background-color: #3b82f6; }
+        .bg-green { background-color: #10b981; } .bg-purple { background-color: #8b5cf6; }
+        .bg-orange { background-color: #f59e0b; } .bg-teal { background-color: #14b8a6; }
+        .bg-indigo { background-color: #6366f1; } .bg-slate { background-color: #64748b; }
     </style>
 </head>
-<body>
+<body id="bodyTag">
+
+    <div id="overlay" onclick="closeAll()"></div>
 
     <header>
         <div class="logo-group">
@@ -66,19 +79,33 @@
     </header>
 
     <div class="main-grid">
-        <div class="card" onclick="this.classList.toggle('expanded')"><div class="card-header bg-red"><span class="card-title">📢 공지 사항</span><span class="expand-label">클릭확대</span></div><div class="card-body"><div id="row5" class="content-area"></div></div></div>
-        <div class="card" onclick="this.classList.toggle('expanded')"><div class="card-header bg-purple"><span class="card-title">👥 근태 현황</span><span class="expand-label">클릭확대</span></div><div class="card-body"><div id="row6" class="content-area"></div></div></div>
-        <div class="card" onclick="this.classList.toggle('expanded')"><div class="card-header bg-green"><span class="card-title">📦 납품 목록</span><span class="expand-label">클릭확대</span></div><div class="card-body"><div id="row7" class="content-area"></div></div></div>
-        <div class="card" onclick="this.classList.toggle('expanded')"><div class="card-header bg-blue"><span class="card-title">✅ 업무 공유</span><span class="expand-label">클릭확대</span></div><div class="card-body"><div id="row8" class="content-area"></div></div></div>
-        
-        <div class="card" onclick="this.classList.toggle('expanded')"><div class="card-header bg-teal"><span class="card-title">📊 진행 현황</span><span class="expand-label">클릭확대</span></div><div class="card-body"><div id="row9" class="content-area"></div></div></div>
-        <div class="card" onclick="this.classList.toggle('expanded')"><div class="card-header bg-orange"><span class="card-title">🔍 BBT 상세</span><span class="expand-label">클릭확대</span></div><div class="card-body"><div id="row10" class="content-area"></div></div></div>
-        <div class="card" onclick="this.classList.toggle('expanded')"><div class="card-header bg-indigo"><span class="card-title">🔧 인서트 상세</span><span class="expand-label">클릭확대</span></div><div class="card-body"><div id="row11" class="content-area"></div></div></div>
-        <div class="card" onclick="this.classList.toggle('expanded')"><div class="card-header bg-slate"><span class="card-title">⚠️ 리터치 상세</span><span class="expand-label">클릭확대</span></div><div class="card-body"><div id="row12" class="content-area"></div></div></div>
+        <div class="card" onclick="toggleCard(this)"><div class="card-header bg-red"><span class="card-title">📢 공지 사항</span><span class="expand-btn">확대보기</span></div><div class="card-body"><div id="row5" class="content-area"></div></div></div>
+        <div class="card" onclick="toggleCard(this)"><div class="card-header bg-purple"><span class="card-title">👥 근태 현황</span><span class="expand-btn">확대보기</span></div><div class="card-body"><div id="row6" class="content-area"></div></div></div>
+        <div class="card" onclick="toggleCard(this)"><div class="card-header bg-green"><span class="card-title">📦 납품 목록</span><span class="expand-btn">확대보기</span></div><div class="card-body"><div id="row7" class="content-area"></div></div></div>
+        <div class="card" onclick="toggleCard(this)"><div class="card-header bg-blue"><span class="card-title">✅ 업무 공유</span><span class="expand-btn">확대보기</span></div><div class="card-body"><div id="row8" class="content-area"></div></div></div>
+        <div class="card" onclick="toggleCard(this)"><div class="card-header bg-teal"><span class="card-title">📊 진행 현황</span><span class="expand-btn">확대보기</span></div><div class="card-body"><div id="row9" class="content-area"></div></div></div>
+        <div class="card" onclick="toggleCard(this)"><div class="card-header bg-orange"><span class="card-title">🔍 BBT 상세</span><span class="expand-btn">확대보기</span></div><div class="card-body"><div id="row10" class="content-area"></div></div></div>
+        <div class="card" onclick="toggleCard(this)"><div class="card-header bg-indigo"><span class="card-title">🔧 인서트 상세</span><span class="expand-btn">확대보기</span></div><div class="card-body"><div id="row11" class="content-area"></div></div></div>
+        <div class="card" onclick="toggleCard(this)"><div class="card-header bg-slate"><span class="card-title">⚠️ 리터치 상세</span><span class="expand-label">확대보기</span></div><div class="card-body"><div id="row12" class="content-area"></div></div></div>
     </div>
 
     <script>
         const API_URL = 'https://script.google.com/macros/s/AKfycby3mm3CW3BzGZxS6sMKiFaQvWzFO4hUtnTF5dKtTR56padEzQly1OcqUv7fhnvkae9nqA/exec';
+
+        // 카드 확대/축소 함수
+        function toggleCard(el) {
+            const isExpanded = el.classList.contains('expanded');
+            closeAll(); // 일단 다 닫기
+            if (!isExpanded) {
+                el.classList.add('expanded');
+                document.getElementById('bodyTag').classList.add('has-expanded');
+            }
+        }
+
+        function closeAll() {
+            document.querySelectorAll('.card').forEach(c => c.classList.remove('expanded'));
+            document.getElementById('bodyTag').classList.remove('has-expanded');
+        }
 
         async function loadData() {
             try {
@@ -93,6 +120,7 @@
                 document.getElementById('otInsert').value = v[1];
                 document.getElementById('otRetouch').value = v[2];
                 
+                // 최고값 강조
                 const max = Math.max(...v);
                 ['box-otBBT', 'box-otInsert', 'box-otRetouch'].forEach((id, i) => {
                     document.getElementById(id).classList.toggle('max-highlight', v[i] === max && max > 0);
@@ -101,13 +129,11 @@
                 // 4행: 전광판
                 document.getElementById('scrollingNotice').innerHTML = (data[3] || "").replace(/<br>/g, " | ");
 
-                // 5~12행 데이터: 각 ID(row5~row12)에 순서대로 매칭
+                // 5~12행 데이터 매핑
                 for(let i=4; i<12; i++) {
-                    const targetId = "row" + (i + 1);
-                    const el = document.getElementById(targetId);
+                    const el = document.getElementById("row" + (i + 1));
                     if(el) el.innerHTML = data[i] || "내용 없음";
                 }
-
             } catch (e) { console.error("데이터 로드 오류:", e); }
         }
 
