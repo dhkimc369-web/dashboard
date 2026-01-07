@@ -2,127 +2,104 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>제조팀 통합 대시보드 (확장형)</title>
+    <title>제조팀 유비 괴외반 - 나노 스타일</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
         body { background-color: #f1f5f9; height: 100vh; display: flex; flex-direction: column; overflow: hidden; font-family: 'Pretendard', sans-serif; }
+
+        /* 1. 슬림 헤더 (다크 블루) */
+        header { background: #2c3e50; padding: 6px 20px; display: flex; align-items: center; gap: 20px; color: white; border-bottom: 3px solid #f39c12; }
+        .logo { font-size: 1.1rem; font-weight: 900; color: #f39c12; min-width: 180px; }
+        .clock { font-size: 0.8rem; color: #bdc3c7; }
         
-        /* 1. 상단 헤더 압축 (기존 대비 50%) */
-        header { background: #1e293b; padding: 8px 20px; display: flex; align-items: center; gap: 20px; border-bottom: 2px solid #fbbf24; }
-        .logo-area { min-width: 200px; }
-        .logo-area h1 { font-size: 1.2rem; font-weight: 900; color: #fbbf24; line-height: 1.1; }
-        #clockDisplay { font-size: 0.85rem; color: #94a3b8; font-weight: 600; }
-        
-        /* 2. 전광판 & 연장인원 컴팩트 배치 */
-        .marquee-container { flex: 1; background: rgba(0,0,0,0.3); border-radius: 4px; padding: 4px 15px; overflow: hidden; white-space: nowrap; }
-        .marquee-text { display: inline-block; font-size: 1rem; font-weight: 700; color: #fbbf24; animation: marquee 15s linear infinite; }
+        /* 2. 전광판 & 연장인원 */
+        .marquee-box { flex: 1; background: #34495e; padding: 4px 15px; border-radius: 4px; overflow: hidden; white-space: nowrap; margin: 0 20px; }
+        .marquee-text { display: inline-block; font-size: 0.95rem; font-weight: 700; color: #f1c40f; animation: marquee 15s linear infinite; }
         @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
 
-        .ot-group { display: flex; gap: 8px; align-items: center; }
-        .ot-item { background: #334155; padding: 2px 8px; border-radius: 4px; display: flex; flex-direction: column; align-items: center; border: 1px solid #475569; position: relative; }
-        .ot-item label { font-size: 10px; color: #94a3b8; font-weight: 800; margin-bottom: -2px; }
-        .ot-item input { background: transparent; color: white; border: none; width: 35px; text-align: center; font-size: 1.2rem; font-weight: 900; outline: none; }
-        .max-highlight { background: #7c3aed !important; border-color: #fbbf24; transform: scale(1.05); }
-        .max-highlight::after { content: '🎉'; position: absolute; top: -12px; font-size: 14px; animation: bounce 0.5s infinite alternate; }
-        @keyframes bounce { 0% { transform: translateY(0); } 100% { transform: translateY(-5px); } }
+        .ot-container { display: flex; gap: 6px; }
+        .ot-card { background: #ffffff; color: #2c3e50; padding: 2px 8px; border-radius: 4px; border-bottom: 2px solid #bdc3c7; display: flex; flex-direction: column; align-items: center; min-width: 60px; }
+        .ot-card label { font-size: 9px; font-weight: 800; color: #7f8c8d; }
+        .ot-card input { width: 100%; border: none; text-align: center; font-size: 1.1rem; font-weight: 900; outline: none; background: transparent; }
+        .max-highlight { background: #f1c40f !important; border-color: #e67e22; position: relative; }
+        .max-highlight::before { content: '🔥'; position: absolute; top: -12px; font-size: 12px; }
 
-        /* 3. 하단 메모 박스 영역 (보상된 크기) */
-        .main-grid { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); gap: 12px; padding: 12px; }
-        .card { background: white; border-radius: 10px; display: flex; flex-direction: column; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); overflow: hidden; position: relative; }
-        .card-header { padding: 8px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; }
-        .card-title { font-size: 1rem; font-weight: 800; display: flex; align-items: center; gap: 6px; }
+        /* 3. 그리드 레이아웃 */
+        .main-content { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: auto auto; gap: 15px; padding: 15px; overflow-y: auto; align-content: start; }
         
-        /* 4. 확장 버튼 디자인 */
-        .expand-btn { cursor: pointer; padding: 4px; border-radius: 4px; transition: background 0.2s; color: #94a3b8; }
-        .expand-btn:hover { background: #f1f5f9; color: #1e293b; }
+        /* 4. 카드 디자인 (나노 스타일) */
+        .card { background: white; border-radius: 8px; border: 1px solid #dcdde1; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; overflow: hidden; height: fit-content; }
+        .card-header { padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .card-header.red { background: #e74c3c; color: white; }
+        .card-header.blue { background: #3498db; color: white; }
+        .card-header.green { background: #27ae60; color: white; }
+        .card-header.purple { background: #9b59b6; color: white; }
+        .card-header.orange { background: #e67e22; color: white; }
+        .card-header.teal { background: #16a085; color: white; }
+        
+        .card-title { font-size: 0.95rem; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+        .btn-expand { font-size: 0.8rem; background: rgba(0,0,0,0.1); padding: 2px 6px; border-radius: 4px; }
 
-        .card-body { flex: 1; padding: 12px; font-size: 1rem; line-height: 1.5; overflow: hidden; background: #fafafa; position: relative; }
-        .scroll-content { white-space: pre-wrap; word-break: break-all; }
-        
-        /* 5. 모달(전체보기) 스타일 */
-        #modalOverlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center; padding: 40px; }
-        #modalContent { background: white; width: 100%; max-width: 800px; border-radius: 15px; display: flex; flex-direction: column; max-height: 90vh; }
-        #modalHeader { padding: 20px; border-bottom: 2px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; }
-        #modalBody { padding: 30px; overflow-y: auto; font-size: 1.5rem; line-height: 1.8; }
+        /* 확장 로직: 기본 높이와 확장 시 높이 */
+        .card-body { max-height: 120px; padding: 12px; overflow: hidden; transition: max-height 0.5s ease-in-out; background: #fff; font-size: 0.95rem; line-height: 1.6; }
+        .card.expanded .card-body { max-height: 800px; overflow-y: auto; }
+        .scroll-content { white-space: pre-wrap; }
     </style>
 </head>
 <body>
 
     <header>
-        <div class="logo-area">
-            <h1>제조팀 통합 보드</h1>
-            <div id="clockDisplay">0000-00-00 00:00:00</div>
+        <div class="logo">제조팀 유비 괴외반</div>
+        <div class="clock" id="clock">2026-01-07 18:36:00</div>
+        <div class="marquee-box">
+            <div id="scrollingNotice" class="marquee-text">현장 데이터 로딩 중...</div>
         </div>
-        <div class="marquee-container">
-            <div id="scrollingNotice" class="marquee-text">데이터를 불러오는 중입니다...</div>
-        </div>
-        <div class="ot-group">
-            <div id="box-otBBT" class="ot-item"><label>BBT</label><input type="text" id="otBBT" readonly></div>
-            <div id="box-otInsert" class="ot-item"><label>인서트</label><input type="text" id="otInsert" readonly></div>
-            <div id="box-otRetouch" class="ot-item"><label>리터치</label><input type="text" id="otRetouch" readonly></div>
+        <div class="ot-container">
+            <div id="box-otBBT" class="ot-card"><label>BBT</label><input type="text" id="otBBT" readonly></div>
+            <div id="box-otInsert" class="ot-card"><label>인서트</label><input type="text" id="otInsert" readonly></div>
+            <div id="box-otRetouch" class="ot-card"><label>리터치</label><input type="text" id="otRetouch" readonly></div>
         </div>
     </header>
 
-    <div class="main-grid">
-        <div class="card border-t-4 border-red-500">
-            <div class="card-header">
-                <span class="card-title text-red-600">📢 공지 사항</span>
-                <span class="expand-btn" onclick="openModal('📢 공지 사항', 'notice')">🔍</span>
-            </div>
+    <div class="main-content">
+        <div class="card" onclick="toggleExpand(this)">
+            <div class="card-header red"><span class="card-title">📢 공지 사항</span><span class="btn-expand">확대/축소</span></div>
             <div class="card-body"><div id="notice" class="scroll-content"></div></div>
         </div>
-        <div class="card border-t-4 border-blue-500 row-span-2">
-            <div class="card-header">
-                <span class="card-title text-blue-600">✅ 업무 공유</span>
-                <span class="expand-btn" onclick="openModal('✅ 업무 공유', 'todoSheet')">🔍</span>
-            </div>
+
+        <div class="card" onclick="toggleExpand(this)">
+            <div class="card-header blue"><span class="card-title">✅ 업무 공유</span><span class="btn-expand">확대/축소</span></div>
             <div class="card-body"><div id="todoSheet" class="scroll-content"></div></div>
         </div>
-        <div class="card border-t-4 border-green-500">
-            <div class="card-header">
-                <span class="card-title text-green-600">📦 납품 목록</span>
-                <span class="expand-btn" onclick="openModal('📦 납품 목록', 'delivery')">🔍</span>
-            </div>
+
+        <div class="card" onclick="toggleExpand(this)">
+            <div class="card-header green"><span class="card-title">📦 납품 목록</span><span class="btn-expand">확대/축소</span></div>
             <div class="card-body"><div id="delivery" class="scroll-content"></div></div>
         </div>
-        <div class="card border-t-4 border-slate-500">
-            <div class="card-header">
-                <span class="card-title text-slate-600">👥 근태 현황</span>
-                <span class="expand-btn" onclick="openModal('👥 근태 현황', 'attendance')">🔍</span>
-            </div>
+
+        <div class="card" onclick="toggleExpand(this)">
+            <div class="card-header purple"><span class="card-title">👥 근태 현황</span><span class="btn-expand">확대/축소</span></div>
             <div class="card-body"><div id="attendance" class="scroll-content"></div></div>
         </div>
-        <div class="card border-t-4 border-teal-500">
-            <div class="card-header">
-                <span class="card-title text-teal-600">📊 진행 현황</span>
-                <span class="expand-btn" onclick="openModal('📊 진행 현황', 'statusList')">🔍</span>
-            </div>
-            <div class="card-body"><div id="statusList" class="scroll-content"></div></div>
-        </div>
-    </div>
 
-    <div id="modalOverlay" onclick="closeModal()">
-        <div id="modalContent" onclick="event.stopPropagation()">
-            <div id="modalHeader">
-                <h2 id="modalTitle" class="text-2xl font-black">제목</h2>
-                <button onclick="closeModal()" class="text-3xl font-bold text-slate-400 hover:text-red-500">&times;</button>
-            </div>
-            <div id="modalBody" id="modalText">내용이 들어갑니다.</div>
+        <div class="card" onclick="toggleExpand(this)">
+            <div class="card-header orange"><span class="card-title">🔧 인서트 현황</span><span class="btn-expand">확대/축소</span></div>
+            <div class="card-body"><div id="shareInsert" class="scroll-content"></div></div>
+        </div>
+
+        <div class="card" onclick="toggleExpand(this)">
+            <div class="card-header teal"><span class="card-title">📊 진행 현황 목록</span><span class="btn-expand">확대/축소</span></div>
+            <div class="card-body"><div id="statusList" class="scroll-content"></div></div>
         </div>
     </div>
 
     <script>
         const API_URL = '팀장님의_웹앱_URL';
 
-        function openModal(title, contentId) {
-            document.getElementById('modalTitle').innerText = title;
-            document.getElementById('modalBody').innerHTML = document.getElementById(contentId).innerHTML;
-            document.getElementById('modalOverlay').style.display = 'flex';
-        }
-
-        function closeModal() {
-            document.getElementById('modalOverlay').style.display = 'none';
+        // 카드 클릭 시 확대/축소 토글 함수
+        function toggleExpand(element) {
+            element.classList.toggle('expanded');
         }
 
         async function loadData() {
@@ -130,15 +107,15 @@
                 const res = await fetch(API_URL, { redirect: 'follow' });
                 const data = await res.json();
                 
-                const extractNumber = (h) => h ? parseInt(h.replace(/<[^>]*>/g, '').replace(/[^0-9]/g, '')) || 0 : 0;
+                const extractNum = (h) => h ? parseInt(h.replace(/<[^>]*>/g, '').replace(/[^0-9]/g, '')) || 0 : 0;
 
                 // 데이터 바인딩
-                document.getElementById('otBBT').value = extractNumber(data[0]);
-                document.getElementById('otInsert').value = extractNumber(data[1]);
-                document.getElementById('otRetouch').value = extractNumber(data[2]);
+                document.getElementById('otBBT').value = extractNum(data[0]);
+                document.getElementById('otInsert').value = extractNum(data[1]);
+                document.getElementById('otRetouch').value = extractNum(data[2]);
                 
-                // 강조 로직
-                const nums = [extractNumber(data[0]), extractNumber(data[1]), extractNumber(data[2])];
+                // 최고값 강조
+                const nums = [extractNum(data[0]), extractNum(data[1]), extractNum(data[2])];
                 const max = Math.max(...nums);
                 ['box-otBBT', 'box-otInsert', 'box-otRetouch'].forEach((id, i) => {
                     document.getElementById(id).classList.toggle('max-highlight', nums[i] === max && max > 0);
@@ -150,14 +127,14 @@
                 document.getElementById('delivery').innerHTML = data[6];
                 document.getElementById('todoSheet').innerHTML = data[7];
                 document.getElementById('statusList').innerHTML = data[8];
+                document.getElementById('shareInsert').innerHTML = data[10];
 
-            } catch (e) { console.error("로드 실패", e); }
+            } catch (e) { console.error("데이터 로드 실패", e); }
         }
 
         function init() {
             setInterval(() => {
-                const now = new Date();
-                document.getElementById('clockDisplay').innerText = now.toLocaleString();
+                document.getElementById('clock').innerText = new Date().toLocaleString();
             }, 1000);
             loadData();
             setInterval(loadData, 30000);
