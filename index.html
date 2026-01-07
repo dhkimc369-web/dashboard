@@ -2,137 +2,162 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>제조팀 업무 게시판 (디자인 동기화형)</title>
+    <title>제조팀 통합 대시보드 (확장형)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
         body { background-color: #f1f5f9; height: 100vh; display: flex; flex-direction: column; overflow: hidden; font-family: 'Pretendard', sans-serif; }
-        .main-container { display: flex; flex: 1; gap: 15px; padding: 15px; width: 100%; box-sizing: border-box; }
-        .column { display: flex; flex-direction: column; gap: 15px; }
-        .card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 15px; display: flex; flex-direction: column; box-shadow: 0 4px 6px rgba(0,0,0,0.05); overflow: hidden; }
-        .card-title { font-size: 1.3rem; font-weight: 800; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 10px; }
         
-        .scroll-box { flex: 1; overflow-y: auto; position: relative; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; scrollbar-width: thin; }
-        .scroll-box::-webkit-scrollbar { width: 4px; }
-        .scroll-box::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
-
-        /* innerHTML을 사용하므로 pre-wrap 대신 br 태그 대응 */
-        .scroll-content { padding: 12px; font-size: 1.1rem; line-height: 1.6; color: #1e293b; position: relative; word-break: break-all; }
-        .animate-scroll { animation: scrollLoop 30s linear infinite alternate; }
-        .scroll-box:hover .animate-scroll { animation-play-state: paused; }
-        @keyframes scrollLoop { 0% { transform: translateY(0); } 100% { transform: translateY(calc(-100% + 150px)); } }
-
-        .ot-box { display: flex; flex-direction: column; align-items: center; background: #334155; padding: 5px; border-radius: 8px; width: 95px; position: relative; }
-        .ot-input { width: 100%; height: 40px; background: white; color: black; font-size: 1.8rem; font-weight: 900; text-align: center; border: 2px solid #fbbf24; border-radius: 6px; outline: none; }
-        .max-highlight { transform: scale(1.1); background: #7c3aed !important; box-shadow: 0 0 20px #fbbf24; }
-        .max-highlight::after { content: '🎉'; position: absolute; top: -15px; font-size: 1.5rem; animation: firework 0.8s infinite alternate; }
+        /* 1. 상단 헤더 압축 (기존 대비 50%) */
+        header { background: #1e293b; padding: 8px 20px; display: flex; align-items: center; gap: 20px; border-bottom: 2px solid #fbbf24; }
+        .logo-area { min-width: 200px; }
+        .logo-area h1 { font-size: 1.2rem; font-weight: 900; color: #fbbf24; line-height: 1.1; }
+        #clockDisplay { font-size: 0.85rem; color: #94a3b8; font-weight: 600; }
         
+        /* 2. 전광판 & 연장인원 컴팩트 배치 */
+        .marquee-container { flex: 1; background: rgba(0,0,0,0.3); border-radius: 4px; padding: 4px 15px; overflow: hidden; white-space: nowrap; }
+        .marquee-text { display: inline-block; font-size: 1rem; font-weight: 700; color: #fbbf24; animation: marquee 15s linear infinite; }
         @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
-        .marquee-container { flex: 1; margin: 0 40px; overflow: hidden; white-space: nowrap; }
-        .marquee-text { display: inline-block; font-size: 1.6rem; font-weight: 700; color: #fbbf24; animation: marquee 15s linear infinite; }
+
+        .ot-group { display: flex; gap: 8px; align-items: center; }
+        .ot-item { background: #334155; padding: 2px 8px; border-radius: 4px; display: flex; flex-direction: column; align-items: center; border: 1px solid #475569; position: relative; }
+        .ot-item label { font-size: 10px; color: #94a3b8; font-weight: 800; margin-bottom: -2px; }
+        .ot-item input { background: transparent; color: white; border: none; width: 35px; text-align: center; font-size: 1.2rem; font-weight: 900; outline: none; }
+        .max-highlight { background: #7c3aed !important; border-color: #fbbf24; transform: scale(1.05); }
+        .max-highlight::after { content: '🎉'; position: absolute; top: -12px; font-size: 14px; animation: bounce 0.5s infinite alternate; }
+        @keyframes bounce { 0% { transform: translateY(0); } 100% { transform: translateY(-5px); } }
+
+        /* 3. 하단 메모 박스 영역 (보상된 크기) */
+        .main-grid { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); gap: 12px; padding: 12px; }
+        .card { background: white; border-radius: 10px; display: flex; flex-direction: column; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); overflow: hidden; position: relative; }
+        .card-header { padding: 8px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; }
+        .card-title { font-size: 1rem; font-weight: 800; display: flex; align-items: center; gap: 6px; }
+        
+        /* 4. 확장 버튼 디자인 */
+        .expand-btn { cursor: pointer; padding: 4px; border-radius: 4px; transition: background 0.2s; color: #94a3b8; }
+        .expand-btn:hover { background: #f1f5f9; color: #1e293b; }
+
+        .card-body { flex: 1; padding: 12px; font-size: 1rem; line-height: 1.5; overflow: hidden; background: #fafafa; position: relative; }
+        .scroll-content { white-space: pre-wrap; word-break: break-all; }
+        
+        /* 5. 모달(전체보기) 스타일 */
+        #modalOverlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center; padding: 40px; }
+        #modalContent { background: white; width: 100%; max-width: 800px; border-radius: 15px; display: flex; flex-direction: column; max-height: 90vh; }
+        #modalHeader { padding: 20px; border-bottom: 2px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; }
+        #modalBody { padding: 30px; overflow-y: auto; font-size: 1.5rem; line-height: 1.8; }
     </style>
 </head>
 <body>
 
-    <header class="flex justify-between items-center bg-[#1e293b] text-white p-5 shadow-xl">
-        <div style="min-width: 380px;">
-            <h1 class="text-3xl font-black text-[#fbbf24]">제조팀 업무 게시판</h1>
-            <div id="clockDisplay" class="text-xl font-bold text-slate-300 mt-1">로딩 중...</div>
+    <header>
+        <div class="logo-area">
+            <h1>제조팀 통합 보드</h1>
+            <div id="clockDisplay">0000-00-00 00:00:00</div>
         </div>
         <div class="marquee-container">
-            <div id="scrollingNotice" class="marquee-text">현장 데이터 동기화 중...</div>
+            <div id="scrollingNotice" class="marquee-text">데이터를 불러오는 중입니다...</div>
         </div>
-        <div class="flex items-center gap-4">
-            <div class="flex gap-3 bg-[#0f172a] p-3 rounded-lg border border-slate-700 items-center">
-                <span class="text-sm font-black text-[#fbbf24] mr-2">🌙 연장 인원</span>
-                <div id="box-otBBT" class="ot-box"><span class="text-[11px] text-white mb-1 font-bold">BBT</span><input type="text" id="otBBT" class="ot-input" readonly></div>
-                <div id="box-otInsert" class="ot-box"><span class="text-[11px] text-white mb-1 font-bold">인서트</span><input type="text" id="otInsert" class="ot-input" readonly></div>
-                <div id="box-otRetouch" class="ot-box"><span class="text-[11px] text-white mb-1 font-bold">리터치</span><input type="text" id="otRetouch" class="ot-input" readonly></div>
-            </div>
+        <div class="ot-group">
+            <div id="box-otBBT" class="ot-item"><label>BBT</label><input type="text" id="otBBT" readonly></div>
+            <div id="box-otInsert" class="ot-item"><label>인서트</label><input type="text" id="otInsert" readonly></div>
+            <div id="box-otRetouch" class="ot-item"><label>리터치</label><input type="text" id="otRetouch" readonly></div>
         </div>
     </header>
 
-    <div class="main-container flex-col">
-        <div class="flex flex-1 gap-4" style="height: 65%;">
-            <div class="column w-1/3">
-                <div class="card h-1/2"><h2 class="card-title text-red-500">📢 공지 사항</h2><div class="scroll-box"><div id="notice" class="scroll-content"></div></div></div>
-                <div class="card h-1/2"><h2 class="card-title text-blue-500">👥 근태 현황</h2><div class="scroll-box"><div id="attendance" class="scroll-content"></div></div></div>
+    <div class="main-grid">
+        <div class="card border-t-4 border-red-500">
+            <div class="card-header">
+                <span class="card-title text-red-600">📢 공지 사항</span>
+                <span class="expand-btn" onclick="openModal('📢 공지 사항', 'notice')">🔍</span>
             </div>
-            <div class="column w-1/3">
-                <div class="card h-full border-t-[6px] border-blue-500"><h2 class="card-title text-blue-600 italic">✅ 업무 공유</h2><div class="scroll-box" style="background-color: #eff6ff;"><div id="todoSheet" class="scroll-content"></div></div></div>
-            </div>
-            <div class="column w-1/3">
-                <div class="card h-1/2"><h2 class="card-title text-green-500">📦 납품 목록</h2><div class="scroll-box"><div id="delivery" class="scroll-content"></div></div></div>
-                <div class="card h-1/2 border-t-[6px] border-teal-500"><h2 class="card-title text-teal-600">📊 진행 현황 목록</h2><div class="scroll-box" style="background-color: #f0fdfa;"><div id="statusList" class="scroll-content"></div></div></div>
-            </div>
+            <div class="card-body"><div id="notice" class="scroll-content"></div></div>
         </div>
-        <div class="flex gap-4" style="height: 35%;">
-            <div class="card w-1/3"><h2 class="card-title text-purple-600">📊 BBT</h2><div class="scroll-box"><div id="shareBBT" class="scroll-content"></div></div></div>
-            <div class="card w-1/3"><h2 class="card-title text-orange-600">🔧 인서트</h2><div class="scroll-box"><div id="shareInsert" class="scroll-content"></div></div></div>
-            <div class="card w-1/3"><h2 class="card-title text-teal-600">⚠️ 리터치</h2><div class="scroll-box"><div id="shareRetouch" class="scroll-content"></div></div></div>
+        <div class="card border-t-4 border-blue-500 row-span-2">
+            <div class="card-header">
+                <span class="card-title text-blue-600">✅ 업무 공유</span>
+                <span class="expand-btn" onclick="openModal('✅ 업무 공유', 'todoSheet')">🔍</span>
+            </div>
+            <div class="card-body"><div id="todoSheet" class="scroll-content"></div></div>
+        </div>
+        <div class="card border-t-4 border-green-500">
+            <div class="card-header">
+                <span class="card-title text-green-600">📦 납품 목록</span>
+                <span class="expand-btn" onclick="openModal('📦 납품 목록', 'delivery')">🔍</span>
+            </div>
+            <div class="card-body"><div id="delivery" class="scroll-content"></div></div>
+        </div>
+        <div class="card border-t-4 border-slate-500">
+            <div class="card-header">
+                <span class="card-title text-slate-600">👥 근태 현황</span>
+                <span class="expand-btn" onclick="openModal('👥 근태 현황', 'attendance')">🔍</span>
+            </div>
+            <div class="card-body"><div id="attendance" class="scroll-content"></div></div>
+        </div>
+        <div class="card border-t-4 border-teal-500">
+            <div class="card-header">
+                <span class="card-title text-teal-600">📊 진행 현황</span>
+                <span class="expand-btn" onclick="openModal('📊 진행 현황', 'statusList')">🔍</span>
+            </div>
+            <div class="card-body"><div id="statusList" class="scroll-content"></div></div>
+        </div>
+    </div>
+
+    <div id="modalOverlay" onclick="closeModal()">
+        <div id="modalContent" onclick="event.stopPropagation()">
+            <div id="modalHeader">
+                <h2 id="modalTitle" class="text-2xl font-black">제목</h2>
+                <button onclick="closeModal()" class="text-3xl font-bold text-slate-400 hover:text-red-500">&times;</button>
+            </div>
+            <div id="modalBody" id="modalText">내용이 들어갑니다.</div>
         </div>
     </div>
 
     <script>
-        // 중요: 여기에 본인의 웹 앱 URL을 붙여넣으세요!
-        const API_URL = 'https://script.google.com/macros/s/AKfycbzk_OMBb0Z-kMvBRw7lKXFG5Kkg87ycosiEB7LDeBXspeXHcpEEauZS5oIqGCXNgbULhQ/exec';
+        const API_URL = '팀장님의_웹앱_URL';
 
-async function loadData() {
-    try {
-        // redirect: 'follow' 옵션을 추가하여 구글 서버의 재연결 허용
-        const res = await fetch(API_URL, {
-            method: 'GET',
-            redirect: 'follow'
-        });
-        
-        if (!res.ok) throw new Error('Network response was not ok');
-        
-        const data = await res.json();
+        function openModal(title, contentId) {
+            document.getElementById('modalTitle').innerText = title;
+            document.getElementById('modalBody').innerHTML = document.getElementById(contentId).innerHTML;
+            document.getElementById('modalOverlay').style.display = 'flex';
+        }
 
-        const updateField = (id, html) => {
-            const el = document.getElementById(id);
-            if (!el) return;
-            el.innerHTML = html;
-            // 스크롤 애니메이션 필요 여부 체크
-            setTimeout(() => {
-                el.classList.toggle('animate-scroll', el.scrollHeight > el.parentElement.clientHeight);
-            }, 100);
-        };
+        function closeModal() {
+            document.getElementById('modalOverlay').style.display = 'none';
+        }
 
-        // 1~3행: 연장 인원 (HTML 태그 제거 후 숫자만 추출)
-        const v1 = (data[0] || "0").replace(/<[^>]*>/g, '').trim();
-        const v2 = (data[1] || "0").replace(/<[^>]*>/g, '').trim();
-        const v3 = (data[2] || "0").replace(/<[^>]*>/g, '').trim();
-        
-        document.getElementById('otBBT').value = v1;
-        document.getElementById('otInsert').value = v2;
-        document.getElementById('otRetouch').value = v3;
+        async function loadData() {
+            try {
+                const res = await fetch(API_URL, { redirect: 'follow' });
+                const data = await res.json();
+                
+                const extractNumber = (h) => h ? parseInt(h.replace(/<[^>]*>/g, '').replace(/[^0-9]/g, '')) || 0 : 0;
 
-        // 1등 강조 효과
-        const nums = [parseInt(v1)||0, parseInt(v2)||0, parseInt(v3)||0];
-        const max = Math.max(...nums);
-        ['box-otBBT', 'box-otInsert', 'box-otRetouch'].forEach((id, i) => {
-            document.getElementById(id).classList.toggle('max-highlight', nums[i] === max && max > 0);
-        });
+                // 데이터 바인딩
+                document.getElementById('otBBT').value = extractNumber(data[0]);
+                document.getElementById('otInsert').value = extractNumber(data[1]);
+                document.getElementById('otRetouch').value = extractNumber(data[2]);
+                
+                // 강조 로직
+                const nums = [extractNumber(data[0]), extractNumber(data[1]), extractNumber(data[2])];
+                const max = Math.max(...nums);
+                ['box-otBBT', 'box-otInsert', 'box-otRetouch'].forEach((id, i) => {
+                    document.getElementById(id).classList.toggle('max-highlight', nums[i] === max && max > 0);
+                });
 
-        // 나머지 구역 업데이트
-        document.getElementById('scrollingNotice').innerHTML = (data[3] || "").replace(/<br>/g, " | ");
-        updateField('notice', data[4]);
-        updateField('attendance', data[5]);
-        updateField('delivery', data[6]);
-        updateField('todoSheet', data[7]);
-        updateField('statusList', data[8]);
-        updateField('shareBBT', data[9]);
-        updateField('shareInsert', data[10]);
-        updateField('shareRetouch', data[11]);
+                document.getElementById('scrollingNotice').innerHTML = (data[3] || "").replace(/<br>/g, " | ");
+                document.getElementById('notice').innerHTML = data[4];
+                document.getElementById('attendance').innerHTML = data[5];
+                document.getElementById('delivery').innerHTML = data[6];
+                document.getElementById('todoSheet').innerHTML = data[7];
+                document.getElementById('statusList').innerHTML = data[8];
 
-    } catch (e) {
-        console.error("데이터 로드 실패:", e);
-    }
-}
+            } catch (e) { console.error("로드 실패", e); }
+        }
 
         function init() {
             setInterval(() => {
-                document.getElementById('clockDisplay').innerText = new Date().toLocaleString('ko-KR');
+                const now = new Date();
+                document.getElementById('clockDisplay').innerText = now.toLocaleString();
             }, 1000);
             loadData();
             setInterval(loadData, 30000);
