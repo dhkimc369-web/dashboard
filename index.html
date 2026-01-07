@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>제조팀 업무 게시판 (강조 효과 복구형)</title>
+    <title>제조팀 업무 게시판 (디자인 동기화형)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #f1f5f9; height: 100vh; display: flex; flex-direction: column; overflow: hidden; font-family: 'Pretendard', sans-serif; }
@@ -15,19 +15,17 @@
         .scroll-box::-webkit-scrollbar { width: 4px; }
         .scroll-box::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
 
-        .scroll-content { padding: 12px; font-size: 1.1rem; line-height: 1.6; color: #1e293b; font-weight: 600; white-space: pre-wrap; position: relative; }
+        /* innerHTML을 사용하므로 pre-wrap 대신 br 태그 대응 */
+        .scroll-content { padding: 12px; font-size: 1.1rem; line-height: 1.6; color: #1e293b; position: relative; word-break: break-all; }
         .animate-scroll { animation: scrollLoop 30s linear infinite alternate; }
         .scroll-box:hover .animate-scroll { animation-play-state: paused; }
         @keyframes scrollLoop { 0% { transform: translateY(0); } 100% { transform: translateY(calc(-100% + 150px)); } }
 
-        /* 강조 애니메이션 스타일 복구 */
-        .ot-box { display: flex; flex-direction: column; align-items: center; background: #334155; padding: 5px; border-radius: 8px; width: 95px; position: relative; transition: all 0.3s ease; }
+        .ot-box { display: flex; flex-direction: column; align-items: center; background: #334155; padding: 5px; border-radius: 8px; width: 95px; position: relative; }
         .ot-input { width: 100%; height: 40px; background: white; color: black; font-size: 1.8rem; font-weight: 900; text-align: center; border: 2px solid #fbbf24; border-radius: 6px; outline: none; }
-        
-        .max-highlight { transform: scale(1.1); background: #7c3aed !important; box-shadow: 0 0 20px #fbbf24; z-index: 10; }
+        .max-highlight { transform: scale(1.1); background: #7c3aed !important; box-shadow: 0 0 20px #fbbf24; }
         .max-highlight::after { content: '🎉'; position: absolute; top: -15px; font-size: 1.5rem; animation: firework 0.8s infinite alternate; }
-        @keyframes firework { 0% { transform: translateY(0); } 100% { transform: translateY(-10px); } }
-
+        
         @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
         .marquee-container { flex: 1; margin: 0 40px; overflow: hidden; white-space: nowrap; }
         .marquee-text { display: inline-block; font-size: 1.6rem; font-weight: 700; color: #fbbf24; animation: marquee 15s linear infinite; }
@@ -75,79 +73,46 @@
     </div>
 
     <script>
-        const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTmOR1Hvcso4G0weHKCXvPpy9enUYo2mX0NIECrY7TDbjDfR_hf1fEBBUBM0qY1Pd8pL1HFFfqex88Z/pub?output=csv';
-
-        function parseCSV(text) {
-            const rows = [];
-            let currentRow = [];
-            let currentField = '';
-            let inQuotes = false;
-            for (let i = 0; i < text.length; i++) {
-                const char = text[i];
-                const nextChar = text[i+1];
-                if (inQuotes) {
-                    if (char === '"' && nextChar === '"') { currentField += '"'; i++; }
-                    else if (char === '"') { inQuotes = false; }
-                    else { currentField += char; }
-                } else {
-                    if (char === '"') { inQuotes = true; }
-                    else if (char === ',') { currentRow.push(currentField); currentField = ''; }
-                    else if (char === '\r' || char === '\n') {
-                        if (currentField || currentRow.length > 0) {
-                            currentRow.push(currentField);
-                            rows.push(currentRow);
-                            currentRow = [];
-                            currentField = '';
-                        }
-                        if (char === '\r' && nextChar === '\n') i++;
-                    } else { currentField += char; }
-                }
-            }
-            if (currentField || currentRow.length > 0) { currentRow.push(currentField); rows.push(currentRow); }
-            return rows;
-        }
+        // 중요: 여기에 본인의 웹 앱 URL을 붙여넣으세요!
+        const API_URL = 'https://script.google.com/macros/s/AKfycbxglf0RNj9xU7EHRc_Ir58CBBPQcBxOSWTX_yMaKiDf05KxRq2UreijmGFk-S4GIl2_uw/exec';
 
         async function loadData() {
             try {
-                const res = await fetch(`${SHEET_URL}&t=${Date.now()}`);
-                const text = await res.text();
-                const dataRows = parseCSV(text);
+                const res = await fetch(API_URL);
+                const data = await res.json(); // [1행내용, 2행내용, ...] 형태의 배열
 
-                const getVal = (rowNum) => {
-                    const row = dataRows[rowNum - 1];
-                    return row && row[1] ? row[1].trim() : "";
+                // 디자인 정보가 포함된 HTML 그대로 삽입
+                const updateField = (id, html) => {
+                    const el = document.getElementById(id);
+                    el.innerHTML = html;
+                    el.classList.toggle('animate-scroll', el.scrollHeight > el.parentElement.clientHeight);
                 };
 
-                // 연장 인원 업데이트
-                const v1 = getVal(1); document.getElementById('otBBT').value = v1;
-                const v2 = getVal(2); document.getElementById('otInsert').value = v2;
-                const v3 = getVal(3); document.getElementById('otRetouch').value = v3;
-                
-                // 강조 애니메이션 로직 복구
+                // 연장 인원 (숫자만 추출하여 업데이트)
+                const v1 = data[0].replace(/<[^>]*>/g, '') || 0;
+                const v2 = data[1].replace(/<[^>]*>/g, '') || 0;
+                const v3 = data[2].replace(/<[^>]*>/g, '') || 0;
+                document.getElementById('otBBT').value = v1;
+                document.getElementById('otInsert').value = v2;
+                document.getElementById('otRetouch').value = v3;
+
+                // 강조 효과
                 const nums = [parseInt(v1)||0, parseInt(v2)||0, parseInt(v3)||0];
                 const max = Math.max(...nums);
                 ['box-otBBT', 'box-otInsert', 'box-otRetouch'].forEach((id, i) => {
-                    const el = document.getElementById(id);
-                    el.classList.remove('max-highlight');
-                    if (nums[i] === max && max > 0) {
-                        el.classList.add('max-highlight');
-                    }
+                    document.getElementById(id).classList.toggle('max-highlight', nums[i] === max && max > 0);
                 });
 
-                document.getElementById('scrollingNotice').innerText = getVal(4).replace(/\n/g, " | ");
-                document.getElementById('notice').innerText = getVal(5);
-                document.getElementById('attendance').innerText = getVal(6);
-                document.getElementById('delivery').innerText = getVal(7);
-                document.getElementById('todoSheet').innerText = getVal(8);
-                document.getElementById('statusList').innerText = getVal(9);
-                document.getElementById('shareBBT').innerText = getVal(10);
-                document.getElementById('shareInsert').innerText = getVal(11);
-                document.getElementById('shareRetouch').innerText = getVal(12);
-
-                ['notice', 'attendance', 'delivery', 'todoSheet', 'statusList', 'shareBBT', 'shareInsert', 'shareRetouch'].forEach(id => {
-                    const el = document.getElementById(id);
-                    el.classList.toggle('animate-scroll', el.scrollHeight > el.parentElement.clientHeight);
-                });
+                // 각 구역 업데이트
+                document.getElementById('scrollingNotice').innerHTML = data[3].replace(/<br>/g, " | ");
+                updateField('notice', data[4]);
+                updateField('attendance', data[5]);
+                updateField('delivery', data[6]);
+                updateField('todoSheet', data[7]);
+                updateField('statusList', data[8]);
+                updateField('shareBBT', data[9]);
+                updateField('shareInsert', data[10]);
+                updateField('shareRetouch', data[11]);
 
             } catch (e) { console.error("데이터 로드 실패", e); }
         }
