@@ -2,15 +2,15 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>제조팀 유비 괴외반 - 최종 연동판</title>
+    <title>제조팀 업무 게시판</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
         body { background-color: #f1f5f9; height: 100vh; display: flex; flex-direction: column; overflow: hidden; font-family: 'Pretendard', sans-serif; }
 
-        /* 헤더: 나노 다크 스타일 */
+        /* 헤더 디자인 */
         header { background: #1a2a3a; padding: 10px 25px; display: flex; align-items: center; justify-content: space-between; color: white; border-bottom: 4px solid #f39c12; }
-        .logo-group h1 { font-size: 1.3rem; font-weight: 900; color: #f39c12; letter-spacing: -0.5px; }
+        .logo-group h1 { font-size: 1.4rem; font-weight: 900; color: #f39c12; letter-spacing: -0.5px; }
         #clock { font-size: 0.85rem; color: #94a3b8; }
         
         /* 전광판 */
@@ -18,46 +18,46 @@
         .marquee-text { display: inline-block; font-size: 1.05rem; font-weight: 700; color: #fbbf24; animation: marquee 18s linear infinite; }
         @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
 
-        /* 연장 인원 디자인 */
+        /* 연장 인원 스타일 */
         .ot-group { display: flex; gap: 10px; }
-        .ot-card { background: #ffffff; padding: 4px 12px; border-radius: 6px; box-shadow: inset 0 -3px 0 #cbd5e1; display: flex; flex-direction: column; align-items: center; min-width: 75px; position: relative; transition: all 0.3s; }
-        .ot-card label { font-size: 11px; font-weight: 800; color: #64748b; margin-bottom: 2px; }
-        .ot-card input { width: 45px; border: none; text-align: center; font-size: 1.4rem; font-weight: 900; color: #1e293b; outline: none; background: transparent; }
-        .max-highlight { background: #f59e0b !important; box-shadow: 0 0 15px rgba(245, 158, 11, 0.5); transform: translateY(-2px); }
-        .max-highlight::after { content: '🏆'; position: absolute; top: -15px; font-size: 16px; }
+        .ot-card { background: #ffffff; padding: 4px 12px; border-radius: 6px; display: flex; flex-direction: column; align-items: center; min-width: 80px; position: relative; }
+        .ot-card label { font-size: 11px; font-weight: 800; color: #64748b; }
+        .ot-card input { width: 50px; border: none; text-align: center; font-size: 1.4rem; font-weight: 900; color: #1e293b; outline: none; background: transparent; }
+        .max-highlight { background: #f59e0b !important; box-shadow: 0 0 15px rgba(245, 158, 11, 0.6); }
+        .max-highlight::after { content: '🎉'; position: absolute; top: -15px; font-size: 16px; animation: bounce 0.5s infinite alternate; }
+        @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-5px); } }
 
-        /* 메인 그리드 및 카드 */
-        .main-grid { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: auto auto; gap: 18px; padding: 20px; overflow-y: auto; align-content: start; }
-        .card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 10px rgba(0,0,0,0.03); cursor: pointer; transition: all 0.4s ease; height: fit-content; }
-        .card:hover { border-color: #cbd5e1; box-shadow: 0 6px 15px rgba(0,0,0,0.06); }
+        /* 메인 그리드 (3열 구조) */
+        .main-grid { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; padding: 15px; overflow-y: auto; align-content: start; }
         
-        .card-header { padding: 10px 18px; display: flex; justify-content: space-between; align-items: center; border-radius: 11px 11px 0 0; }
-        .card-title { font-size: 1.05rem; font-weight: 800; color: white; display: flex; align-items: center; gap: 8px; }
-        .expand-icon { font-size: 0.75rem; background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 20px; color: white; font-weight: bold; }
+        /* 카드 및 어코디언 효과 */
+        .card { background: white; border-radius: 10px; border: 1px solid #e2e8f0; cursor: pointer; transition: all 0.3s; height: fit-content; }
+        .card-header { padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-radius: 9px 9px 0 0; color: white; }
+        .card-title { font-size: 1rem; font-weight: 800; }
+        .expand-label { font-size: 0.7rem; background: rgba(0,0,0,0.15); padding: 2px 6px; border-radius: 4px; }
 
-        /* 카드 바디 (어코디언) */
-        .card-body { max-height: 140px; padding: 18px; overflow: hidden; transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1); background: #ffffff; }
+        .card-body { max-height: 110px; padding: 15px; overflow: hidden; transition: max-height 0.5s ease-in-out; background: #fff; }
         .card.expanded .card-body { max-height: 1000px; overflow-y: visible; }
-        .scroll-content { font-size: 1.1rem; line-height: 1.7; color: #334155; }
+        .content-area { font-size: 1rem; line-height: 1.6; color: #334155; white-space: pre-wrap; }
 
-        /* 카드 색상 테마 */
-        .theme-red { background: #ef4444; }
-        .theme-blue { background: #3b82f6; }
-        .theme-green { background: #10b981; }
-        .theme-purple { background: #8b5cf6; }
-        .theme-orange { background: #f59e0b; }
-        .theme-teal { background: #14b8a6; }
+        /* 색상 테마 */
+        .bg-red { background-color: #ef4444; }
+        .bg-blue { background-color: #3b82f6; }
+        .bg-green { background-color: #10b981; }
+        .bg-purple { background-color: #8b5cf6; }
+        .bg-orange { background-color: #f59e0b; }
+        .bg-teal { background-color: #14b8a6; }
     </style>
 </head>
 <body>
 
     <header>
         <div class="logo-group">
-            <h1>제조팀 유비 괴외반</h1>
-            <div id="clock">0000. 00. 00. 오전 00:00:00</div>
+            <h1>제조팀 업무 게시판</h1>
+            <div id="clock">로딩 중...</div>
         </div>
         <div class="marquee-box">
-            <div id="scrollingNotice" class="marquee-text">현장 데이터를 실시간 동기화 중입니다...</div>
+            <div id="scrollingNotice" class="marquee-text">데이터를 불러오는 중입니다...</div>
         </div>
         <div class="ot-group">
             <div id="box-otBBT" class="ot-card"><label>BBT</label><input type="text" id="otBBT" readonly></div>
@@ -68,33 +68,37 @@
 
     <div class="main-grid">
         <div class="card" onclick="this.classList.toggle('expanded')">
-            <div class="card-header theme-red"><span class="card-title">📢 공지 사항</span><span class="expand-icon">CLICK 확대</span></div>
-            <div class="card-body"><div id="notice" class="scroll-content"></div></div>
+            <div class="card-header bg-red"><span class="card-title">📢 공지 사항</span><span class="expand-label">확대/축소</span></div>
+            <div class="card-body"><div id="notice" class="content-area"></div></div>
         </div>
+
         <div class="card" onclick="this.classList.toggle('expanded')">
-            <div class="card-header theme-blue"><span class="card-title">👥 근태 현황</span><span class="expand-icon">CLICK 확대</span></div>
-            <div class="card-body"><div id="attendance" class="scroll-content"></div></div>
+            <div class="card-header bg-purple"><span class="card-title">👥 근태 현황</span><span class="expand-label">확대/축소</span></div>
+            <div class="card-body"><div id="attendance" class="content-area"></div></div>
         </div>
+
         <div class="card" onclick="this.classList.toggle('expanded')">
-            <div class="card-header theme-green"><span class="card-title">📦 납품 목록</span><span class="expand-icon">CLICK 확대</span></div>
-            <div class="card-body"><div id="delivery" class="scroll-content"></div></div>
+            <div class="card-header bg-green"><span class="card-title">📦 납품 목록</span><span class="expand-label">확대/축소</span></div>
+            <div class="card-body"><div id="delivery" class="content-area"></div></div>
         </div>
+
         <div class="card" onclick="this.classList.toggle('expanded')">
-            <div class="card-header theme-purple"><span class="card-title">✅ 업무 공유</span><span class="expand-icon">CLICK 확대</span></div>
-            <div class="card-body"><div id="todoSheet" class="scroll-content"></div></div>
+            <div class="card-header bg-blue"><span class="card-title">✅ 업무 공유</span><span class="expand-label">확대/축소</span></div>
+            <div class="card-body"><div id="todoSheet" class="content-area"></div></div>
         </div>
+
         <div class="card" onclick="this.classList.toggle('expanded')">
-            <div class="card-header theme-orange"><span class="card-title">📊 BBT/인서트 상세</span><span class="expand-icon">CLICK 확대</span></div>
-            <div class="card-body"><div id="combinedStatus" class="scroll-content"></div></div>
+            <div class="card-header bg-teal"><span class="card-title">📊 진행 현황</span><span class="expand-label">확대/축소</span></div>
+            <div class="card-body"><div id="statusList" class="content-area"></div></div>
         </div>
+
         <div class="card" onclick="this.classList.toggle('expanded')">
-            <div class="card-header theme-teal"><span class="card-title">⚠️ 리터치/진행현황</span><span class="expand-icon">CLICK 확대</span></div>
-            <div class="card-body"><div id="extraStatus" class="scroll-content"></div></div>
+            <div class="card-header bg-orange"><span class="card-title">🔧 파트별 상세 (BBT/인서트/리터치)</span><span class="expand-label">확대/축소</span></div>
+            <div class="card-body"><div id="partDetails" class="content-area"></div></div>
         </div>
     </div>
 
     <script>
-        // 팀장님 URL을 여기에 넣으세요
         const API_URL = 'https://script.google.com/macros/s/AKfycby3mm3CW3BzGZxS6sMKiFaQvWzFO4hUtnTF5dKtTR56padEzQly1OcqUv7fhnvkae9nqA/exec';
 
         async function loadData() {
@@ -105,37 +109,36 @@
                 const extractNum = (h) => h ? parseInt(h.replace(/<[^>]*>/g, '').replace(/[^0-9]/g, '')) || 0 : 0;
 
                 // 1~3행: 연장 인원
-                const v1 = extractNum(data[0]);
-                const v2 = extractNum(data[1]);
-                const v3 = extractNum(data[2]);
+                const v1 = extractNum(data[0]); // BBT
+                const v2 = extractNum(data[1]); // 인서트
+                const v3 = extractNum(data[2]); // 리터치
                 document.getElementById('otBBT').value = v1;
                 document.getElementById('otInsert').value = v2;
                 document.getElementById('otRetouch').value = v3;
                 
-                // 1등 강조
+                // 최고값 강조
                 const max = Math.max(v1, v2, v3);
                 ['box-otBBT', 'box-otInsert', 'box-otRetouch'].forEach((id, i) => {
-                    const el = document.getElementById(id);
-                    el.classList.toggle('max-highlight', [v1, v2, v3][i] === max && max > 0);
+                    document.getElementById(id).classList.toggle('max-highlight', [v1, v2, v3][i] === max && max > 0);
                 });
 
                 // 4행: 전광판
                 document.getElementById('scrollingNotice').innerHTML = (data[3] || "").replace(/<br>/g, " | ");
 
-                // 5~12행 데이터 매핑 (중요!)
-                document.getElementById('notice').innerHTML = data[4] || "";     // 5행
-                document.getElementById('attendance').innerHTML = data[5] || ""; // 6행
-                document.getElementById('delivery').innerHTML = data[6] || "";   // 7행
-                document.getElementById('todoSheet').innerHTML = data[7] || "";  // 8행
-                
-                // 9~12행은 칸이 6개이므로 내용을 합치거나 선택해서 배치
-                document.getElementById('combinedStatus').innerHTML = 
-                    `<b>[현황]</b><br>${data[8]}<hr class="my-2 border-slate-200"><b>[BBT]</b><br>${data[9]}`; 
-                
-                document.getElementById('extraStatus').innerHTML = 
-                    `<b>[인서트]</b><br>${data[10]}<hr class="my-2 border-slate-200"><b>[리터치]</b><br>${data[11]}`;
+                // 5~12행 매핑
+                document.getElementById('notice').innerHTML = data[4] || "";     // 5행: 공지
+                document.getElementById('attendance').innerHTML = data[5] || ""; // 6행: 근태
+                document.getElementById('delivery').innerHTML = data[6] || "";   // 7행: 납품
+                document.getElementById('todoSheet').innerHTML = data[7] || "";  // 8행: 업무공유
+                document.getElementById('statusList').innerHTML = data[8] || ""; // 9행: 진행현황
 
-            } catch (e) { console.error("연결 오류:", e); }
+                // 10~12행 통합 (BBT, 인서트, 리터치 상세)
+                document.getElementById('partDetails').innerHTML = 
+                    `<div style="margin-bottom:10px"><b>[BBT]</b><br>${data[9]}</div>` +
+                    `<div style="margin-bottom:10px"><b>[인서트]</b><br>${data[10]}</div>` +
+                    `<div><b>[리터치]</b><br>${data[11]}</div>`;
+
+            } catch (e) { console.error("데이터 로드 오류:", e); }
         }
 
         function init() {
@@ -143,7 +146,7 @@
                 document.getElementById('clock').innerText = new Date().toLocaleString('ko-KR');
             }, 1000);
             loadData();
-            setInterval(loadData, 30000); // 30초마다 자동 갱신
+            setInterval(loadData, 30000);
         }
         window.onload = init;
     </script>
