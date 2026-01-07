@@ -76,46 +76,59 @@
         // 중요: 여기에 본인의 웹 앱 URL을 붙여넣으세요!
         const API_URL = 'https://script.google.com/macros/s/AKfycbxglf0RNj9xU7EHRc_Ir58CBBPQcBxOSWTX_yMaKiDf05KxRq2UreijmGFk-S4GIl2_uw/exec';
 
-        async function loadData() {
-            try {
-                const res = await fetch(API_URL);
-                const data = await res.json(); // [1행내용, 2행내용, ...] 형태의 배열
+async function loadData() {
+    try {
+        // redirect: 'follow' 옵션을 추가하여 구글 서버의 재연결 허용
+        const res = await fetch(API_URL, {
+            method: 'GET',
+            redirect: 'follow'
+        });
+        
+        if (!res.ok) throw new Error('Network response was not ok');
+        
+        const data = await res.json();
 
-                // 디자인 정보가 포함된 HTML 그대로 삽입
-                const updateField = (id, html) => {
-                    const el = document.getElementById(id);
-                    el.innerHTML = html;
-                    el.classList.toggle('animate-scroll', el.scrollHeight > el.parentElement.clientHeight);
-                };
+        const updateField = (id, html) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.innerHTML = html;
+            // 스크롤 애니메이션 필요 여부 체크
+            setTimeout(() => {
+                el.classList.toggle('animate-scroll', el.scrollHeight > el.parentElement.clientHeight);
+            }, 100);
+        };
 
-                // 연장 인원 (숫자만 추출하여 업데이트)
-                const v1 = data[0].replace(/<[^>]*>/g, '') || 0;
-                const v2 = data[1].replace(/<[^>]*>/g, '') || 0;
-                const v3 = data[2].replace(/<[^>]*>/g, '') || 0;
-                document.getElementById('otBBT').value = v1;
-                document.getElementById('otInsert').value = v2;
-                document.getElementById('otRetouch').value = v3;
+        // 1~3행: 연장 인원 (HTML 태그 제거 후 숫자만 추출)
+        const v1 = (data[0] || "0").replace(/<[^>]*>/g, '').trim();
+        const v2 = (data[1] || "0").replace(/<[^>]*>/g, '').trim();
+        const v3 = (data[2] || "0").replace(/<[^>]*>/g, '').trim();
+        
+        document.getElementById('otBBT').value = v1;
+        document.getElementById('otInsert').value = v2;
+        document.getElementById('otRetouch').value = v3;
 
-                // 강조 효과
-                const nums = [parseInt(v1)||0, parseInt(v2)||0, parseInt(v3)||0];
-                const max = Math.max(...nums);
-                ['box-otBBT', 'box-otInsert', 'box-otRetouch'].forEach((id, i) => {
-                    document.getElementById(id).classList.toggle('max-highlight', nums[i] === max && max > 0);
-                });
+        // 1등 강조 효과
+        const nums = [parseInt(v1)||0, parseInt(v2)||0, parseInt(v3)||0];
+        const max = Math.max(...nums);
+        ['box-otBBT', 'box-otInsert', 'box-otRetouch'].forEach((id, i) => {
+            document.getElementById(id).classList.toggle('max-highlight', nums[i] === max && max > 0);
+        });
 
-                // 각 구역 업데이트
-                document.getElementById('scrollingNotice').innerHTML = data[3].replace(/<br>/g, " | ");
-                updateField('notice', data[4]);
-                updateField('attendance', data[5]);
-                updateField('delivery', data[6]);
-                updateField('todoSheet', data[7]);
-                updateField('statusList', data[8]);
-                updateField('shareBBT', data[9]);
-                updateField('shareInsert', data[10]);
-                updateField('shareRetouch', data[11]);
+        // 나머지 구역 업데이트
+        document.getElementById('scrollingNotice').innerHTML = (data[3] || "").replace(/<br>/g, " | ");
+        updateField('notice', data[4]);
+        updateField('attendance', data[5]);
+        updateField('delivery', data[6]);
+        updateField('todoSheet', data[7]);
+        updateField('statusList', data[8]);
+        updateField('shareBBT', data[9]);
+        updateField('shareInsert', data[10]);
+        updateField('shareRetouch', data[11]);
 
-            } catch (e) { console.error("데이터 로드 실패", e); }
-        }
+    } catch (e) {
+        console.error("데이터 로드 실패:", e);
+    }
+}
 
         function init() {
             setInterval(() => {
