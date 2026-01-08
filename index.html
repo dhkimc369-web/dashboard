@@ -12,31 +12,38 @@
         header { background: #1a2a3a; padding: 10px 25px; display: flex; align-items: center; justify-content: space-between; color: white; border-bottom: 4px solid #f39c12; flex-shrink: 0; }
         .logo-group h1 { font-size: 1.4rem; font-weight: 900; color: #f39c12; }
         
+        /* 전광판 */
         .marquee-box { flex: 1; background: #0f172a; padding: 8px 20px; border-radius: 6px; overflow: hidden; margin: 0 30px; border: 1px solid #334155; position: relative; height: 44px; }
         .marquee-text { position: absolute; white-space: nowrap; font-size: 1.2rem; font-weight: 800; color: #fbbf24; top: 8px; }
 
-        /* 연장 인원 카드 및 반짝임 효과 */
-        .ot-card { background: #ffffff; padding: 4px 12px; border-radius: 6px; display: flex; flex-direction: column; align-items: center; min-width: 90px; color: #1e293b; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.3s; }
+        /* 연장 인원 카드 및 애니메이션 */
+        .ot-card { background: #ffffff; padding: 4px 12px; border-radius: 6px; display: flex; flex-direction: column; align-items: center; min-width: 90px; color: #1e293b; box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: relative; }
         .update-flash { animation: flash-yellow 1.2s ease-in-out; }
-        @keyframes flash-yellow { 0% { background: #fbbf24; transform: scale(1.1); } 100% { background: #ffffff; transform: scale(1); } }
+        @keyframes flash-yellow { 
+            0% { background-color: #fbbf24; transform: scale(1.1); } 
+            100% { background-color: #ffffff; transform: scale(1); } 
+        }
 
-        /* 메인 그리드 및 스크롤 */
+        /* 메인 그리드 */
         .main-grid { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 15px; padding: 20px; }
-        .card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; transition: all 0.2s; overflow: hidden; position: relative; cursor: pointer; }
-        .card-body { padding: 18px; overflow-y: auto; flex: 1; font-size: 1rem; line-height: 1.6; background: #fff; color: #334155; }
+        .card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; transition: all 0.2s; overflow: hidden; cursor: pointer; position: relative; z-index: 1; }
+        .card:hover { border-color: #f39c12; }
+        .card-body { padding: 18px; overflow-y: auto; flex: 1; font-size: 1rem; line-height: 1.6; background: #fff; color: #334155; pointer-events: none; }
         .content-area { white-space: pre-wrap; word-break: break-all; }
+        .content-area img { max-width: 100%; height: auto; border-radius: 8px; margin-top: 10px; }
 
-        /* 팝업(확대) 기능 - 모든 창 동일 크기 강제 */
+        /* 팝업(확대) 기능 */
         .card.expanded { 
             position: fixed !important; z-index: 9999 !important; 
-            top: 5vh !important; left: 5vw !important;
+            top: 5vh !important; bottom: 5vh !important; 
+            left: 5vw !important; right: 5vw !important; 
             width: 90vw !important; height: 90vh !important; 
-            box-shadow: 0 0 100px rgba(0,0,0,0.8) !important;
-            border: 4px solid #f39c12 !important;
-            cursor: default;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.8); 
+            border: 4px solid #f39c12; cursor: default;
         }
+        .card.expanded .card-body { pointer-events: auto; }
         
-        #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 9998; backdrop-filter: blur(5px); }
+        #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 9998; backdrop-filter: blur(4px); }
         body.has-expanded #overlay { display: block; }
     </style>
 </head>
@@ -44,11 +51,11 @@
     <div id="overlay" onclick="closeAll()"></div>
     <header>
         <div class="logo-group"><h1>제조팀 업무 게시판</h1><div id="clock" class="text-xs text-slate-400">Loading...</div></div>
-        <div class="marquee-box" id="mBox"><div id="scrollingNotice" class="marquee-text">현장 데이터를 동기화 중입니다...</div></div>
+        <div class="marquee-box" id="mBox"><div id="scrollingNotice" class="marquee-text">데이터를 불러오는 중입니다...</div></div>
         <div class="flex gap-2">
-            <div class="ot-card" id="card0"><label class="text-[10px] font-bold text-slate-500 uppercase">BBT</label><span id="ot0" class="text-2xl font-black">0</span></div>
-            <div class="ot-card" id="card1"><label class="text-[10px] font-bold text-slate-500 uppercase">인서트</label><span id="ot1" class="text-2xl font-black">0</span></div>
-            <div class="ot-card" id="card2"><label class="text-[10px] font-bold text-slate-500 uppercase">리터치</label><span id="ot2" class="text-2xl font-black">0</span></div>
+            <div class="ot-card" id="card0"><label class="text-[10px] font-bold text-slate-500">BBT</label><span id="ot0" class="text-2xl font-black">0</span></div>
+            <div class="ot-card" id="card1"><label class="text-[10px] font-bold text-slate-500">인서트</label><span id="ot1" class="text-2xl font-black">0</span></div>
+            <div class="ot-card" id="card2"><label class="text-[10px] font-bold text-slate-500">리터치</label><span id="ot2" class="text-2xl font-black">0</span></div>
         </div>
     </header>
 
@@ -66,23 +73,28 @@
     <script>
         const API_URL = 'https://script.google.com/macros/s/AKfycbxrd12Z9aMTrteBuThvgXmjo6zgOx__SyaxJG-UBzWrCavqf5AUc0fvid6-mX3LtRRSmw/exec';
 
+        // 팝업 확대/축소 로직
         function toggleCard(el) {
-            if(el.classList.contains('expanded')) { closeAll(); return; }
-            closeAll(); el.classList.add('expanded'); document.getElementById('bodyTag').classList.add('has-expanded');
+            if (el.classList.contains('expanded')) {
+                closeAll();
+            } else {
+                closeAll();
+                el.classList.add('expanded');
+                document.getElementById('bodyTag').classList.add('has-expanded');
+            }
         }
+
         function closeAll() {
             document.querySelectorAll('.card').forEach(c => c.classList.remove('expanded'));
             document.getElementById('bodyTag').classList.remove('has-expanded');
         }
 
-        // 💡 중요: 텍스트에서 숫자만 완벽하게 골라내는 함수
-        function getPureNumber(str) {
+        // 💡 텍스트에서 숫자만 완벽하게 추출하는 함수 (태그 제거 포함)
+        function extractNumber(str) {
             if(!str) return "0";
-            // 1. HTML 태그 제거
-            let temp = document.createElement("div");
-            temp.innerHTML = str;
-            let text = temp.textContent || temp.innerText || "";
-            // 2. 숫자만 남기기
+            let div = document.createElement("div");
+            div.innerHTML = str;
+            let text = div.textContent || div.innerText || "";
             let num = text.replace(/[^0-9]/g, '');
             return num || "0";
         }
@@ -93,33 +105,36 @@
                 const data = await res.json();
                 if (!data) return;
 
-                // 1. 인원 업데이트 (정밀 숫자 추출 및 애니메이션)
+                // 1. 상단 인원 (숫자 추출 및 애니메이션)
                 for(let i=0; i<3; i++) {
-                    const val = getPureNumber(data[i]);
+                    const val = extractNumber(data[i]);
                     const el = document.getElementById('ot'+i);
+                    const card = document.getElementById('card'+i);
                     if(el.innerText !== val) {
                         el.innerText = val;
-                        const card = document.getElementById('card'+i);
                         card.classList.remove('update-flash');
-                        void card.offsetWidth; // 리플로우 강제
+                        void card.offsetWidth; // 애니메이션 리셋용
                         card.classList.add('update-flash');
                     }
                 }
-                // 2. 전광판 업데이트
-                document.getElementById('scrollingNotice').innerText = (data[3] || "").replace(/<[^>]*>?/gm, '');
-                // 3. 본문 박스 업데이트
+
+                // 2. 전광판
+                let marqueeVal = (data[3] || "").replace(/<[^>]*>?/gm, '');
+                document.getElementById('scrollingNotice').innerHTML = marqueeVal || "현장 데이터를 실시간 동기화 중입니다...";
+
+                // 3. 본문 박스 8개
                 for(let i=4; i<12; i++) {
                     const target = document.getElementById("row" + (i + 1));
                     if(target) target.innerHTML = data[i] || "";
                 }
-            } catch (e) { console.error("Update Fail:", e); }
+            } catch (e) { console.error("Update Error:", e); }
         }
 
         function runMarquee() {
             const el = document.getElementById('scrollingNotice');
             let pos = document.getElementById('mBox').offsetWidth;
             function step() {
-                pos -= 1.6;
+                pos -= 1.8;
                 if (pos < -el.offsetWidth) pos = document.getElementById('mBox').offsetWidth;
                 el.style.left = pos + 'px';
                 requestAnimationFrame(step);
@@ -130,7 +145,7 @@
         window.onload = () => {
             runMarquee();
             loadData();
-            setInterval(loadData, 25000);
+            setInterval(loadData, 30000); // 30초마다 갱신
             setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleString(); }, 1000);
         };
     </script>
