@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>제조팀 업무 게시판 V2.9</title>
+    <title>제조팀 업무 게시판 V3.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -15,33 +15,32 @@
         .ot-card { background: #ffffff; padding: 4px 12px; border-radius: 6px; display: flex; flex-direction: column; align-items: center; min-width: 95px; border: 2px solid #cbd5e1; }
         .ot-num { font-size: 1.8rem; font-weight: 900; color: #1e293b; }
 
-        /* [시간 지정 알림 팝업] 디자인 강화 */
-        #msgPopup { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10001; align-items: center; justify-content: center; }
-        .popup-inner { background: #fff; width: 650px; border-radius: 30px; border: 15px solid #ef4444; padding: 60px; text-align: center; animation: shake 0.5s infinite; }
-        @keyframes shake { 0%, 100% { transform: translate(0,0); } 25% { transform: translate(5px,0); } 75% { transform: translate(-5px,0); } }
-        .popup-inner h2 { font-size: 3.5rem; font-weight: 900; color: #ef4444; margin-bottom: 15px; }
-        .popup-inner p { font-size: 2.2rem; font-weight: 800; color: #000; margin-bottom: 40px; word-break: keep-all; }
-        .popup-inner button { background: #1a2a3a; color: white; padding: 20px 60px; border-radius: 15px; font-size: 1.8rem; font-weight: bold; }
+        /* 지정시간 메시지 알람 팝업 */
+        #msgPopup { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 10001; align-items: center; justify-content: center; }
+        .popup-inner { background: #fff; width: 600px; border-radius: 20px; border: 12px solid #ef4444; padding: 50px; text-align: center; }
+        .popup-inner h2 { font-size: 3rem; font-weight: 900; color: #ef4444; margin-bottom: 20px; }
+        .popup-inner p { font-size: 2rem; font-weight: 800; color: #333; margin-bottom: 40px; }
+        .popup-inner button { background: #1a2a3a; color: white; padding: 15px 50px; border-radius: 10px; font-size: 1.5rem; font-weight: bold; }
 
         .main-grid { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 15px; padding: 20px; }
         .card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; overflow: hidden; cursor: pointer; }
-        .card-body { padding: 18px; overflow-y: auto; flex: 1; font-size: 1.1rem; }
-        .card.expanded { position: fixed !important; top: 5vh; left: 5vw; width: 90vw; height: 90vh; z-index: 9999; border: 6px solid #f39c12; box-shadow: 0 0 100px rgba(0,0,0,0.8); }
+        .card-body { padding: 18px; overflow-y: auto; flex: 1; }
+        .card.expanded { position: fixed !important; top: 5vh; left: 5vw; width: 90vw; height: 90vh; z-index: 9999; border: 6px solid #f39c12; }
     </style>
 </head>
 <body>
 
     <div id="msgPopup">
         <div class="popup-inner">
-            <h2>🚨 긴급 알림</h2>
-            <p id="targetMsg">공지 사항 확인 바랍니다.</p>
-            <button onclick="document.getElementById('msgPopup').style.display='none'">메시지 닫기</button>
+            <h2>📢 현장 알림</h2>
+            <p id="targetMsg"></p>
+            <button onclick="document.getElementById('msgPopup').style.display='none'">확인</button>
         </div>
     </div>
 
     <header>
-        <div class="logo-group"><h1>제조팀 업무 게시판 V2.9</h1><div id="clock" class="text-xs text-slate-400">Loading...</div></div>
-        <div class="marquee-box"><div id="scrollingNotice" class="marquee-text">현장 데이터 동기화 중...</div></div>
+        <div class="logo-group"><h1>제조팀 업무 게시판 V3.0</h1><div id="clock" class="text-xs text-slate-400">Loading...</div></div>
+        <div class="marquee-box"><div id="scrollingNotice" class="marquee-text">데이터 동기화 중...</div></div>
         <div class="flex gap-2">
             <div class="ot-card"><label class="text-[10px] font-bold text-slate-500 uppercase">BBT</label><span id="ot0" class="ot-num">0</span></div>
             <div class="ot-card"><label class="text-[10px] font-bold text-slate-500 uppercase">인서트</label><span id="ot1" class="ot-num">0</span></div>
@@ -49,7 +48,7 @@
         </div>
     </header>
 
-    <div class="main-grid" id="grid">
+    <div class="main-grid">
         <div class="card" onclick="this.classList.toggle('expanded')"><div class="p-3 bg-red-500 text-white font-bold text-sm">📢 공지 사항</div><div class="card-body" id="row5"></div></div>
         <div class="card" onclick="this.classList.toggle('expanded')"><div class="p-3 bg-purple-500 text-white font-bold text-sm">👥 근태 현황</div><div class="card-body" id="row6"></div></div>
         <div class="card" onclick="this.classList.toggle('expanded')"><div class="p-3 bg-green-500 text-white font-bold text-sm">📦 납품 목록</div><div class="card-body" id="row7"></div></div>
@@ -62,25 +61,26 @@
 
     <script>
         const API_URL = 'https://script.google.com/macros/s/AKfycbxrd12Z9aMTrteBuThvgXmjo6zgOx__SyaxJG-UBzWrCavqf5AUc0fvid6-mX3LtRRSmw/exec';
-        let lastShownMsg = "";
+        let lastMsg = "";
 
-        // 숫자만 남기는 더 강력한 함수
-        function forceNum(v) {
-            return String(v || "0").replace(/<[^>]*>/g, "").replace(/[^0-9]/g, "") || "0";
+        // [핵심] 모든 HTML 태그를 제거하고 순수한 텍스트만 추출하는 함수
+        function stripHTML(html) {
+            let doc = new DOMParser().parseFromString(html, 'text/html');
+            return doc.body.textContent || "";
         }
 
         async function update() {
             try {
-                const res = await fetch(API_URL + "?nocache=" + Date.now());
+                const res = await fetch(API_URL + "?v=" + Date.now());
                 const data = await res.json();
                 
-                // 1. 인원 업데이트 (B열 데이터)
-                document.getElementById('ot0').innerText = forceNum(data[0]);
-                document.getElementById('ot1').innerText = forceNum(data[1]);
-                document.getElementById('ot2').innerText = forceNum(data[2]);
+                // 1. 인원 업데이트 (숫자만 추출)
+                document.getElementById('ot0').innerText = stripHTML(data[0]).replace(/[^0-9]/g, "") || "0";
+                document.getElementById('ot1').innerText = stripHTML(data[1]).replace(/[^0-9]/g, "") || "0";
+                document.getElementById('ot2').innerText = stripHTML(data[2]).replace(/[^0-9]/g, "") || "0";
                 
                 // 2. 전광판
-                document.getElementById('scrollingNotice').innerText = String(data[3]||"").replace(/<[^>]*>/g,"");
+                document.getElementById('scrollingNotice').innerText = stripHTML(data[3]);
                 
                 // 3. 본문 8개
                 for(let i=4; i<12; i++) {
@@ -88,43 +88,35 @@
                     if(box) box.innerHTML = data[i] || "";
                 }
 
-                // 4. [긴급] 시간 지정 팝업 로직 (시간 형식 보정 포함)
+                // 4. 시간 지정 팝업 (13행 메시지, 14행 시간)
                 const now = new Date();
                 const curTime = now.getHours().toString().padStart(2,'0') + ":" + now.getMinutes().toString().padStart(2,'0');
                 
-                // 시트의 시간을 "HH:mm" 형식으로만 추출
-                let rawTime = String(data[13] || "");
-                let targetTime = "";
-                if(rawTime.includes("T")) { // ISO 형식인 경우
-                    targetTime = rawTime.split("T")[1].substring(0,5);
-                } else {
-                    targetTime = rawTime.match(/\d{2}:\d{2}/) ? rawTime.match(/\d{2}:\d{2}/)[0] : rawTime.trim();
-                }
+                // 시트에서 가져온 시간 데이터 정제 (글자에서 HH:mm 형태만 추출)
+                let sheetTimeRaw = stripHTML(data[13]);
+                let match = sheetTimeRaw.match(/\d{2}:\d{2}/);
+                let targetTime = match ? match[0] : "";
+                
+                let msg = stripHTML(data[12]).trim();
 
-                const msg = String(data[12] || "").replace(/<[^>]*>/g, "").trim();
-
-                if (targetTime === curTime && msg && lastShownMsg !== msg) {
+                if (targetTime === curTime && msg !== "" && lastMsg !== msg) {
                     document.getElementById('targetMsg').innerText = msg;
                     document.getElementById('msgPopup').style.display = 'flex';
-                    lastShownMsg = msg;
+                    lastMsg = msg;
                 }
-            } catch (e) { console.error("Update Error:", e); }
+            } catch (e) { console.error(e); }
         }
 
         let x = window.innerWidth;
         function move() {
             const m = document.getElementById('scrollingNotice');
-            x -= 1.8; if (x < -m.offsetWidth - 50) x = window.innerWidth;
+            x -= 1.5; if (x < -m.offsetWidth - 50) x = window.innerWidth;
             m.style.left = x + 'px'; requestAnimationFrame(move);
         }
 
-        window.onload = () => {
-            move(); update();
-            setInterval(update, 20000);
-            setInterval(() => {
-                document.getElementById('clock').innerText = new Date().toLocaleString();
-            }, 1000);
-        };
+        window.onload = () => { move(); update(); setInterval(update, 20000); setInterval(() => {
+            document.getElementById('clock').innerText = new Date().toLocaleString();
+        }, 1000); };
     </script>
 </body>
 </html>
