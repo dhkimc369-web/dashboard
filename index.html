@@ -62,7 +62,7 @@
     <script>
         const API_URL = 'https://script.google.com/macros/s/AKfycbxrd12Z9aMTrteBuThvgXmjo6zgOx__SyaxJG-UBzWrCavqf5AUc0fvid6-mX3LtRRSmw/exec';
 
-        // 팝업 함수 (데이터 상관없이 무조건 작동)
+        // 팝업 함수 (데이터 로딩과 무관하게 무조건 작동)
         function pop(el) {
             if(el.classList.contains('expanded')) { closeAll(); }
             else { closeAll(); el.classList.add('expanded'); document.body.classList.add('has-expanded'); }
@@ -72,10 +72,10 @@
             document.body.classList.remove('has-expanded');
         }
 
-        // 지저분한 HTML 태그에서 숫자만 골라내는 함수 (핵심)
+        // 지저분한 HTML 태그에서 숫자만 골라내는 함수
         function clean(val) {
             if(!val) return "0";
-            let s = String(val).replace(/<[^>]*>/g, ""); // 태그 제거
+            let s = String(val).replace(/<[^>]*>/g, ""); // HTML 태그 제거
             let n = s.replace(/[^0-9]/g, ""); // 숫자만 추출
             return n || "0";
         }
@@ -85,7 +85,7 @@
                 const res = await fetch(API_URL + "?v=" + Date.now());
                 const data = await res.json();
                 
-                // 상단 숫자 강제 정제 후 주입
+                // 인원 데이터 주입 (정제 후 적용)
                 document.getElementById('ot0').innerText = clean(data[0]);
                 document.getElementById('ot1').innerText = clean(data[1]);
                 document.getElementById('ot2').innerText = clean(data[2]);
@@ -93,12 +93,12 @@
                 // 전광판
                 document.getElementById('scrollingNotice').innerText = String(data[3] || "").replace(/<[^>]*>/g, "");
                 
-                // 본문 8개
+                // 본문 8개 영역
                 for(let i=4; i<12; i++) {
                     let target = document.getElementById("row" + (i + 1));
                     if(target) target.innerHTML = data[i] || "";
                 }
-            } catch (e) { console.log("로드 에러:", e); }
+            } catch (e) { console.log("데이터 로드 중 오류 발생:", e); }
         }
 
         let pos = window.innerWidth;
