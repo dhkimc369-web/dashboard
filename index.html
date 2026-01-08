@@ -3,122 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>제조팀 업무 게시판 V2.6</title>
+    <title>제조팀 업무 게시판 V2.7</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
         body { background-color: #f1f5f9; height: 100vh; display: flex; flex-direction: column; overflow: hidden; font-family: 'Pretendard', sans-serif; }
         header { background: #1a2a3a; padding: 10px 25px; display: flex; align-items: center; justify-content: space-between; color: white; border-bottom: 4px solid #f39c12; flex-shrink: 0; }
         .logo-group h1 { font-size: 1.4rem; font-weight: 900; color: #f39c12; }
-        
-        /* [핵심] 전광판 스타일 및 클릭 가능 표시 */
-        .marquee-box { flex: 1; background: #0f172a; padding: 8px 20px; border-radius: 6px; overflow: hidden; margin: 0 30px; border: 1px solid #334155; position: relative; height: 44px; cursor: pointer; }
-        .marquee-box:hover { border-color: #fbbf24; }
+        .marquee-box { flex: 1; background: #0f172a; padding: 8px 20px; border-radius: 6px; overflow: hidden; margin: 0 30px; border: 1px solid #334155; position: relative; height: 44px; }
         .marquee-text { position: absolute; white-space: nowrap; font-size: 1.2rem; font-weight: 800; color: #fbbf24; top: 8px; left: 100%; }
         
         /* 인원 카드 */
-        .ot-card { background: #ffffff; padding: 4px 12px; border-radius: 6px; display: flex; flex-direction: column; align-items: center; min-width: 90px; color: #1e293b; }
-        .ot-num { font-size: 1.8rem; font-weight: 900; color: #1e293b; }
+        .ot-card { background: #ffffff; padding: 4px 12px; border-radius: 6px; display: flex; flex-direction: column; align-items: center; min-width: 90px; color: #1e293b; border: 1px solid #cbd5e1; }
+        .ot-num { font-size: 1.8rem; font-weight: 900; }
 
-        /* [핵심] 전광판 전용 팝업창 스타일 */
-        #noticePopup { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 10000; align-items: center; justify-content: center; padding: 40px; }
-        #noticePopup.active { display: flex; }
-        .popup-content { background: #1a2a3a; width: 80%; max-height: 80%; border: 4px solid #fbbf24; border-radius: 20px; padding: 40px; position: relative; color: white; }
-        .popup-close { position: absolute; top: 20px; right: 20px; font-size: 2rem; color: #fbbf24; cursor: pointer; }
+        /* [핵심] 자동 알림 팝업창 스타일 */
+        #autoPopup { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 10001; align-items: center; justify-content: center; }
+        .popup-box { background: #ffffff; width: 600px; border-radius: 20px; border: 10px solid #ef4444; padding: 40px; text-align: center; box-shadow: 0 0 50px rgba(0,0,0,0.5); }
+        .popup-title { font-size: 2.5rem; font-weight: 900; color: #ef4444; margin-bottom: 20px; }
+        .popup-msg { font-size: 1.8rem; font-weight: 700; color: #1e293b; line-height: 1.4; margin-bottom: 30px; }
+        .btn-close { background: #1a2a3a; color: white; padding: 12px 40px; border-radius: 10px; font-weight: bold; font-size: 1.2rem; cursor: pointer; }
 
-        /* 메인 카드 스타일 (기존 기능 유지) */
         .main-grid { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 15px; padding: 20px; }
         .card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; overflow: hidden; cursor: pointer; }
-        .card-body { padding: 18px; overflow-y: auto; flex: 1; }
         .card.expanded { position: fixed !important; top: 5vh; left: 5vw; width: 90vw; height: 90vh; z-index: 9999; border: 6px solid #f39c12; }
     </style>
 </head>
 <body>
 
-    <div id="noticePopup" onclick="closeNotice()">
-        <div class="popup-content" onclick="event.stopPropagation()">
-            <span class="popup-close" onclick="closeNotice()">&times;</span>
-            <h2 class="text-3xl font-black mb-6 text-yellow-400">📢 전체 공지사항</h2>
-            <div id="fullNoticeContent" class="text-2xl leading-relaxed whitespace-pre-wrap"></div>
+    <div id="autoPopup">
+        <div class="popup-box">
+            <div class="popup-title">⚠️ 현장 공지</div>
+            <div id="popupMsg" class="popup-msg">메시지 내용</div>
+            <button class="btn-close" onclick="closeAutoPopup()">내용 확인</button>
         </div>
     </div>
 
     <header>
-        <div class="logo-group"><h1>제조팀 업무 게시판 V2.6</h1><div id="clock" class="text-xs text-slate-400">Loading...</div></div>
-        <div class="marquee-box" onclick="openNotice()">
-            <div id="scrollingNotice" class="marquee-text">데이터를 불러오는 중입니다...</div>
-        </div>
+        <div class="logo-group"><h1>제조팀 업무 게시판 V2.7</h1><div id="clock" class="text-xs text-slate-400">Loading...</div></div>
+        <div class="marquee-box"><div id="scrollingNotice" class="marquee-text">연결 중...</div></div>
         <div class="flex gap-2">
-            <div class="ot-card"><label class="text-[10px] font-bold text-slate-500 uppercase">BBT</label><span id="ot0" class="ot-num">0</span></div>
-            <div class="ot-card"><label class="text-[10px] font-bold text-slate-500 uppercase">인서트</label><span id="ot1" class="ot-num">0</span></div>
-            <div class="ot-card"><label class="text-[10px] font-bold text-slate-500 uppercase">리터치</label><span id="ot2" class="ot-num">0</span></div>
+            <div class="ot-card"><label class="text-[10px] font-bold text-slate-500">BBT</label><span id="ot0" class="ot-num">0</span></div>
+            <div class="ot-card"><label class="text-[10px] font-bold text-slate-500">인서트</label><span id="ot1" class="ot-num">0</span></div>
+            <div class="ot-card"><label class="text-[10px] font-bold text-slate-500">리터치</label><span id="ot2" class="ot-num">0</span></div>
         </div>
     </header>
 
     <div class="main-grid">
-        <div class="card" onclick="this.classList.toggle('expanded')"><div class="p-3 bg-red-500 text-white font-bold text-sm">📢 공지 사항</div><div class="card-body" id="row5"></div></div>
-        <div class="card" onclick="this.classList.toggle('expanded')"><div class="p-3 bg-purple-500 text-white font-bold text-sm">👥 근태 현황</div><div class="card-body" id="row6"></div></div>
-        <div class="card" onclick="this.classList.toggle('expanded')"><div class="p-3 bg-green-500 text-white font-bold text-sm">📦 납품 목록</div><div class="card-body" id="row7"></div></div>
-        <div class="card" onclick="this.classList.toggle('expanded')"><div class="p-3 bg-blue-500 text-white font-bold text-sm">✅ 업무 공유</div><div class="card-body" id="row8"></div></div>
-        <div class="card" onclick="this.classList.toggle('expanded')"><div class="p-3 bg-teal-500 text-white font-bold text-sm">📊 진행 현황</div><div class="card-body" id="row9"></div></div>
-        <div class="card" onclick="this.classList.toggle('expanded')"><div class="p-3 bg-orange-500 text-white font-bold text-sm">🔍 BBT 상세</div><div class="card-body" id="row10"></div></div>
-        <div class="card" onclick="this.classList.toggle('expanded')"><div class="p-3 bg-indigo-500 text-white font-bold text-sm">🔧 인서트 상세</div><div class="card-body" id="row11"></div></div>
-        <div class="card" onclick="this.classList.toggle('expanded')"><div class="p-3 bg-slate-500 text-white font-bold text-sm">⚠️ 리터치 상세</div><div class="card-body" id="row12"></div></div>
+        <div class="card" onclick="this.classList.toggle('expanded')"><div class="p-3 bg-red-500 text-white font-bold text-sm">📢 공지 사항</div><div class="card-body p-4" id="row5"></div></div>
+        <div class="card" onclick="this.classList.toggle('expanded')"><div class="p-3 bg-purple-500 text-white font-bold text-sm">👥 근태 현황</div><div class="card-body p-4" id="row6"></div></div>
+        <div class="card" onclick="this.classList.toggle('expanded')"><div class="p-3 bg-green-500 text-white font-bold text-sm">📦 납품 목록</div><div class="card-body p-4" id="row7"></div></div>
+        <div class="card" onclick="this.classList.toggle('expanded')"><div class="p-3 bg-blue-500 text-white font-bold text-sm">✅ 업무 공유</div><div class="card-body p-4" id="row8"></div></div>
+        <div class="card" onclick="this.classList.toggle('expanded')"><div class="p-3 bg-teal-500 text-white font-bold text-sm">📊 진행 현황</div><div class="card-body p-4" id="row9"></div></div>
+        <div class="card" onclick="this.classList.toggle('expanded')"><div class="p-3 bg-orange-500 text-white font-bold text-sm">🔍 BBT 상세</div><div class="card-body p-4" id="row10"></div></div>
+        <div class="card" onclick="this.classList.toggle('expanded')"><div class="p-3 bg-indigo-500 text-white font-bold text-sm">🔧 인서트 상세</div><div class="card-body p-4" id="row11"></div></div>
+        <div class="card" onclick="this.classList.toggle('expanded')"><div class="p-3 bg-slate-500 text-white font-bold text-sm">⚠️ 리터치 상세</div><div class="card-body p-4" id="row12"></div></div>
     </div>
 
     <script>
         const API_URL = 'https://script.google.com/macros/s/AKfycbxrd12Z9aMTrteBuThvgXmjo6zgOx__SyaxJG-UBzWrCavqf5AUc0fvid6-mX3LtRRSmw/exec';
+        let lastPopupMsg = "";
 
-        // 전광판 팝업 열기/닫기
-        function openNotice() {
-            const content = document.getElementById('scrollingNotice').innerText;
-            document.getElementById('fullNoticeContent').innerText = content;
-            document.getElementById('noticePopup').classList.add('active');
-        }
-        function closeNotice() {
-            document.getElementById('noticePopup').classList.remove('active');
-        }
+        function closeAutoPopup() { document.getElementById('autoPopup').style.display = 'none'; }
 
-        // 숫자 정제 함수
+        // 숫자 정제 (태그 완전 박멸)
         function clean(val) {
-            return String(val || "0").replace(/<[^>]*>/g, "").replace(/[^0-9]/g, "") || "0";
+            let s = String(val || "0").replace(/<[^>]*>/g, "").replace(/[^0-9]/g, "");
+            return s || "0";
         }
 
         async function loadData() {
             try {
-                const response = await fetch(API_URL + "?t=" + Date.now());
-                const data = await response.json();
+                const res = await fetch(API_URL + "?t=" + Date.now());
+                const data = await res.json();
                 
-                // [수정] 인원 업데이트 - 시트의 B1, B2, B3 값을 정확히 타겟팅
+                // 1. 인원 업데이트 (강력 정제)
                 document.getElementById('ot0').innerText = clean(data[0]);
                 document.getElementById('ot1').innerText = clean(data[1]);
                 document.getElementById('ot2').innerText = clean(data[2]);
                 
-                // 전광판
-                const noticeText = String(data[3] || "").replace(/<[^>]*>/g, "");
-                document.getElementById('scrollingNotice').innerText = noticeText;
+                // 2. 전광판
+                document.getElementById('scrollingNotice').innerText = String(data[3] || "").replace(/<[^>]*>/g, "");
                 
-                // 본문 8개
+                // 3. 본문 8개
                 for(let i=4; i<12; i++) {
                     const target = document.getElementById("row" + (i + 1));
                     if(target) target.innerHTML = data[i] || "";
                 }
-            } catch (err) { console.error(err); }
+
+                // 4. [중요] 메시지 팝업 로직 (13번째:메시지, 14번째:시간)
+                const msg = data[12]; // A13 셀
+                const targetTime = String(data[13] || "").trim(); // A14 셀 (예: 10:30)
+                const currentTime = new Date().toTimeString().substring(0, 5); // 현재 시각 (예: 10:30)
+
+                if (targetTime === currentTime && msg && msg !== lastPopupMsg) {
+                    document.getElementById('popupMsg').innerText = msg;
+                    document.getElementById('autoPopup').style.display = 'flex';
+                    lastPopupMsg = msg; // 같은 메시지로 계속 뜨는 것 방지
+                }
+            } catch (e) { console.error(e); }
         }
 
-        // 전광판 애니메이션 로직
-        let pos = window.innerWidth;
-        function animate() {
+        let p = window.innerWidth;
+        function run() {
             const el = document.getElementById('scrollingNotice');
-            pos -= 1.5;
-            if (pos < -el.offsetWidth - 50) pos = window.innerWidth;
-            el.style.left = pos + 'px';
-            requestAnimationFrame(animate);
+            p -= 1.5; if (p < -el.offsetWidth - 50) p = window.innerWidth;
+            el.style.left = p + 'px'; requestAnimationFrame(run);
         }
 
         window.onload = () => {
-            animate();
-            loadData();
+            run(); loadData();
             setInterval(loadData, 20000);
             setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleString(); }, 1000);
         };
