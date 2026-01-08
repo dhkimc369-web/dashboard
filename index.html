@@ -3,126 +3,126 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>제조팀 업무 게시판 V2.2_Final</title>
+    <title>제조팀 업무 게시판 V2.5</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
         body { background-color: #f1f5f9; height: 100vh; display: flex; flex-direction: column; overflow: hidden; font-family: 'Pretendard', sans-serif; }
         header { background: #1a2a3a; padding: 10px 25px; display: flex; align-items: center; justify-content: space-between; color: white; border-bottom: 4px solid #f39c12; flex-shrink: 0; }
         .logo-group h1 { font-size: 1.4rem; font-weight: 900; color: #f39c12; }
-        
-        /* 인원 카드 디자인 고정 */
         .marquee-box { flex: 1; background: #0f172a; padding: 8px 20px; border-radius: 6px; overflow: hidden; margin: 0 30px; border: 1px solid #334155; position: relative; height: 44px; }
         .marquee-text { position: absolute; white-space: nowrap; font-size: 1.2rem; font-weight: 800; color: #fbbf24; top: 8px; left: 100%; }
-        .ot-card { background: #ffffff; padding: 4px 12px; border-radius: 6px; display: flex; flex-direction: column; align-items: center; min-width: 90px; color: #1e293b; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 1px solid #cbd5e1; }
-        .ot-num { font-size: 1.8rem; font-weight: 900; color: #1e293b; }
-
-        /* 메인 그리드 및 카드 */
+        .ot-card { background: #ffffff; padding: 4px 12px; border-radius: 6px; display: flex; flex-direction: column; align-items: center; min-width: 90px; color: #1e293b; border: 1px solid #cbd5e1; }
+        .ot-num { font-size: 1.8rem; font-weight: 900; }
         .main-grid { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 15px; padding: 20px; }
-        .card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; overflow: hidden; cursor: pointer; position: relative; transition: transform 0.1s; }
-        .card:active { transform: scale(0.98); }
-        .card-header { padding: 10px 15px; color: white; font-weight: bold; font-size: 0.95rem; }
-        .card-body { padding: 18px; overflow-y: auto; flex: 1; background: #fff; pointer-events: none; }
         
-        /* 팝업(확대) 스타일 - V2.2 정석 유지 */
+        /* 팝업 구조 개선 */
+        .card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; overflow: hidden; cursor: pointer; position: relative; z-index: 1; }
+        .card-body { padding: 18px; overflow-y: auto; flex: 1; pointer-events: none; font-size: 1.1rem; }
+
+        /* V2.2 스타일 확대 레이아웃 (강제성 강화) */
+        body.has-expanded { overflow: hidden; }
         .card.expanded { 
             position: fixed !important; top: 5vh !important; left: 5vw !important; 
             width: 90vw !important; height: 90vh !important; 
-            z-index: 9999 !important; border: 6px solid #f39c12 !important; 
-            box-shadow: 0 0 150px rgba(0,0,0,0.9) !important; cursor: default !important;
+            z-index: 10000 !important; border: 6px solid #f39c12 !important; 
+            box-shadow: 0 0 100px rgba(0,0,0,0.8) !important;
         }
-        .card.expanded .card-body { pointer-events: auto !important; font-size: 1.5rem !important; line-height: 1.6; }
-        
-        #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9998; backdrop-filter: blur(5px); }
+        .card.expanded .card-body { pointer-events: auto !important; font-size: 1.5rem !important; }
+
+        #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9999; }
         body.has-expanded #overlay { display: block; }
     </style>
 </head>
 <body id="bodyTag">
     <div id="overlay" onclick="closeAll()"></div>
     <header>
-        <div class="logo-group"><h1>제조팀 업무 게시판 V2.2</h1><div id="clock" class="text-xs text-slate-400">Loading...</div></div>
-        <div class="marquee-box"><div id="scrollingNotice" class="marquee-text">현장 데이터를 동기화 중...</div></div>
+        <div class="logo-group"><h1>제조팀 업무 게시판 V2.5</h1><div id="clock" class="text-xs text-slate-400">Loading...</div></div>
+        <div class="marquee-box"><div id="scrollingNotice" class="marquee-text">연결 대기 중...</div></div>
         <div class="flex gap-2">
-            <div class="ot-card"><label class="text-[10px] font-bold text-slate-500 uppercase">BBT</label><span id="ot0" class="ot-num">0</span></div>
-            <div class="ot-card"><label class="text-[10px] font-bold text-slate-500 uppercase">인서트</label><span id="ot1" class="ot-num">0</span></div>
-            <div class="ot-card"><label class="text-[10px] font-bold text-slate-500 uppercase">리터치</label><span id="ot2" class="ot-num">0</span></div>
+            <div class="ot-card"><label class="text-[10px] font-bold text-slate-500">BBT</label><span id="ot0" class="ot-num">0</span></div>
+            <div class="ot-card"><label class="text-[10px] font-bold text-slate-500">인서트</label><span id="ot1" class="ot-num">0</span></div>
+            <div class="ot-card"><label class="text-[10px] font-bold text-slate-500">리터치</label><span id="ot2" class="ot-num">0</span></div>
         </div>
     </header>
 
     <div class="main-grid">
-        <div class="card" onclick="pop(this)"><div class="card-header bg-red-500">📢 공지 사항</div><div class="card-body" id="row5"></div></div>
-        <div class="card" onclick="pop(this)"><div class="card-header bg-purple-500">👥 근태 현황</div><div class="card-body" id="row6"></div></div>
-        <div class="card" onclick="pop(this)"><div class="card-header bg-green-500">📦 납품 목록</div><div class="card-body" id="row7"></div></div>
-        <div class="card" onclick="pop(this)"><div class="card-header bg-blue-500">✅ 업무 공유</div><div class="card-body" id="row8"></div></div>
-        <div class="card" onclick="pop(this)"><div class="card-header bg-teal-500">📊 진행 현황</div><div class="card-body" id="row9"></div></div>
-        <div class="card" onclick="pop(this)"><div class="card-header bg-orange-500">🔍 BBT 상세</div><div class="card-body" id="row10"></div></div>
-        <div class="card" onclick="pop(this)"><div class="card-header bg-indigo-500">🔧 인서트 상세</div><div class="card-body" id="row11"></div></div>
-        <div class="card" onclick="pop(this)"><div class="card-header bg-slate-500">⚠️ 리터치 상세</div><div class="card-body" id="row12"></div></div>
+        <div class="card" onclick="pop(this)"><div class="p-3 bg-red-500 text-white font-bold text-sm">📢 공지 사항</div><div class="card-body" id="row5">데이터를 불러오는 중입니다...</div></div>
+        <div class="card" onclick="pop(this)"><div class="p-3 bg-purple-500 text-white font-bold text-sm">👥 근태 현황</div><div class="card-body" id="row6"></div></div>
+        <div class="card" onclick="pop(this)"><div class="p-3 bg-green-500 text-white font-bold text-sm">📦 납품 목록</div><div class="card-body" id="row7"></div></div>
+        <div class="card" onclick="pop(this)"><div class="p-3 bg-blue-500 text-white font-bold text-sm">✅ 업무 공유</div><div class="card-body" id="row8"></div></div>
+        <div class="card" onclick="pop(this)"><div class="p-3 bg-teal-500 text-white font-bold text-sm">📊 진행 현황</div><div class="card-body" id="row9"></div></div>
+        <div class="card" onclick="pop(this)"><div class="p-3 bg-orange-500 text-white font-bold text-sm">🔍 BBT 상세</div><div class="card-body" id="row10"></div></div>
+        <div class="card" onclick="pop(this)"><div class="p-3 bg-indigo-500 text-white font-bold text-sm">🔧 인서트 상세</div><div class="card-body" id="row11"></div></div>
+        <div class="card" onclick="pop(this)"><div class="p-3 bg-slate-500 text-white font-bold text-sm">⚠️ 리터치 상세</div><div class="card-body" id="row12"></div></div>
     </div>
 
     <script>
-        const API_URL = 'https://script.google.com/macros/s/AKfycbxrd12Z9aMTrteBuThvgXmjo6zgOx__SyaxJG-UBzWrCavqf5AUc0fvid6-mX3LtRRSmw/exec';
-
-        // 팝업 기능: 어떤 데이터 상황에서도 독립적으로 작동하도록 개선
+        // 1. 팝업 함수 - 데이터를 못 받아와도 무조건 실행되도록 최상단 배치
         function pop(el) {
-            if(el.classList.contains('expanded')) { 
-                closeAll(); 
-            } else { 
-                closeAll(); 
-                el.classList.add('expanded'); 
-                document.body.classList.add('has-expanded'); 
+            console.log("Card Clicked!"); // 브라우저 검사용
+            if (el.classList.contains('expanded')) {
+                closeAll();
+            } else {
+                closeAll();
+                el.classList.add('expanded');
+                document.getElementById('bodyTag').classList.add('has-expanded');
             }
         }
         function closeAll() {
             document.querySelectorAll('.card').forEach(c => c.classList.remove('expanded'));
-            document.body.classList.remove('has-expanded');
+            document.getElementById('bodyTag').classList.remove('has-expanded');
         }
 
-        // 지저분한 HTML 태그에서 숫자만 골라내는 보정 함수
-        function cleanNumber(val) {
-            if(!val) return "0";
-            let str = String(val).replace(/<[^>]*>/g, ""); // 태그 제거
-            let num = str.replace(/[^0-9]/g, ""); // 숫자만 남기기
-            return num || "0";
+        // 2. 데이터 정제 함수
+        function clean(val) {
+            return String(val || "0").replace(/<[^>]*>/g, "").replace(/[^0-9]/g, "") || "0";
         }
+
+        // 3. 데이터 로드 (보안 우회 위해 파라미터 추가)
+        const API_URL = 'https://script.google.com/macros/s/AKfycbxrd12Z9aMTrteBuThvgXmjo6zgOx__SyaxJG-UBzWrCavqf5AUc0fvid6-mX3LtRRSmw/exec';
 
         async function loadData() {
             try {
-                const res = await fetch(API_URL + "?v=" + Date.now());
-                const data = await res.json();
+                const response = await fetch(API_URL + "?nocache=" + new Date().getTime(), {
+                    method: 'GET',
+                    mode: 'cors'
+                });
+                const data = await response.json();
                 
-                // 이미지 분석 결과: 시트의 B1, B2, B3 값이 데이터 배열의 0, 1, 2번에 위치함
-                document.getElementById('ot0').innerText = cleanNumber(data[0]);
-                document.getElementById('ot1').innerText = cleanNumber(data[1]);
-                document.getElementById('ot2').innerText = cleanNumber(data[2]);
+                // 숫자 업데이트
+                document.getElementById('ot0').innerText = clean(data[0]);
+                document.getElementById('ot1').innerText = clean(data[1]);
+                document.getElementById('ot2').innerText = clean(data[2]);
                 
-                // 전광판 (4번째 데이터)
+                // 전광판 및 본문
                 document.getElementById('scrollingNotice').innerText = String(data[3] || "").replace(/<[^>]*>/g, "");
-                
-                // 공지사항~상세내용 (5번째 데이터부터 순차 매칭)
                 for(let i=4; i<12; i++) {
-                    let target = document.getElementById("row" + (i + 1));
+                    const target = document.getElementById("row" + (i + 1));
                     if(target) target.innerHTML = data[i] || "";
                 }
-            } catch (e) { console.error("Data mapping error:", e); }
+            } catch (err) {
+                console.error("Connection Fail:", err);
+                document.getElementById('scrollingNotice').innerText = "시트 연결에 실패했습니다. (보안 정책 확인 필요)";
+            }
         }
 
-        let pos = window.innerWidth;
-        function marquee() {
-            const el = document.getElementById('scrollingNotice');
-            pos -= 1.5;
-            if(pos < -el.offsetWidth - 50) pos = window.innerWidth;
-            el.style.left = pos + 'px';
-            requestAnimationFrame(marquee);
-        }
-
+        // 4. 초기 구동
         window.onload = () => {
-            marquee();
             loadData();
-            setInterval(loadData, 20000);
-            setInterval(() => { 
-                document.getElementById('clock').innerText = new Date().toLocaleString('ko-KR', { hour12: false }); 
-            }, 1000);
+            setInterval(loadData, 30000);
+            setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleString(); }, 1000);
+            
+            // 전광판 애니메이션
+            const sn = document.getElementById('scrollingNotice');
+            let p = window.innerWidth;
+            function scroll() {
+                p -= 1.5;
+                if (p < -sn.offsetWidth) p = window.innerWidth;
+                sn.style.left = p + 'px';
+                requestAnimationFrame(scroll);
+            }
+            scroll();
         };
     </script>
 </body>
