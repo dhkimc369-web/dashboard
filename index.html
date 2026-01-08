@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>제조팀 업무 게시판</title>
+    <title>제조팀 업무 게시판 V2.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -16,40 +16,39 @@
         .marquee-box { flex: 1; background: #0f172a; padding: 8px 20px; border-radius: 6px; overflow: hidden; margin: 0 30px; border: 1px solid #334155; position: relative; height: 44px; }
         .marquee-text { position: absolute; white-space: nowrap; font-size: 1.2rem; font-weight: 800; color: #fbbf24; top: 8px; left: 100%; }
 
-        /* 인원 카드 & 반짝임 */
+        /* 인원 카드 & 애니메이션 */
         .ot-card { background: #ffffff; padding: 4px 12px; border-radius: 6px; display: flex; flex-direction: column; align-items: center; min-width: 90px; color: #1e293b; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .flash-active { animation: flash-now 1.5s ease-out; }
+        .flash-active { animation: flash-now 1.5s ease-out !important; }
         @keyframes flash-now { 
             0% { background-color: #fbbf24; transform: scale(1.1); }
             100% { background-color: #ffffff; transform: scale(1); }
         }
 
-        /* 그리드 및 스크롤 */
+        /* 메인 그리드 */
         .main-grid { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 15px; padding: 20px; }
-        .card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; overflow: hidden; position: relative; cursor: pointer; transition: transform 0.2s; }
-        .card:active { transform: scale(0.98); }
-        .card-body { padding: 18px; overflow-y: auto; flex: 1; pointer-events: none; background: #fff; }
-        .content-area { white-space: pre-wrap; word-break: break-all; color: #334155; }
-
-        /* 팝업(확대) - 모든 창 동일 크기 */
-        .card.expanded { 
-            position: fixed !important; top: 5vh !important; left: 5vw !important;
-            width: 90vw !important; height: 90vh !important; 
-            z-index: 9999 !important; border: 5px solid #f39c12 !important;
-            box-shadow: 0 0 100px rgba(0,0,0,0.8) !important;
-            cursor: default !important; transform: none !important;
-        }
-        .card.expanded .card-body { pointer-events: auto !important; }
+        .card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; overflow: hidden; position: relative; cursor: pointer; }
         
-        #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9998; backdrop-filter: blur(5px); }
+        /* 팝업(확대) 스타일 - 최우선 순위 */
+        .card.expanded { 
+            position: fixed !important; top: 4vh !important; left: 4vw !important;
+            width: 92vw !important; height: 92vh !important; 
+            z-index: 9999 !important; border: 6px solid #f39c12 !important;
+            box-shadow: 0 0 150px rgba(0,0,0,0.9) !important;
+            cursor: default !important;
+        }
+        .card-body { padding: 20px; overflow-y: auto; flex: 1; pointer-events: none; background: #fff; }
+        .card.expanded .card-body { pointer-events: auto !important; }
+        .content-area { white-space: pre-wrap; word-break: break-all; color: #334155; font-size: 1.1rem; }
+
+        #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 9998; backdrop-filter: blur(8px); }
         body.has-expanded #overlay { display: block; }
     </style>
 </head>
 <body id="bodyTag">
     <div id="overlay" onclick="closeAll()"></div>
     <header>
-        <div class="logo-group"><h1>제조팀 업무 게시판</h1><div id="clock" class="text-xs text-slate-400">Loading...</div></div>
-        <div class="marquee-box" id="mBox"><div id="scrollingNotice" class="marquee-text">현장 데이터를 동기화 중입니다...</div></div>
+        <div class="logo-group"><h1>제조팀 업무 게시판</h1><div id="clock" class="text-xs text-slate-400">시간 동기화 중...</div></div>
+        <div class="marquee-box" id="mBox"><div id="scrollingNotice" class="marquee-text">현장 데이터를 실시간 로드 중입니다...</div></div>
         <div class="flex gap-2">
             <div class="ot-card" id="card0"><label class="text-[10px] font-bold text-slate-500">BBT</label><span id="ot0" class="text-2xl font-black">0</span></div>
             <div class="ot-card" id="card1"><label class="text-[10px] font-bold text-slate-500">인서트</label><span id="ot1" class="text-2xl font-black">0</span></div>
@@ -58,49 +57,42 @@
     </header>
 
     <div class="main-grid">
-        <div class="card" onclick="openMe(this)"><div class="p-3 bg-red-500 text-white font-bold">📢 공지 사항</div><div class="card-body"><div id="row5" class="content-area"></div></div></div>
-        <div class="card" onclick="openMe(this)"><div class="p-3 bg-purple-500 text-white font-bold">👥 근태 현황</div><div class="card-body"><div id="row6" class="content-area"></div></div></div>
-        <div class="card" onclick="openMe(this)"><div class="p-3 bg-green-500 text-white font-bold">📦 납품 목록</div><div class="card-body"><div id="row7" class="content-area"></div></div></div>
-        <div class="card" onclick="openMe(this)"><div class="p-3 bg-blue-500 text-white font-bold">✅ 업무 공유</div><div class="card-body"><div id="row8" class="content-area"></div></div></div>
-        <div class="card" onclick="openMe(this)"><div class="p-3 bg-teal-500 text-white font-bold">📊 진행 현황</div><div class="card-body"><div id="row9" class="content-area"></div></div></div>
-        <div class="card" onclick="openMe(this)"><div class="p-3 bg-orange-500 text-white font-bold">🔍 BBT 상세</div><div class="card-body"><div id="row10" class="content-area"></div></div></div>
-        <div class="card" onclick="openMe(this)"><div class="p-3 bg-indigo-500 text-white font-bold">🔧 인서트 상세</div><div class="card-body"><div id="row11" class="content-area"></div></div></div>
-        <div class="card" onclick="openMe(this)"><div class="p-3 bg-slate-500 text-white font-bold">⚠️ 리터치 상세</div><div class="card-body"><div id="row12" class="content-area"></div></div></div>
+        <div class="card" onclick="openCard(this)"><div class="p-3 bg-red-500 text-white font-bold">📢 공지 사항</div><div class="card-body"><div id="row5" class="content-area"></div></div></div>
+        <div class="card" onclick="openCard(this)"><div class="p-3 bg-purple-500 text-white font-bold">👥 근태 현황</div><div class="card-body"><div id="row6" class="content-area"></div></div></div>
+        <div class="card" onclick="openCard(this)"><div class="p-3 bg-green-500 text-white font-bold">📦 납품 목록</div><div class="card-body"><div id="row7" class="content-area"></div></div></div>
+        <div class="card" onclick="openCard(this)"><div class="p-3 bg-blue-500 text-white font-bold">✅ 업무 공유</div><div class="card-body"><div id="row8" class="content-area"></div></div></div>
+        <div class="card" onclick="openCard(this)"><div class="p-3 bg-teal-500 text-white font-bold">📊 진행 현황</div><div class="card-body"><div id="row9" class="content-area"></div></div></div>
+        <div class="card" onclick="openCard(this)"><div class="p-3 bg-orange-500 text-white font-bold">🔍 BBT 상세</div><div class="card-body"><div id="row10" class="content-area"></div></div></div>
+        <div class="card" onclick="openCard(this)"><div class="p-3 bg-indigo-500 text-white font-bold">🔧 인서트 상세</div><div class="card-body"><div id="row11" class="content-area"></div></div></div>
+        <div class="card" onclick="openCard(this)"><div class="p-3 bg-slate-500 text-white font-bold">⚠️ 리터치 상세</div><div class="card-body"><div id="row12" class="content-area"></div></div></div>
     </div>
 
     <script>
         const API_URL = 'https://script.google.com/macros/s/AKfycbxrd12Z9aMTrteBuThvgXmjo6zgOx__SyaxJG-UBzWrCavqf5AUc0fvid6-mX3LtRRSmw/exec';
 
-        // 팝업 함수
-        function openMe(el) {
-            if (el.classList.contains('expanded')) {
-                closeAll();
-            } else {
-                closeAll();
-                el.classList.add('expanded');
-                document.getElementById('bodyTag').classList.add('has-expanded');
-            }
+        function openCard(el) {
+            if (el.classList.contains('expanded')) { closeAll(); } 
+            else { closeAll(); el.classList.add('expanded'); document.getElementById('bodyTag').classList.add('has-expanded'); }
         }
         function closeAll() {
             document.querySelectorAll('.card').forEach(c => c.classList.remove('expanded'));
             document.getElementById('bodyTag').classList.remove('has-expanded');
         }
 
-        // 숫자만 남기는 초간단 함수
         function toNum(str) {
             if(!str) return "0";
-            const text = str.toString().replace(/<[^>]*>/g, ""); // 태그 제거
-            const num = text.replace(/[^0-9]/g, ""); // 숫자만
-            return num || "0";
+            // 태그 제거 후 숫자만 남기기
+            const clean = str.toString().replace(/<[^>]*>/g, "").replace(/[^0-9]/g, "");
+            return clean || "0";
         }
 
         async function loadData() {
             try {
-                const res = await fetch(API_URL + "?v=" + new Date().getTime());
-                const data = await res.json();
-                if (!data) return;
-
-                // 1. 인원 업데이트
+                // 캐시 파괴: 매번 새로운 URL로 인식하게 함
+                const response = await fetch(`${API_URL}?cache=${new Date().getTime()}`);
+                const data = await response.json();
+                
+                // 1. 인원 업데이트 (바뀔 때만 반짝임)
                 for(let i=0; i<3; i++) {
                     const val = toNum(data[i]);
                     const el = document.getElementById('ot'+i);
@@ -108,18 +100,19 @@
                     if(el.innerText !== val) {
                         el.innerText = val;
                         card.classList.remove('flash-active');
-                        void card.offsetWidth;
+                        void card.offsetWidth; // 리플로우
                         card.classList.add('flash-active');
                     }
                 }
                 // 2. 전광판
-                document.getElementById('scrollingNotice').innerHTML = (data[3] || "").replace(/<[^>]*>/g, "");
-                // 3. 본문
+                const notice = (data[3] || "").replace(/<[^>]*>/g, "");
+                document.getElementById('scrollingNotice').innerHTML = notice;
+                // 3. 본문 박스
                 for(let i=4; i<12; i++) {
                     const target = document.getElementById("row" + (i + 1));
                     if(target) target.innerHTML = data[i] || "";
                 }
-            } catch (e) { console.log(e); }
+            } catch (e) { console.error("Update Fail", e); }
         }
 
         function runMarquee() {
@@ -127,7 +120,7 @@
             let pos = document.getElementById('mBox').offsetWidth;
             function step() {
                 pos -= 1.5;
-                if (pos < -el.offsetWidth) pos = document.getElementById('mBox').offsetWidth;
+                if (pos < -el.offsetWidth - 50) pos = document.getElementById('mBox').offsetWidth;
                 el.style.left = pos + 'px';
                 requestAnimationFrame(step);
             }
@@ -137,7 +130,7 @@
         window.onload = () => {
             runMarquee();
             loadData();
-            setInterval(loadData, 20000);
+            setInterval(loadData, 20000); // 20초마다 갱신
             setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleString(); }, 1000);
         };
     </script>
