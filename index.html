@@ -3,25 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>제조팀 업무 게시판 V2.4</title>
+    <title>제조팀 업무 게시판 V2.3</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
         body { background-color: #f1f5f9; height: 100vh; display: flex; flex-direction: column; overflow: hidden; font-family: 'Pretendard', sans-serif; }
         header { background: #1a2a3a; padding: 10px 25px; display: flex; align-items: center; justify-content: space-between; color: white; border-bottom: 4px solid #f39c12; flex-shrink: 0; }
         .logo-group h1 { font-size: 1.4rem; font-weight: 900; color: #f39c12; }
+        .marquee-box { flex: 1; background: #0f172a; padding: 8px 20px; border-radius: 6px; overflow: hidden; margin: 0 30px; border: 1px solid #334155; position: relative; height: 44px; }
+        .marquee-text { position: absolute; white-space: nowrap; font-size: 1.2rem; font-weight: 800; color: #fbbf24; top: 8px; left: 100%; }
         
-        /* 상단 인원 박스 */
-        .ot-card { background: #ffffff; padding: 4px 12px; border-radius: 6px; display: flex; flex-direction: column; align-items: center; min-width: 95px; color: #1e293b; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .ot-num { font-size: 1.7rem; font-weight: 900; line-height: 1.2; }
+        /* 인원 카드 */
+        .ot-card { background: #ffffff; padding: 4px 12px; border-radius: 6px; display: flex; flex-direction: column; align-items: center; min-width: 90px; color: #1e293b; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .ot-num { font-size: 1.8rem; font-weight: 900; color: #000; }
 
         /* 메인 그리드 */
         .main-grid { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 15px; padding: 20px; }
-        .card { background: white; border-radius: 12px; border: 2px solid #e2e8f0; display: flex; flex-direction: column; overflow: hidden; cursor: pointer; position: relative; }
-        .card-header { padding: 12px; color: white; font-weight: bold; font-size: 0.9rem; pointer-events: none; }
-        .card-body { padding: 18px; overflow-y: auto; flex: 1; background: #fff; font-size: 1rem; pointer-events: none; }
+        .card { background: white; border-radius: 12px; border: 2px solid #e2e8f0; display: flex; flex-direction: column; overflow: hidden; position: relative; cursor: pointer; }
+        .card-header { padding: 12px; color: white; font-weight: bold; font-size: 0.9rem; }
+        .card-body { padding: 18px; overflow-y: auto; flex: 1; background: #fff; font-size: 1rem; color: #334155; pointer-events: none; }
         
-        /* 팝업(확대) 스타일 - 무조건 최상단 */
+        /* 팝업(확대) 스타일 - 최상단 고정 */
         .card.expanded { 
             position: fixed !important; top: 0 !important; left: 0 !important; 
             width: 100vw !important; height: 100vh !important; 
@@ -29,78 +31,82 @@
         }
         .card.expanded .card-body { font-size: 1.6rem !important; padding: 50px !important; pointer-events: auto !important; }
         
-        /* 닫기 안내 문구 */
-        .close-tip { display: none; position: absolute; top: 10px; right: 20px; color: white; font-weight: bold; background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 20px; }
-        .card.expanded .close-tip { display: block; }
+        #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 9998; }
+        body.has-expanded #overlay { display: block; }
     </style>
 </head>
 <body id="bodyTag">
+    <div id="overlay"></div>
     <header>
-        <div class="logo-group"><h1>제조팀 업무 게시판 V2.4</h1><div id="clock" class="text-xs text-slate-400">Loading...</div></div>
-        <div style="flex:1; margin: 0 30px; background:#0f172a; border-radius:6px; height:40px; position:relative; overflow:hidden; border:1px solid #334155;">
-            <div id="scrollingNotice" style="position:absolute; white-space:nowrap; font-size:1.2rem; font-weight:800; color:#fbbf24; top:6px; left:100%;">데이터 연동 중...</div>
-        </div>
+        <div class="logo-group"><h1>제조팀 업무 게시판 V2.3</h1><div id="clock" class="text-xs text-slate-400">Loading...</div></div>
+        <div class="marquee-box" id="mBox"><div id="scrollingNotice" class="marquee-text">데이터 동기화 중...</div></div>
         <div class="flex gap-2">
-            <div class="ot-card"><label class="text-[10px] font-bold text-slate-500">BBT</label><span id="ot0" class="ot-num">0</span></div>
-            <div class="ot-card"><label class="text-[10px] font-bold text-slate-500">인서트</label><span id="ot1" class="ot-num">0</span></div>
-            <div class="ot-card"><label class="text-[10px] font-bold text-slate-500">리터치</label><span id="ot2" class="ot-num">0</span></div>
+            <div class="ot-card"><label class="text-[10px] font-bold text-slate-500 uppercase">BBT</label><span id="ot0" class="ot-num">0</span></div>
+            <div class="ot-card"><label class="text-[10px] font-bold text-slate-500 uppercase">인서트</label><span id="ot1" class="ot-num">0</span></div>
+            <div class="ot-card"><label class="text-[10px] font-bold text-slate-500 uppercase">리터치</label><span id="ot2" class="ot-num">0</span></div>
         </div>
     </header>
 
     <div class="main-grid">
-        <div class="card" onclick="togglePopup(this)"><div class="close-tip">다시 클릭하면 닫힙니다</div><div class="card-header bg-red-500">📢 공지 사항</div><div class="card-body" id="row5"></div></div>
-        <div class="card" onclick="togglePopup(this)"><div class="close-tip">다시 클릭하면 닫힙니다</div><div class="card-header bg-purple-500">👥 근태 현황</div><div class="card-body" id="row6"></div></div>
-        <div class="card" onclick="togglePopup(this)"><div class="close-tip">다시 클릭하면 닫힙니다</div><div class="card-header bg-green-500">📦 납품 목록</div><div class="card-body" id="row7"></div></div>
-        <div class="card" onclick="togglePopup(this)"><div class="close-tip">다시 클릭하면 닫힙니다</div><div class="card-header bg-blue-500">✅ 업무 공유</div><div class="card-body" id="row8"></div></div>
-        <div class="card" onclick="togglePopup(this)"><div class="close-tip">다시 클릭하면 닫힙니다</div><div class="card-header bg-teal-500">📊 진행 현황</div><div class="card-body" id="row9"></div></div>
-        <div class="card" onclick="togglePopup(this)"><div class="close-tip">다시 클릭하면 닫힙니다</div><div class="card-header bg-orange-500">🔍 BBT 상세</div><div class="card-body" id="row10"></div></div>
-        <div class="card" onclick="togglePopup(this)"><div class="card-header bg-indigo-500">🔧 인서트 상세</div><div class="card-body" id="row11"></div></div>
-        <div class="card" onclick="togglePopup(this)"><div class="card-header bg-slate-500">⚠️ 리터치 상세</div><div class="card-body" id="row12"></div></div>
+        <div class="card" onclick="tgl(this)"><div class="card-header bg-red-500">📢 공지 사항 (클릭)</div><div class="card-body" id="row5"></div></div>
+        <div class="card" onclick="tgl(this)"><div class="card-header bg-purple-500">👥 근태 현황 (클릭)</div><div class="card-body" id="row6"></div></div>
+        <div class="card" onclick="tgl(this)"><div class="card-header bg-green-500">📦 납품 목록 (클릭)</div><div class="card-body" id="row7"></div></div>
+        <div class="card" onclick="tgl(this)"><div class="card-header bg-blue-500">✅ 업무 공유 (클릭)</div><div class="card-body" id="row8"></div></div>
+        <div class="card" onclick="tgl(this)"><div class="card-header bg-teal-500">📊 진행 현황 (클릭)</div><div class="card-body" id="row9"></div></div>
+        <div class="card" onclick="tgl(this)"><div class="card-header bg-orange-500">🔍 BBT 상세 (클릭)</div><div class="card-body" id="row10"></div></div>
+        <div class="card" onclick="tgl(this)"><div class="card-header bg-indigo-500">🔧 인서트 상세 (클릭)</div><div class="card-body" id="row11"></div></div>
+        <div class="card" onclick="tgl(this)"><div class="card-header bg-slate-500">⚠️ 리터치 상세 (클릭)</div><div class="card-body" id="row12"></div></div>
     </div>
 
     <script>
         const API_URL = 'https://script.google.com/macros/s/AKfycbxrd12Z9aMTrteBuThvgXmjo6zgOx__SyaxJG-UBzWrCavqf5AUc0fvid6-mX3LtRRSmw/exec';
 
-        // 팝업 함수 수정 (박스 전체 클릭)
-        function togglePopup(el) {
+        // 팝업 함수 (가장 단순화)
+        function tgl(el) {
             el.classList.toggle('expanded');
+            document.body.classList.toggle('has-expanded');
         }
 
-        // 숫자 추출 함수 (강력 수정)
-        function cleanNumber(val) {
-            let s = String(val || "0");
-            // <span> 태그 등이 섞여있어도 글자만 다 걷어내고 숫자만 남김
-            let n = s.replace(/<[^>]*>/g, "").replace(/[^0-9]/g, "");
-            return n || "0";
+        // 지저분한 태그 사이에서 숫자만 골라내는 함수
+        function getNum(val) {
+            if(!val) return "0";
+            let s = String(val);
+            // 모든 HTML 태그 제거 후 숫자만 남기기
+            let clean = s.replace(/<[^>]*>/g, "").replace(/[^0-9]/g, "");
+            return clean || "0";
         }
 
         async function loadData() {
             try {
-                const res = await fetch(API_URL + "?t=" + Date.now());
+                const res = await fetch(API_URL + "?v=" + Date.now());
                 const data = await res.json();
                 
-                // 상단 숫자
-                document.getElementById('ot0').innerText = cleanNumber(data[0]);
-                document.getElementById('ot1').innerText = cleanNumber(data[1]);
-                document.getElementById('ot2').innerText = cleanNumber(data[2]);
+                // 상단 숫자 강제 주입
+                document.getElementById('ot0').innerText = getNum(data[0]);
+                document.getElementById('ot1').innerText = getNum(data[1]);
+                document.getElementById('ot2').innerText = getNum(data[2]);
                 
                 // 전광판
                 document.getElementById('scrollingNotice').innerText = String(data[3] || "").replace(/<[^>]*>/g, "");
                 
-                // 본문
+                // 본문 8개 박스
                 for(let i=4; i<12; i++) {
                     let target = document.getElementById("row" + (i + 1));
                     if(target) target.innerHTML = data[i] || "";
                 }
-            } catch (e) { console.error(e); }
+            } catch (e) { 
+                console.error("Data Load Error:", e);
+                // 에러 발생 시 팝업이라도 되도록 기본값 세팅
+                document.querySelectorAll('.card-body').forEach(b => { if(!b.innerText) b.innerText = "데이터 로딩 중..."; });
+            }
         }
 
-        let marqueePos = window.innerWidth;
+        let mPos = window.innerWidth;
         function runMarquee() {
             const el = document.getElementById('scrollingNotice');
-            marqueePos -= 2;
-            if(marqueePos < -el.offsetWidth - 50) marqueePos = window.innerWidth;
-            el.style.left = marqueePos + 'px';
+            mPos -= 2;
+            if(mPos < -el.offsetWidth - 50) mPos = window.innerWidth;
+            el.style.left = mPos + 'px';
             requestAnimationFrame(runMarquee);
         }
 
