@@ -11,38 +11,37 @@
         header { background: #1a2a3a; padding: 10px 25px; display: flex; align-items: center; justify-content: space-between; color: white; border-bottom: 4px solid #f39c12; flex-shrink: 0; }
         .logo-group h1 { font-size: 1.4rem; font-weight: 900; color: #f39c12; }
         
-        .marquee-box { flex: 1; background: #0f172a; padding: 6px 20px; border-radius: 6px; overflow: hidden; white-space: nowrap; margin: 0 30px; border: 1px solid #334155; }
-        .marquee-text { display: inline-block; font-size: 1.05rem; font-weight: 700; color: #fbbf24; animation: marquee 18s linear infinite; }
-        @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+        /* 전광판 영역 수정 */
+        .marquee-box { flex: 1; background: #0f172a; padding: 8px 20px; border-radius: 6px; overflow: hidden; margin: 0 30px; border: 1px solid #334155; position: relative; height: 40px; }
+        .marquee-text { position: absolute; white-space: nowrap; font-size: 1.1rem; font-weight: 700; color: #fbbf24; will-change: transform; }
 
-        /* 연장 인원 숫자 박스 */
+        /* 연장 인원 디자인 */
         .ot-group { display: flex; gap: 8px; }
-        .ot-card { background: #ffffff; padding: 4px 12px; border-radius: 6px; display: flex; flex-direction: column; align-items: center; min-width: 80px; }
+        .ot-card { background: #ffffff; padding: 4px 12px; border-radius: 6px; display: flex; flex-direction: column; align-items: center; min-width: 80px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .ot-card label { font-size: 11px; font-weight: 800; color: #64748b; }
         .ot-card input { width: 50px; border: none; text-align: center; font-size: 1.4rem; font-weight: 900; color: #1e293b; outline: none; background: transparent; }
 
-        /* 8개 박스 그리드 */
-        .main-grid { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 12px; padding: 15px; }
+        /* 그리드 및 카드 */
+        .main-grid { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 15px; padding: 20px; }
+        .card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); overflow: hidden; position: relative; }
+        .card-header { padding: 12px 18px; color: white; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: 800; z-index: 2; }
         
-        .card { background: white; border-radius: 10px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; transition: transform 0.2s; overflow: hidden; }
-        .card-header { padding: 10px 15px; color: white; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: 800; }
-        .card-body { padding: 15px; overflow-y: auto; flex: 1; font-size: 1rem; line-height: 1.6; background: #fff; }
-        .content-area { white-space: pre-wrap; color: #334155; }
+        /* 핵심: 스크롤 기능 추가 */
+        .card-body { padding: 18px; overflow-y: auto; flex: 1; background: #fff; font-size: 1.05rem; line-height: 1.7; scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
+        .card-body::-webkit-scrollbar { width: 6px; }
+        .card-body::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .content-area { white-space: pre-wrap; color: #334155; word-break: break-all; }
 
-        /* 일반 확대 모드 (중앙) */
+        /* 확대 모드 (리터치 포함 모든 창 동일 크기) */
         .card.expanded {
             position: fixed; z-index: 9999;
-            top: 10%; bottom: 10%; left: 10%; right: 10%;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            top: 5vh; bottom: 5vh; left: 5vw; right: 5vw;
+            width: auto; height: auto;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.6);
+            border: 2px solid #fff;
         }
 
-        /* ⚠️ 리터치 상세 전용: 왼쪽으로 커지는 효과 */
-        .card.retouch-card.expanded {
-            left: 5%; right: 45%; /* 화면 왼쪽 절반 이상을 차지하도록 */
-            top: 10%; bottom: 10%;
-        }
-
-        #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 9998; }
+        #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 9998; backdrop-filter: blur(2px); }
         body.has-expanded #overlay { display: block; }
 
         .bg-red { background-color: #ef4444; } .bg-blue { background-color: #3b82f6; }
@@ -55,28 +54,29 @@
     <div id="overlay" onclick="closeAll()"></div>
     <header>
         <div class="logo-group"><h1>제조팀 업무 게시판</h1><div id="clock" class="text-xs text-slate-400">Loading...</div></div>
-        <div class="marquee-box"><div id="scrollingNotice" class="marquee-text">시트 데이터를 불러오는 중입니다...</div></div>
+        <div class="marquee-box" id="mBox"><div id="scrollingNotice" class="marquee-text">데이터를 불러오는 중입니다...</div></div>
         <div class="ot-group">
-            <div class="ot-card"><label>BBT</label><input id="otBBT" readonly></div>
-            <div class="ot-card"><label>인서트</label><input id="otInsert" readonly></div>
-            <div class="ot-card"><label>리터치</label><input id="otRetouch" readonly></div>
+            <div class="ot-card"><label>BBT</label><input id="otBBT" value="0" readonly></div>
+            <div class="ot-card"><label>인서트</label><input id="otInsert" value="0" readonly></div>
+            <div class="ot-card"><label>리터치</label><input id="otRetouch" value="0" readonly></div>
         </div>
     </header>
 
     <div class="main-grid">
-        <div class="card" onclick="toggleCard(this)"><div class="card-header bg-red"><span>📢 공지 사항</span></div><div class="card-body"><div id="row5" class="content-area">대기 중...</div></div></div>
-        <div class="card" onclick="toggleCard(this)"><div class="card-header bg-purple"><span>👥 근태 현황</span></div><div class="card-body"><div id="row6" class="content-area">대기 중...</div></div></div>
-        <div class="card" onclick="toggleCard(this)"><div class="card-header bg-green"><span>📦 납품 목록</span></div><div class="card-body"><div id="row7" class="content-area">대기 중...</div></div></div>
-        <div class="card" onclick="toggleCard(this)"><div class="card-header bg-blue"><span>✅ 업무 공유</span></div><div class="card-body"><div id="row8" class="content-area">대기 중...</div></div></div>
-        <div class="card" onclick="toggleCard(this)"><div class="card-header bg-teal"><span>📊 진행 현황</span></div><div class="card-body"><div id="row9" class="content-area">대기 중...</div></div></div>
-        <div class="card" onclick="toggleCard(this)"><div class="card-header bg-orange"><span>🔍 BBT 상세</span></div><div class="card-body"><div id="row10" class="content-area">대기 중...</div></div></div>
-        <div class="card" onclick="toggleCard(this)"><div class="card-header bg-indigo"><span>🔧 인서트 상세</span></div><div class="card-body"><div id="row11" class="content-area">대기 중...</div></div></div>
-        <div class="card retouch-card" onclick="toggleCard(this)"><div class="card-header bg-slate"><span>⚠️ 리터치 상세</span></div><div class="card-body"><div id="row12" class="content-area">대기 중...</div></div></div>
+        <div class="card" onclick="toggleCard(this)"><div class="card-header bg-red"><span>📢 공지 사항</span></div><div class="card-body"><div id="row5" class="content-area"></div></div></div>
+        <div class="card" onclick="toggleCard(this)"><div class="card-header bg-purple"><span>👥 근태 현황</span></div><div class="card-body"><div id="row6" class="content-area"></div></div></div>
+        <div class="card" onclick="toggleCard(this)"><div class="card-header bg-green"><span>📦 납품 목록</span></div><div class="card-body"><div id="row7" class="content-area"></div></div></div>
+        <div class="card" onclick="toggleCard(this)"><div class="card-header bg-blue"><span>✅ 업무 공유</span></div><div class="card-body"><div id="row8" class="content-area"></div></div></div>
+        <div class="card" onclick="toggleCard(this)"><div class="card-header bg-teal"><span>📊 진행 현황</span></div><div class="card-body"><div id="row9" class="content-area"></div></div></div>
+        <div class="card" onclick="toggleCard(this)"><div class="card-header bg-orange"><span>🔍 BBT 상세</span></div><div class="card-body"><div id="row10" class="content-area"></div></div></div>
+        <div class="card" onclick="toggleCard(this)"><div class="card-header bg-indigo"><span>🔧 인서트 상세</span></div><div class="card-body"><div id="row11" class="content-area"></div></div></div>
+        <div class="card" onclick="toggleCard(this)"><div class="card-header bg-slate"><span>⚠️ 리터치 상세</span></div><div class="card-body"><div id="row12" class="content-area"></div></div></div>
     </div>
 
     <script>
-        const API_URL = 'https://script.google.com/macros/s/AKfycby52oILWAM0SrPPNSzW9YUS5R1AMWto5Tk2gFlMfptF6FnWZV8hU_9YEZw2Fz9735g36Q/exec';
+        const API_URL = 'https://script.google.com/macros/s/AKfycby3mm3CW3BzGZxS6sMKiFaQvWzFO4hUtnTF5dKtTR56padEzQly1OcqUv7fhnvkae9nqA/exec';
 
+        // 1. 카드 확대/축소 로직 (리터치 포함 동일 크기)
         function toggleCard(el) {
             const isExpanded = el.classList.contains('expanded');
             closeAll();
@@ -90,30 +90,61 @@
             document.getElementById('bodyTag').classList.remove('has-expanded');
         }
 
+        // 2. 전광판 애니메이션 직접 구현 (더 안정적임)
+        function startMarquee() {
+            const el = document.getElementById('scrollingNotice');
+            const box = document.getElementById('mBox');
+            let pos = box.offsetWidth;
+            
+            function animate() {
+                pos--;
+                if (pos < -el.offsetWidth) pos = box.offsetWidth;
+                el.style.left = pos + 'px';
+                requestAnimationFrame(animate);
+            }
+            animate();
+        }
+
+        // 3. 데이터 로드 및 업데이트
         async function loadData() {
             try {
                 const res = await fetch(API_URL, { redirect: 'follow' });
                 const data = await res.json();
                 
-                const extractNum = (h) => h ? parseInt(h.replace(/<[^>]*>/g, '').replace(/[^0-9]/g, '')) || 0 : 0;
+                if (!data) return;
 
+                const extractNum = (h) => {
+                    if(!h) return 0;
+                    const clean = h.toString().replace(/<[^>]*>/g, '').replace(/[^0-9]/g, '');
+                    return parseInt(clean) || 0;
+                };
+
+                // 연장 인원 업데이트
                 document.getElementById('otBBT').value = extractNum(data[0]);
                 document.getElementById('otInsert').value = extractNum(data[1]);
                 document.getElementById('otRetouch').value = extractNum(data[2]);
-                document.getElementById('scrollingNotice').innerHTML = (data[3] || "").replace(/<br>/g, " | ");
 
+                // 전광판 업데이트
+                document.getElementById('scrollingNotice').innerHTML = (data[3] || "현재 공지 사항이 없습니다.").replace(/<br>/g, " | ");
+
+                // 5~12행 박스 데이터 업데이트
                 for(let i=4; i<12; i++) {
-                    const target = document.getElementById("row" + (i + 1));
-                    if(target) target.innerHTML = data[i] || "데이터가 없습니다.";
+                    const rowId = "row" + (i + 1);
+                    const target = document.getElementById(rowId);
+                    if(target) target.innerHTML = data[i] || "내용 없음";
                 }
             } catch (e) {
-                document.getElementById('scrollingNotice').innerText = "연결 실패 (URL 또는 시트 권한 확인 필요)";
+                console.error("Data Load Error:", e);
             }
         }
 
-        setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleString(); }, 1000);
-        loadData();
-        setInterval(loadData, 30000);
+        // 초기화
+        window.onload = () => {
+            setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleString(); }, 1000);
+            loadData();
+            setInterval(loadData, 30000); // 30초마다 갱신
+            startMarquee();
+        };
     </script>
 </body>
 </html>
