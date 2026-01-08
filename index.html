@@ -15,25 +15,31 @@
         .marquee-text { display: inline-block; font-size: 1.05rem; font-weight: 700; color: #fbbf24; animation: marquee 18s linear infinite; }
         @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
 
-        /* 메인 그리드 설정 */
+        /* 연장 인원 숫자 박스 */
+        .ot-group { display: flex; gap: 8px; }
+        .ot-card { background: #ffffff; padding: 4px 12px; border-radius: 6px; display: flex; flex-direction: column; align-items: center; min-width: 80px; }
+        .ot-card label { font-size: 11px; font-weight: 800; color: #64748b; }
+        .ot-card input { width: 50px; border: none; text-align: center; font-size: 1.4rem; font-weight: 900; color: #1e293b; outline: none; background: transparent; }
+
+        /* 8개 박스 그리드 */
         .main-grid { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 12px; padding: 15px; }
         
-        .card { background: white; border-radius: 10px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; transition: all 0.3s; overflow: hidden; position: relative; }
-        .card-header { padding: 10px 15px; color: white; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-        .card-body { padding: 15px; overflow-y: auto; flex: 1; font-size: 1rem; line-height: 1.6; }
+        .card { background: white; border-radius: 10px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; transition: transform 0.2s; overflow: hidden; }
+        .card-header { padding: 10px 15px; color: white; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: 800; }
+        .card-body { padding: 15px; overflow-y: auto; flex: 1; font-size: 1rem; line-height: 1.6; background: #fff; }
         .content-area { white-space: pre-wrap; color: #334155; }
 
-        /* 확대 로직 */
+        /* 일반 확대 모드 (중앙) */
         .card.expanded {
-            position: fixed;
-            z-index: 9999;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            position: fixed; z-index: 9999;
             top: 10%; bottom: 10%; left: 10%; right: 10%;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
         }
 
-        /* 리터치 상세(마지막 카드) 전용: 왼쪽으로 커지는 느낌을 주기 위한 설정 */
+        /* ⚠️ 리터치 상세 전용: 왼쪽으로 커지는 효과 */
         .card.retouch-card.expanded {
-            left: 5%; right: 40%; /* 화면의 왼쪽 영역을 더 많이 차지하도록 설정 */
+            left: 5%; right: 45%; /* 화면 왼쪽 절반 이상을 차지하도록 */
+            top: 10%; bottom: 10%;
         }
 
         #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 9998; }
@@ -46,32 +52,30 @@
     </style>
 </head>
 <body id="bodyTag">
-
     <div id="overlay" onclick="closeAll()"></div>
-
     <header>
-        <div class="logo-group"><h1>제조팀 업무 게시판</h1><div id="clock" class="text-xs text-slate-400">데이터 확인 중...</div></div>
-        <div class="marquee-box"><div id="scrollingNotice" class="marquee-text">연결 상태 확인 중...</div></div>
-        <div class="flex gap-2">
-            <div class="bg-white px-3 py-1 rounded text-slate-800 text-center"><div class="text-[10px] font-bold">BBT</div><input id="otBBT" class="w-10 text-center font-black" readonly></div>
-            <div class="bg-white px-3 py-1 rounded text-slate-800 text-center"><div class="text-[10px] font-bold">인서트</div><input id="otInsert" class="w-10 text-center font-black" readonly></div>
-            <div class="bg-white px-3 py-1 rounded text-slate-800 text-center"><div class="text-[10px] font-bold">리터치</div><input id="otRetouch" class="w-10 text-center font-black" readonly></div>
+        <div class="logo-group"><h1>제조팀 업무 게시판</h1><div id="clock" class="text-xs text-slate-400">Loading...</div></div>
+        <div class="marquee-box"><div id="scrollingNotice" class="marquee-text">시트 데이터를 불러오는 중입니다...</div></div>
+        <div class="ot-group">
+            <div class="ot-card"><label>BBT</label><input id="otBBT" readonly></div>
+            <div class="ot-card"><label>인서트</label><input id="otInsert" readonly></div>
+            <div class="ot-card"><label>리터치</label><input id="otRetouch" readonly></div>
         </div>
     </header>
 
     <div class="main-grid">
-        <div class="card" onclick="toggleCard(this)"><div class="card-header bg-red"><span>📢 공지 사항</span></div><div class="card-body"><div id="row5" class="content-area">데이터 로딩 중...</div></div></div>
-        <div class="card" onclick="toggleCard(this)"><div class="card-header bg-purple"><span>👥 근태 현황</span></div><div class="card-body"><div id="row6" class="content-area">데이터 로딩 중...</div></div></div>
-        <div class="card" onclick="toggleCard(this)"><div class="card-header bg-green"><span>📦 납품 목록</span></div><div class="card-body"><div id="row7" class="content-area">데이터 로딩 중...</div></div></div>
-        <div class="card" onclick="toggleCard(this)"><div class="card-header bg-blue"><span>✅ 업무 공유</span></div><div class="card-body"><div id="row8" class="content-area">데이터 로딩 중...</div></div></div>
-        <div class="card" onclick="toggleCard(this)"><div class="card-header bg-teal"><span>📊 진행 현황</span></div><div class="card-body"><div id="row9" class="content-area">데이터 로딩 중...</div></div></div>
-        <div class="card" onclick="toggleCard(this)"><div class="card-header bg-orange"><span>🔍 BBT 상세</span></div><div class="card-body"><div id="row10" class="content-area">데이터 로딩 중...</div></div></div>
-        <div class="card" onclick="toggleCard(this)"><div class="card-header bg-indigo"><span>🔧 인서트 상세</span></div><div class="card-body"><div id="row11" class="content-area">데이터 로딩 중...</div></div></div>
-        <div class="card retouch-card" onclick="toggleCard(this)"><div class="card-header bg-slate"><span>⚠️ 리터치 상세</span></div><div class="card-body"><div id="row12" class="content-area">데이터 로딩 중...</div></div></div>
+        <div class="card" onclick="toggleCard(this)"><div class="card-header bg-red"><span>📢 공지 사항</span></div><div class="card-body"><div id="row5" class="content-area">대기 중...</div></div></div>
+        <div class="card" onclick="toggleCard(this)"><div class="card-header bg-purple"><span>👥 근태 현황</span></div><div class="card-body"><div id="row6" class="content-area">대기 중...</div></div></div>
+        <div class="card" onclick="toggleCard(this)"><div class="card-header bg-green"><span>📦 납품 목록</span></div><div class="card-body"><div id="row7" class="content-area">대기 중...</div></div></div>
+        <div class="card" onclick="toggleCard(this)"><div class="card-header bg-blue"><span>✅ 업무 공유</span></div><div class="card-body"><div id="row8" class="content-area">대기 중...</div></div></div>
+        <div class="card" onclick="toggleCard(this)"><div class="card-header bg-teal"><span>📊 진행 현황</span></div><div class="card-body"><div id="row9" class="content-area">대기 중...</div></div></div>
+        <div class="card" onclick="toggleCard(this)"><div class="card-header bg-orange"><span>🔍 BBT 상세</span></div><div class="card-body"><div id="row10" class="content-area">대기 중...</div></div></div>
+        <div class="card" onclick="toggleCard(this)"><div class="card-header bg-indigo"><span>🔧 인서트 상세</span></div><div class="card-body"><div id="row11" class="content-area">대기 중...</div></div></div>
+        <div class="card retouch-card" onclick="toggleCard(this)"><div class="card-header bg-slate"><span>⚠️ 리터치 상세</span></div><div class="card-body"><div id="row12" class="content-area">대기 중...</div></div></div>
     </div>
 
     <script>
-        const API_URL = 'https://script.google.com/macros/s/AKfycby3mm3CW3BzGZxS6sMKiFaQvWzFO4hUtnTF5dKtTR56padEzQly1OcqUv7fhnvkae9nqA/exec';
+        const API_URL = 'https://script.google.com/macros/s/AKfycby52oILWAM0SrPPNSzW9YUS5R1AMWto5Tk2gFlMfptF6FnWZV8hU_9YEZw2Fz9735g36Q/exec';
 
         function toggleCard(el) {
             const isExpanded = el.classList.contains('expanded');
@@ -81,7 +85,6 @@
                 document.getElementById('bodyTag').classList.add('has-expanded');
             }
         }
-
         function closeAll() {
             document.querySelectorAll('.card').forEach(c => c.classList.remove('expanded'));
             document.getElementById('bodyTag').classList.remove('has-expanded');
@@ -89,41 +92,28 @@
 
         async function loadData() {
             try {
-                // 캐시 방지를 위해 랜덤 쿼리 추가
-                const res = await fetch(API_URL + '?t=' + new Date().getTime(), { redirect: 'follow' });
+                const res = await fetch(API_URL, { redirect: 'follow' });
                 const data = await res.json();
                 
-                if (!data || data.length === 0) throw new Error("데이터가 비어있음");
-
                 const extractNum = (h) => h ? parseInt(h.replace(/<[^>]*>/g, '').replace(/[^0-9]/g, '')) || 0 : 0;
 
-                // 상단 데이터
                 document.getElementById('otBBT').value = extractNum(data[0]);
                 document.getElementById('otInsert').value = extractNum(data[1]);
                 document.getElementById('otRetouch').value = extractNum(data[2]);
                 document.getElementById('scrollingNotice').innerHTML = (data[3] || "").replace(/<br>/g, " | ");
 
-                // 본문 데이터 (5행~12행)
                 for(let i=4; i<12; i++) {
-                    const rowId = "row" + (i + 1);
-                    const target = document.getElementById(rowId);
-                    if(target) {
-                        // 시트에서 가져온 HTML을 그대로 삽입하여 디자인 유지
-                        target.innerHTML = data[i] || "내용이 없습니다.";
-                    }
+                    const target = document.getElementById("row" + (i + 1));
+                    if(target) target.innerHTML = data[i] || "데이터가 없습니다.";
                 }
             } catch (e) {
-                console.error("연결 오류:", e);
-                document.getElementById('scrollingNotice').innerText = "데이터 연결 실패 (URL 또는 시트 권한 확인 필요)";
+                document.getElementById('scrollingNotice').innerText = "연결 실패 (URL 또는 시트 권한 확인 필요)";
             }
         }
 
-        function init() {
-            setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleString(); }, 1000);
-            loadData();
-            setInterval(loadData, 30000);
-        }
-        window.onload = init;
+        setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleString(); }, 1000);
+        loadData();
+        setInterval(loadData, 30000);
     </script>
 </body>
 </html>
