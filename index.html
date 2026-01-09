@@ -3,24 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>제조팀 업무 게시판 V4.9</title>
+    <title>제조팀 업무 게시판 V5.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
-        body { background-color: #f1f5f9; height: 100vh; display: flex; flex-direction: column; overflow: hidden; font-family: 'Pretendard', sans-serif; margin: 0; }
+        body { background-color: #f1f5f9; height: 100vh; display: flex; flex-direction: column; overflow: hidden; font-family: 'Pretendard', sans-serif; }
         
+        /* [V4.0 복원] 헤더 레이아웃 */
         header { background: #1a2a3a; padding: 10px 25px; display: flex; align-items: center; justify-content: space-between; color: white; border-bottom: 4px solid #f39c12; flex-shrink: 0; }
         .logo-group h1 { font-size: 1.4rem; font-weight: 900; color: #f39c12; }
         
-        /* 전광판: 가장 원시적이고 확실한 애니메이션 */
+        /* [V4.0 복원] 전광판 로직 */
         .marquee-box { flex: 1; background: #0f172a; padding: 8px 20px; border-radius: 6px; overflow: hidden; margin: 0 30px; border: 1px solid #334155; position: relative; height: 44px; }
-        #scrollingNotice { position: absolute; white-space: nowrap; font-size: 1.3rem; font-weight: 800; color: #fbbf24; top: 50%; transform: translateY(-50%); left: 100%; }
+        .marquee-text { position: absolute; white-space: nowrap; font-size: 1.2rem; font-weight: 800; color: #fbbf24; top: 8px; left: 100%; }
         
+        /* [V4.0 복원] 인원 카드 스타일 */
         .ot-card { background: #ffffff; padding: 4px 12px; border-radius: 6px; display: flex; flex-direction: column; align-items: center; min-width: 95px; border: 2px solid #cbd5e1; }
-        .ot-num { font-size: 1.8rem; font-weight: 900; color: #1e293b; line-height: 1.2; }
+        .ot-num { font-size: 1.8rem; font-weight: 900; color: #1e293b; }
 
         .main-grid { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 15px; padding: 20px; }
-        .card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; overflow: hidden; }
+        .card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; overflow: hidden; cursor: pointer; }
         .card-body { padding: 18px; overflow-y: auto; flex: 1; font-size: 1.05rem; color: #334155; line-height: 1.5; }
         
         #msgPopup { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 10001; align-items: center; justify-content: center; }
@@ -38,12 +40,12 @@
     </div>
 
     <header>
-        <div class="logo-group"><h1>제조팀 업무 게시판 V4.9</h1><div id="clock" class="text-xs text-slate-400">Loading...</div></div>
-        <div class="marquee-box"><div id="scrollingNotice">데이터 연결 확인 중...</div></div>
+        <div class="logo-group"><h1>제조팀 업무 게시판 V5.0</h1><div id="clock" class="text-xs text-slate-400">Loading...</div></div>
+        <div class="marquee-box"><div id="scrollingNotice" class="marquee-text">현장 데이터를 동기화 중입니다...</div></div>
         <div class="flex gap-2">
-            <div class="ot-card"><label class="text-[10px] font-bold text-slate-500 text-center">BBT</label><span id="ot0" class="ot-num">5</span></div>
-            <div class="ot-card"><label class="text-[10px] font-bold text-slate-500 text-center">인서트</label><span id="ot1" class="ot-num">2</span></div>
-            <div class="ot-card"><label class="text-[10px] font-bold text-slate-500 text-center">리터치</label><span id="ot2" class="ot-num">2</span></div>
+            <div class="ot-card"><label class="text-[10px] font-bold text-slate-500 uppercase">BBT</label><span id="ot0" class="ot-num">0</span></div>
+            <div class="ot-card"><label class="text-[10px] font-bold text-slate-500 uppercase">인서트</label><span id="ot1" class="ot-num">0</span></div>
+            <div class="ot-card"><label class="text-[10px] font-bold text-slate-500 uppercase">리터치</label><span id="ot2" class="ot-num">0</span></div>
         </div>
     </header>
 
@@ -61,62 +63,58 @@
     <script>
         const API_URL = 'https://script.google.com/macros/s/AKfycbyFlAfiJHW0Jwrd6W_mHQ1i1ImTMzBxIF3Mp49b-NjvhY9c9yHoqz4cGHbYGgoFXX8t/exec';
         let lastMsg = "";
-        let currentPos = window.innerWidth;
+        let pos = window.innerWidth;
 
-        // V3.3에서 사용하던 가장 단순한 데이터 매핑 방식 적용
-        async function update() {
-            try {
-                const response = await fetch(API_URL + "?t=" + new Date().getTime());
-                const data = await response.json();
-                
-                if (data && data.length >= 3) {
-                    // 상단 인원 (서식 태그 무시하고 데이터 그대로 삽입)
-                    document.getElementById('ot0').innerHTML = data[0];
-                    document.getElementById('ot1').innerHTML = data[1];
-                    document.getElementById('ot2').innerHTML = data[2];
-                    
-                    // 전광판
-                    document.getElementById('scrollingNotice').innerHTML = data[3] || "";
-                    
-                    // 본문 8개 영역
-                    for (let i = 0; i < 8; i++) {
-                        const targetId = "row" + (i + 5);
-                        const element = document.getElementById(targetId);
-                        if (element && data[i + 4] !== undefined) {
-                            element.innerHTML = data[i + 4];
-                        }
-                    }
-
-                    // 팝업 로직
-                    const now = new Date();
-                    const curTime = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
-                    if (String(data[13]).trim() === curTime && data[12] && lastMsg !== data[12]) {
-                        document.getElementById('targetMsg').innerHTML = data[12];
-                        document.getElementById('msgPopup').style.display = 'flex';
-                        lastMsg = data[12];
-                    }
-                }
-            } catch (error) {
-                console.log("Sync Error:", error);
-            }
+        // [V4.0 방식] 태그 제거 함수
+        function clean(val) {
+            return String(val || "0").replace(/<[^>]*>?/gm, '').trim();
         }
 
-        function scroll() {
-            const notice = document.getElementById('scrollingNotice');
-            if (notice) {
-                currentPos -= 1.5;
-                if (currentPos < -notice.offsetWidth - 50) {
-                    currentPos = window.innerWidth;
+        async function update() {
+            try {
+                const res = await fetch(API_URL + "?v=" + Date.now());
+                const data = await res.json();
+                
+                // 상단 데이터 (무조건 클린하게 숫자만)
+                document.getElementById('ot0').innerText = clean(data[0]);
+                document.getElementById('ot1').innerText = clean(data[1]);
+                document.getElementById('ot2').innerText = clean(data[2]);
+                
+                // 전광판 (서식 허용)
+                document.getElementById('scrollingNotice').innerHTML = data[3] || "";
+                
+                // 본문 8칸 (서식 허용)
+                for(let i=4; i<12; i++) {
+                    const box = document.getElementById("row" + (i + 1));
+                    if(box) box.innerHTML = data[i] || "";
                 }
-                notice.style.left = currentPos + 'px';
+
+                // 팝업
+                const now = new Date();
+                const curT = now.getHours().toString().padStart(2,'0') + ":" + now.getMinutes().toString().padStart(2,'0');
+                if (clean(data[13]) === curT && data[12] && lastMsg !== data[12]) {
+                    document.getElementById('targetMsg').innerHTML = data[12];
+                    document.getElementById('msgPopup').style.display = 'flex';
+                    lastMsg = data[12];
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        // [V4.0 복원] 애니메이션
+        function move() {
+            const el = document.getElementById('scrollingNotice');
+            if (el) {
+                pos -= 1.5;
+                if (pos < -el.offsetWidth - 50) pos = window.innerWidth;
+                el.style.left = pos + 'px';
             }
-            requestAnimationFrame(scroll);
+            requestAnimationFrame(move);
         }
 
         window.onload = () => {
-            update();
-            scroll();
-            setInterval(update, 15000); // 15초 동기화
+            move(); // 애니메이션 먼저 시작
+            update(); // 데이터 가져오기
+            setInterval(update, 20000);
             setInterval(() => {
                 document.getElementById('clock').innerText = new Date().toLocaleString('ko-KR', { hour12: false });
             }, 1000);
