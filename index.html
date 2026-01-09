@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>제조팀 업무 게시판 (서식 복구 버전)</title>
+    <title>제조팀 업무 게시판 (서식 복구 완료)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -18,12 +18,13 @@
         .stat-val { font-size: 1.8rem; font-weight: 900; color: #1e293b; line-height: 1; }
 
         main { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 12px; padding: 15px; }
-        .card { background: white; border-radius: 8px; display: flex; flex-direction: column; border: 1px solid #e2e8f0; cursor: pointer; transition: 0.2s; }
+        .card { background: white; border-radius: 8px; display: flex; flex-direction: column; border: 1px solid #e2e8f0; cursor: pointer; transition: 0.2s; overflow: hidden; }
         .card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
-        .card-h { padding: 8px 12px; font-size: 14px; font-weight: 800; color: white; border-radius: 8px 8px 0 0; }
-        /* 줄바꿈을 있는 그대로 보여주는 핵심 스타일 */
+        .card-h { padding: 8px 12px; font-size: 14px; font-weight: 800; color: white; }
+        /* 서식 유지를 위해 innerHTML 사용 대기 */
         .card-b { padding: 12px; font-size: 0.95rem; flex: 1; overflow: hidden; white-space: pre-wrap; word-break: break-all; color: #334155; line-height: 1.6; }
 
+        /* 확대창 (팀장님 요청으로 기존 스타일 고수) */
         #zoom { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; align-items: center; justify-content: center; padding: 30px; }
         .zoom-box { background: white; width: 95%; max-height: 90vh; border-radius: 12px; display: flex; flex-direction: column; }
         #zHead { padding: 25px 40px; font-size: 2.5rem; font-weight: 900; color: white; border-radius: 12px 12px 0 0; }
@@ -37,7 +38,7 @@
             <h1 class="text-xl font-black text-[#f39c12]">제조팀 업무 게시판</h1>
             <div id="clock" class="text-[10px] text-slate-400 font-bold"></div>
         </div>
-        <div class="marquee-box"><div id="scrollNotice">실시간 데이터 연결 중...</div></div>
+        <div class="marquee-box"><div id="scrollNotice">데이터 연동 중...</div></div>
         <div class="stat-group">
             <div class="stat-box"><div class="stat-label">BBT</div><div id="v1" class="stat-val">-</div></div>
             <div class="stat-box"><div class="stat-label">인서트</div><div id="v2" class="stat-val">-</div></div>
@@ -66,12 +67,11 @@
     <script>
         const API = 'https://script.google.com/macros/s/AKfycbyFlAfiJHW0Jwrd6W_mHQ1i1ImTMzBxIF3Mp49b-NjvhY9c9yHoqz4cGHbYGgoFXX8t/exec';
 
-        // 가장 강력한 텍스트 추출기 (HTML 태그를 걷어내고 순수 글자만 반환)
-        function toText(html) {
-            if(!html) return "";
-            const div = document.createElement("div");
-            div.innerHTML = html.toString().replace(/<br\s*\/?>/gi, '\n');
-            return div.textContent || div.innerText || "";
+        // 숫자만 안전하게 추출하는 함수
+        function pickNum(html) {
+            if(!html) return "0";
+            let clean = html.toString().replace(/<\/?[^>]+(>|$)/g, ""); // 태그 제거
+            return clean.replace(/[^0-9]/g, "") || "0";
         }
 
         async function refresh() {
@@ -79,20 +79,22 @@
                 const res = await fetch(`${API}?t=${Date.now()}`);
                 const data = await res.json();
                 
-                if (data && data.length >= 4) {
-                    // 상단 인원수: 숫자만 강제 추출 (태그가 섞여있어도 숫자만 골라냄)
-                    document.getElementById('v1').innerText = toText(data[0]).replace(/[^0-9]/g, "") || "0";
-                    document.getElementById('v2').innerText = toText(data[1]).replace(/[^0-9]/g, "") || "0";
-                    document.getElementById('v3').innerText = toText(data[2]).replace(/[^0-9]/g, "") || "0";
+                if (data && data.length >= 12) {
+                    // 상단 인원수 업데이트
+                    document.getElementById('v1').innerText = pickNum(data[0]);
+                    document.getElementById('v2').innerText = pickNum(data[1]);
+                    document.getElementById('v3').innerText = pickNum(data[2]);
                     
-                    document.getElementById('scrollNotice').innerText = toText(data[3]);
+                    // 전광판 (텍스트만)
+                    document.getElementById('scrollNotice').innerHTML = data[3];
                     
+                    // 각 카드 내용 업데이트 (innerHTML로 서식 유지)
                     for (let i = 0; i < 8; i++) {
                         const cell = document.getElementById("r" + (i + 5));
-                        if (cell) cell.innerText = toText(data[i + 4]);
+                        if (cell) cell.innerHTML = data[i + 4];
                     }
                 }
-            } catch (err) { console.error("Update Error"); }
+            } catch (err) { console.error("Data Load Error"); }
         }
 
         function openZ(el) {
@@ -100,7 +102,7 @@
             const b = el.querySelector('.card-b');
             document.getElementById('zHead').innerText = h.innerText;
             document.getElementById('zHead').style.backgroundColor = getComputedStyle(h).backgroundColor;
-            document.getElementById('zBody').innerText = b.innerText;
+            document.getElementById('zBody').innerHTML = b.innerHTML; // 확대창에서도 색상 유지
             document.getElementById('zoom').style.display = 'flex';
         }
 
