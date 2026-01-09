@@ -3,49 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>제조팀 업무 게시판 V5.0</title>
+    <title>제조팀 업무 게시판 (안정 복구판)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
-        body { background-color: #f1f5f9; height: 100vh; display: flex; flex-direction: column; overflow: hidden; font-family: 'Pretendard', sans-serif; }
+        body { background-color: #f1f5f9; height: 100vh; display: flex; flex-direction: column; overflow: hidden; font-family: 'Pretendard', sans-serif; margin: 0; }
         
-        /* [V4.0 복원] 헤더 레이아웃 */
+        /* [V4.0 구조 그대로] */
         header { background: #1a2a3a; padding: 10px 25px; display: flex; align-items: center; justify-content: space-between; color: white; border-bottom: 4px solid #f39c12; flex-shrink: 0; }
         .logo-group h1 { font-size: 1.4rem; font-weight: 900; color: #f39c12; }
         
-        /* [V4.0 복원] 전광판 로직 */
+        /* [V4.0 전광판 구조] */
         .marquee-box { flex: 1; background: #0f172a; padding: 8px 20px; border-radius: 6px; overflow: hidden; margin: 0 30px; border: 1px solid #334155; position: relative; height: 44px; }
-        .marquee-text { position: absolute; white-space: nowrap; font-size: 1.2rem; font-weight: 800; color: #fbbf24; top: 8px; left: 100%; }
+        #scrollingNotice { position: absolute; white-space: nowrap; font-size: 1.2rem; font-weight: 800; color: #fbbf24; top: 10px; left: 100%; }
         
-        /* [V4.0 복원] 인원 카드 스타일 */
+        /* [V4.0 인원 카드 구조] */
         .ot-card { background: #ffffff; padding: 4px 12px; border-radius: 6px; display: flex; flex-direction: column; align-items: center; min-width: 95px; border: 2px solid #cbd5e1; }
-        .ot-num { font-size: 1.8rem; font-weight: 900; color: #1e293b; }
+        .ot-num { font-size: 1.8rem; font-weight: 900; color: #1e293b; line-height: 1.2; }
 
         .main-grid { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 15px; padding: 20px; }
-        .card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; overflow: hidden; cursor: pointer; }
+        .card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; overflow: hidden; }
         .card-body { padding: 18px; overflow-y: auto; flex: 1; font-size: 1.05rem; color: #334155; line-height: 1.5; }
-        
-        #msgPopup { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 10001; align-items: center; justify-content: center; }
-        .popup-inner { background: #fff; width: 650px; border-radius: 30px; border: 12px solid #ef4444; padding: 50px; text-align: center; }
     </style>
 </head>
 <body>
 
-    <div id="msgPopup">
-        <div class="popup-inner">
-            <h2 class="text-5xl font-black text-red-600 mb-6">🚨 긴급 공지</h2>
-            <div id="targetMsg" class="text-3xl font-bold text-slate-800 mb-10"></div>
-            <button onclick="document.getElementById('msgPopup').style.display='none'" class="bg-slate-800 text-white px-12 py-4 rounded-xl text-2xl font-bold">확인</button>
-        </div>
-    </div>
-
     <header>
-        <div class="logo-group"><h1>제조팀 업무 게시판 V5.0</h1><div id="clock" class="text-xs text-slate-400">Loading...</div></div>
-        <div class="marquee-box"><div id="scrollingNotice" class="marquee-text">현장 데이터를 동기화 중입니다...</div></div>
+        <div class="logo-group"><h1>제조팀 업무 게시판</h1><div id="clock" class="text-xs text-slate-400">Loading...</div></div>
+        <div class="marquee-box"><div id="scrollingNotice">데이터를 불러오는 중입니다...</div></div>
         <div class="flex gap-2">
-            <div class="ot-card"><label class="text-[10px] font-bold text-slate-500 uppercase">BBT</label><span id="ot0" class="ot-num">0</span></div>
-            <div class="ot-card"><label class="text-[10px] font-bold text-slate-500 uppercase">인서트</label><span id="ot1" class="ot-num">0</span></div>
-            <div class="ot-card"><label class="text-[10px] font-bold text-slate-500 uppercase">리터치</label><span id="ot2" class="ot-num">0</span></div>
+            <div class="ot-card"><label class="text-[10px] font-bold text-slate-500">BBT</label><span id="ot0" class="ot-num">-</span></div>
+            <div class="ot-card"><label class="text-[10px] font-bold text-slate-500">인서트</label><span id="ot1" class="ot-num">-</span></div>
+            <div class="ot-card"><label class="text-[10px] font-bold text-slate-500">리터치</label><span id="ot2" class="ot-num">-</span></div>
         </div>
     </header>
 
@@ -62,59 +51,47 @@
 
     <script>
         const API_URL = 'https://script.google.com/macros/s/AKfycbyFlAfiJHW0Jwrd6W_mHQ1i1ImTMzBxIF3Mp49b-NjvhY9c9yHoqz4cGHbYGgoFXX8t/exec';
-        let lastMsg = "";
         let pos = window.innerWidth;
 
-        // [V4.0 방식] 태그 제거 함수
-        function clean(val) {
-            return String(val || "0").replace(/<[^>]*>?/gm, '').trim();
-        }
-
+        // [V4.0 스타일 데이터 로드] 복잡한 가공 없이 직관적으로 매핑
         async function update() {
             try {
                 const res = await fetch(API_URL + "?v=" + Date.now());
                 const data = await res.json();
                 
-                // 상단 데이터 (무조건 클린하게 숫자만)
-                document.getElementById('ot0').innerText = clean(data[0]);
-                document.getElementById('ot1').innerText = clean(data[1]);
-                document.getElementById('ot2').innerText = clean(data[2]);
-                
-                // 전광판 (서식 허용)
-                document.getElementById('scrollingNotice').innerHTML = data[3] || "";
-                
-                // 본문 8칸 (서식 허용)
-                for(let i=4; i<12; i++) {
-                    const box = document.getElementById("row" + (i + 1));
-                    if(box) box.innerHTML = data[i] || "";
+                if(data) {
+                    // 상단 3개 칸 (BBT, 인서트, 리터치)
+                    document.getElementById('ot0').innerHTML = data[0] || '0';
+                    document.getElementById('ot1').innerHTML = data[1] || '0';
+                    document.getElementById('ot2').innerHTML = data[2] || '0';
+                    
+                    // 전광판
+                    document.getElementById('scrollingNotice').innerHTML = data[3] || '';
+                    
+                    // 본문 8개 영역 (row5 ~ row12)
+                    for(let i=0; i<8; i++) {
+                        const cell = document.getElementById("row" + (i + 5));
+                        if(cell) cell.innerHTML = data[i + 4] || '';
+                    }
                 }
-
-                // 팝업
-                const now = new Date();
-                const curT = now.getHours().toString().padStart(2,'0') + ":" + now.getMinutes().toString().padStart(2,'0');
-                if (clean(data[13]) === curT && data[12] && lastMsg !== data[12]) {
-                    document.getElementById('targetMsg').innerHTML = data[12];
-                    document.getElementById('msgPopup').style.display = 'flex';
-                    lastMsg = data[12];
-                }
-            } catch (e) { console.error(e); }
+            } catch (e) { console.error("Update Error:", e); }
         }
 
-        // [V4.0 복원] 애니메이션
-        function move() {
+        // [V4.0 스타일 애니메이션] 중단 없는 흐름
+        function animate() {
             const el = document.getElementById('scrollingNotice');
             if (el) {
-                pos -= 1.5;
+                pos -= 1.8;
                 if (pos < -el.offsetWidth - 50) pos = window.innerWidth;
                 el.style.left = pos + 'px';
             }
-            requestAnimationFrame(move);
+            requestAnimationFrame(animate);
         }
 
         window.onload = () => {
-            move(); // 애니메이션 먼저 시작
-            update(); // 데이터 가져오기
-            setInterval(update, 20000);
+            update();
+            animate();
+            setInterval(update, 20000); // 20초 주기 갱신
             setInterval(() => {
                 document.getElementById('clock').innerText = new Date().toLocaleString('ko-KR', { hour12: false });
             }, 1000);
