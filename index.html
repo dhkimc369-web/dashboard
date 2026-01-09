@@ -2,151 +2,33 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>제조팀 업무 게시판 (최종 완결본)</title>
+    <title>제조팀 업무 게시판 (통합 안정화)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
-        
-        body { 
-            background: #1a2a3a; 
-            font-family: 'Pretendard', sans-serif; 
-            margin: 0; 
-            overflow: hidden; 
-            height: 100vh; 
-            display: flex; 
-            flex-direction: column; 
-        }
-
-        /* 헤더 영역 */
-        header { 
-            background: #1a2a3a; 
-            padding: 10px 20px; 
-            display: flex; 
-            align-items: center; 
-            border-bottom: 3px solid #f39c12; 
-            gap: 15px; 
-            flex-shrink: 0; 
-        }
-
-        /* 전광판 */
-        .marquee-box { 
-            flex: 1; 
-            background: #0f172a; 
-            height: 48px; 
-            border-radius: 4px; 
-            overflow: hidden; 
-            position: relative; 
-            border: 1px solid #334155; 
-        }
-        #scrollNotice { 
-            position: absolute; 
-            white-space: nowrap; 
-            font-size: 1.8rem; 
-            font-weight: 900; 
-            color: #fbbf24; 
-            top: 50%; 
-            transform: translateY(-50%); 
-            animation: scroll 25s linear infinite; 
-        }
+        body { background: #1a2a3a; font-family: 'Pretendard', sans-serif; margin: 0; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+        header { background: #1a2a3a; padding: 10px 20px; display: flex; align-items: center; border-bottom: 3px solid #f39c12; gap: 15px; flex-shrink: 0; }
+        .marquee-box { flex: 1; background: #0f172a; height: 48px; border-radius: 4px; overflow: hidden; position: relative; border: 1px solid #334155; }
+        #scrollNotice { position: absolute; white-space: nowrap; font-size: 1.8rem; font-weight: 900; color: #fbbf24; top: 50%; transform: translateY(-50%); animation: scroll 25s linear infinite; }
         @keyframes scroll { 0% { left: 100%; } 100% { left: -180%; } }
-
-        /* 상단 숫자 박스 */
         .stat-group { display: flex; gap: 8px; }
-        .stat-box { 
-            background: white; 
-            width: 105px; 
-            height: 55px; 
-            border-radius: 4px; 
-            text-align: center; 
-            border: 2px solid #cbd5e1; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: center; 
-        }
+        .stat-box { background: white; width: 105px; height: 55px; border-radius: 4px; text-align: center; border: 2px solid #cbd5e1; display: flex; flex-direction: column; justify-content: center; }
         .stat-label { font-size: 11px; font-weight: 800; color: #64748b; }
         .stat-val { font-size: 1.8rem; font-weight: 900; color: #1e293b; line-height: 1; }
-
-        /* 메인 카드 영역 */
-        main { 
-            flex: 1; 
-            display: grid; 
-            grid-template-columns: repeat(4, 1fr); 
-            grid-template-rows: repeat(2, 1fr); 
-            gap: 12px; 
-            padding: 15px; 
-        }
-        .card { 
-            background: white; 
-            border-radius: 8px; 
-            display: flex; 
-            flex-direction: column; 
-            border: 1px solid #e2e8f0; 
-            cursor: pointer; 
-            overflow: hidden; 
-            transition: 0.2s;
-        }
-        .card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3); }
+        main { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 12px; padding: 15px; }
+        .card { background: white; border-radius: 8px; display: flex; flex-direction: column; border: 1px solid #e2e8f0; cursor: pointer; overflow: hidden; }
         .card-h { padding: 8px 12px; font-size: 14px; font-weight: 800; color: white; }
-        .card-b { 
-            padding: 12px; 
-            font-size: 0.95rem; 
-            flex: 1; 
-            overflow: hidden; 
-            white-space: pre-wrap; 
-            word-break: break-all; 
-            color: #334155; 
-            line-height: 1.6; 
-        }
-
-        /* 확대창 (Zoom) */
-        #zoom { 
-            display: none; 
-            position: fixed; 
-            inset: 0; 
-            background: rgba(0,0,0,0.9); 
-            z-index: 9999; 
-            align-items: center; 
-            justify-content: center; 
-            padding: 30px; 
-        }
-        .zoom-box { 
-            background: white; 
-            width: 95%; 
-            max-height: 90vh; 
-            border-radius: 12px; 
-            display: flex; 
-            flex-direction: column; 
-        }
-        #zHead { padding: 25px 40px; font-size: 2.5rem; font-weight: 900; color: white; border-radius: 12px 12px 0 0; }
-        #zBody { 
-            padding: 45px; 
-            font-size: 2.2rem; 
-            font-weight: 600; 
-            line-height: 1.6; 
-            color: #1e293b; 
-            overflow-y: auto; 
-            white-space: pre-wrap; 
-        }
+        .card-b { padding: 12px; font-size: 0.95rem; flex: 1; overflow: hidden; white-space: pre-wrap; word-break: break-all; color: #334155; line-height: 1.6; }
 
         /* 팝업 알람 스타일 */
-        #alertPopup { 
-            display: none; 
-            position: fixed; 
-            top: 50%; 
-            left: 50%; 
-            transform: translate(-50%, -50%); 
-            background: #fef2f2; 
-            border: 6px solid #ef4444; 
-            padding: 50px; 
-            border-radius: 30px; 
-            z-index: 10000; 
-            text-align: center; 
-            box-shadow: 0 0 100px rgba(0,0,0,0.7); 
-            min-width: 600px;
-        }
-        #alertPopup h2 { font-size: 4rem; font-weight: 900; color: #b91c1c; margin-bottom: 20px; }
-        #alertPopup p { font-size: 2.5rem; font-weight: 700; color: #1e293b; }
+        #alertPopup { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff1f2; border: 8px solid #be123c; padding: 60px; border-radius: 40px; z-index: 10000; text-align: center; box-shadow: 0 0 150px rgba(0,0,0,0.8); min-width: 650px; }
+        #alertPopup h2 { font-size: 4rem; font-weight: 900; color: #9f1239; margin-bottom: 25px; }
+        #alertPopup p { font-size: 2.5rem; font-weight: 800; color: #1e293b; }
+
+        #zoom { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; align-items: center; justify-content: center; padding: 30px; }
+        .zoom-box { background: white; width: 95%; max-height: 90vh; border-radius: 12px; display: flex; flex-direction: column; }
+        #zHead { padding: 25px 40px; font-size: 2.5rem; font-weight: 900; color: white; border-radius: 12px 12px 0 0; }
+        #zBody { padding: 45px; font-size: 2.2rem; font-weight: 600; line-height: 1.6; color: #1e293b; overflow-y: auto; white-space: pre-wrap; }
     </style>
 </head>
 <body>
@@ -156,7 +38,7 @@
             <h1 class="text-xl font-black text-[#f39c12]">제조팀 업무 게시판</h1>
             <div id="clock" class="text-[10px] text-slate-400 font-bold"></div>
         </div>
-        <div class="marquee-box"><div id="scrollNotice">데이터 연동 시도 중...</div></div>
+        <div class="marquee-box"><div id="scrollNotice">데이터 연동 중...</div></div>
         <div class="stat-group">
             <div class="stat-box"><div class="stat-label">BBT</div><div id="v1" class="stat-val">-</div></div>
             <div class="stat-box"><div class="stat-label">인서트</div><div id="v2" class="stat-val">-</div></div>
@@ -176,75 +58,58 @@
     </main>
 
     <div id="alertPopup" onclick="this.style.display='none'">
-        <h2>⚠️ 시간 안내 ⚠️</h2>
+        <h2>📢 안내 드립니다</h2>
         <p id="alertMsg"></p>
-        <p class="mt-8 text-gray-500 text-xl font-bold">(화면을 클릭하면 닫힙니다)</p>
+        <p class="mt-8 text-gray-400 text-lg font-bold">(화면을 클릭하면 창이 닫힙니다)</p>
     </div>
 
-    <div id="zoom" onclick="this.style.display='none'">
-        <div class="zoom-box" onclick="event.stopPropagation()">
-            <div id="zHead"></div>
-            <div id="zBody"></div>
-        </div>
-    </div>
+    <div id="zoom" onclick="this.style.display='none'"><div class="zoom-box" onclick="event.stopPropagation()"><div id="zHead"></div><div id="zBody"></div></div></div>
 
     <script>
-        // 중요: 여기에 새로 배포한 구글 앱스 스크립트 URL을 입력하세요.
-        const API = 'https://script.google.com/macros/s/AKfycbzLIQwnP5xe7qK-1vw_eAi59HRb-Ut9WVCm31DWUZG9GDzVUf10Q-L5V5HiAUCIVaxgcg/exec';
+        const API = 'https://script.google.com/macros/s/AKfycbyHbhwdJVa7F4xjU0MeRScNJ62ZtuXP84kvzSlZZimedmh5P5y4ocm3A8u-3cX1EeRgTw/exec';
 
-        // 1. 지정 시간 알람 기능
+        let lastCheckedMinute = -1;
         function checkAlarm() {
             const now = new Date();
-            const time = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
-            const alertBox = document.getElementById('alertPopup');
-            const alertMsg = document.getElementById('alertMsg');
-
-            // 알람을 띄울 시간 리스트 (팀장님 필요에 따라 수정 가능)
+            const currentMin = now.getMinutes();
+            if (currentMin === lastCheckedMinute) return; // 1분에 한 번만 실행
+            
+            lastCheckedMinute = currentMin;
+            const time = now.getHours().toString().padStart(2, '0') + ":" + currentMin.toString().padStart(2, '0');
+            
             const schedules = {
-                "08:30": "아침 조회 및 업무 시작 시간입니다!",
-                "12:00": "점심 식사 맛있게 하세요!",
-                "17:30": "퇴근 전 전원 OFF 및 정리정돈 확인!",
-                "20:30": "야간 근무 종료 및 보안 점검 시간입니다."
+                "08:30": "📢 아침 조회가 예정되어 있습니다. 모여주세요!",
+                "12:00": "🍴 즐거운 점심 시간입니다. 식사 맛있게 하세요!",
+                "17:30": "⚠️ 퇴근 전 전원 OFF 및 정리정돈 상태를 확인하세요!",
+                "20:30": "🌙 야간 근무 종료 시간입니다. 고생하셨습니다!"
             };
 
             if (schedules[time]) {
-                alertMsg.innerText = schedules[time];
-                alertBox.style.display = 'block';
-                // 1분 후 자동 닫기 (알람 시간 중복 실행 방지)
-                setTimeout(() => { alertBox.style.display = 'none'; }, 60000);
+                document.getElementById('alertMsg').innerText = schedules[time];
+                document.getElementById('alertPopup').style.display = 'block';
+                // 팝업 후 30초 뒤 자동 닫기
+                setTimeout(() => { document.getElementById('alertPopup').style.display = 'none'; }, 30000);
             }
         }
 
-        // 2. 데이터 새로고침 기능
         async function refresh() {
             try {
                 const res = await fetch(API);
                 const data = await res.json();
-                
-                if (data && data.length >= 12) {
-                    // 상단 인원수 (서식 태그 제거하고 순수 글자만 출력)
-                    const clean = (html) => html.replace(/<[^>]*>?/gm, '');
-                    document.getElementById('v1').innerText = clean(data[0]);
-                    document.getElementById('v2').innerText = clean(data[1]);
-                    document.getElementById('v3').innerText = clean(data[2]);
-                    
-                    // 전광판
-                    document.getElementById('scrollNotice').innerHTML = data[3] || "현재 공지사항이 없습니다.";
-                    
-                    // 각 카드 내용 (시트 서식 유지)
+                if (data) {
+                    const cleanNum = (t) => t.replace(/<[^>]*>?/gm, '');
+                    document.getElementById('v1').innerText = cleanNum(data[0]);
+                    document.getElementById('v2').innerText = cleanNum(data[1]);
+                    document.getElementById('v3').innerText = cleanNum(data[2]);
+                    document.getElementById('scrollNotice').innerHTML = data[3];
                     for (let i = 0; i < 8; i++) {
-                        const target = document.getElementById("r" + (i + 5));
-                        if (target) {
-                            target.innerHTML = data[i+4] || ""; 
-                        }
+                        const cell = document.getElementById("r" + (i + 5));
+                        if (cell) cell.innerHTML = data[i+4] || "";
                     }
                 }
-            } catch (err) {
-                console.log("데이터 연동 대기 중...");
-            }
+            } catch (err) { console.log("갱신 대기 중..."); }
         }
 
-        // 3. 카드 확대 기능
         function openZ(el) {
             const h = el.querySelector('.card-h');
             const b = el.querySelector('.card-b');
@@ -254,17 +119,12 @@
             document.getElementById('zoom').style.display = 'flex';
         }
 
-        // 4. 시계 및 알람 타이머 실행
         setInterval(() => { 
             document.getElementById('clock').innerText = new Date().toLocaleString();
-            checkAlarm(); // 매 초마다 체크하지만 시각이 일치할 때만 팝업
+            checkAlarm(); 
         }, 1000);
 
-        // 초기 실행 및 주기적 업데이트 (15초)
-        window.onload = () => {
-            refresh();
-            setInterval(refresh, 15000);
-        };
+        window.onload = () => { refresh(); setInterval(refresh, 20000); };
     </script>
 </body>
 </html>
