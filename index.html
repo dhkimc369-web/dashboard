@@ -1,100 +1,42 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <title>제조팀 업무 게시판 (UI 고정 및 기능 복구)</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
-        body { background: #1a2a3a; font-family: 'Pretendard', sans-serif; margin: 0; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
-        header { background: #1a2a3a; padding: 10px 20px; display: flex; align-items: center; border-bottom: 3px solid #f39c12; gap: 15px; flex-shrink: 0; }
-        .marquee-box { flex: 1; background: #0f172a; height: 48px; border-radius: 4px; overflow: hidden; position: relative; border: 1px solid #334155; }
-        #scrollNotice { position: absolute; white-space: nowrap; font-size: 1.8rem; font-weight: 900; color: #fbbf24; top: 50%; transform: translateY(-50%); animation: scroll 25s linear infinite; }
-        @keyframes scroll { 0% { left: 100%; } 100% { left: -180%; } }
-        
-        .stat-group { display: flex; gap: 8px; }
-        .stat-box { background: white; width: 105px; height: 55px; border-radius: 4px; text-align: center; border: 2px solid #cbd5e1; display: flex; flex-direction: column; justify-content: center; }
-        .stat-label { font-size: 11px; font-weight: 800; color: #64748b; }
-        .stat-val { font-size: 1.8rem; font-weight: 900; color: #1e293b; line-height: 1; }
+<script>
+    const API_URL = 'https://script.google.com/macros/s/AKfycbwN8VJRl7Ui3OJgI7r9Tj8b4SaTEZQmiCEyu7V_-cmHEbiXO65bUmjDpD4rR5kV2URcVg/exec';
 
-        main { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 12px; padding: 15px; }
-        .card { background: white; border-radius: 8px; display: flex; flex-direction: column; border: 1px solid #e2e8f0; cursor: pointer; transition: 0.2s; overflow: hidden; }
-        .card-h { padding: 8px 12px; font-size: 14px; font-weight: 800; color: white; }
-        .card-b { padding: 12px; font-size: 0.95rem; flex: 1; overflow: hidden; white-space: pre-wrap; word-break: break-all; color: #334155; line-height: 1.6; }
-
-        #zoom { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; align-items: center; justify-content: center; padding: 30px; }
-        .zoom-box { background: white; width: 95%; max-height: 90vh; border-radius: 12px; display: flex; flex-direction: column; }
-        #zHead { padding: 25px 40px; font-size: 2.5rem; font-weight: 900; color: white; border-radius: 12px 12px 0 0; }
-        #zBody { padding: 45px; font-size: 2.2rem; font-weight: 600; line-height: 1.6; color: #1e293b; overflow-y: auto; white-space: pre-wrap; }
-    </style>
-</head>
-<body>
-    <header>
-        <div style="min-width: 175px;">
-            <h1 class="text-xl font-black text-[#f39c12]">제조팀 업무 게시판</h1>
-            <div id="clock" class="text-[10px] text-slate-400 font-bold"></div>
-        </div>
-        <div class="marquee-box"><div id="scrollNotice">데이터 연동 중...</div></div>
-        <div class="stat-group">
-            <div class="stat-box"><div class="stat-label">BBT</div><div id="v1" class="stat-val">-</div></div>
-            <div class="stat-box"><div class="stat-label">인서트</div><div id="v2" class="stat-val">-</div></div>
-            <div class="stat-box"><div class="stat-label">리터치</div><div id="v3" class="stat-val">-</div></div>
-        </div>
-    </header>
-
-    <main>
-        <div class="card" onclick="openZ(this)"><div class="card-h bg-red-500">📢 공지 사항</div><div class="card-b" id="r5"></div></div>
-        <div class="card" onclick="openZ(this)"><div class="card-h bg-purple-500">👥 근태 현황</div><div class="card-b" id="r6"></div></div>
-        <div class="card" onclick="openZ(this)"><div class="card-h bg-green-600">📦 납품 목록</div><div class="card-b" id="r7"></div></div>
-        <div class="card" onclick="openZ(this)"><div class="card-h bg-blue-600">✅ 업무 공유</div><div class="card-b" id="r8"></div></div>
-        <div class="card" onclick="openZ(this)"><div class="card-h bg-teal-600">📊 진행 현황</div><div class="card-b" id="r9"></div></div>
-        <div class="card" onclick="openZ(this)"><div class="card-h bg-orange-500">🔍 BBT 상세</div><div class="card-b" id="r10"></div></div>
-        <div class="card" onclick="openZ(this)"><div class="card-h bg-indigo-600">🔧 인서트 상세</div><div class="card-b" id="r11"></div></div>
-        <div class="card" onclick="openZ(this)"><div class="card-h bg-slate-600">⚠️ 리터치 상세</div><div class="card-b" id="r12"></div></div>
-    </main>
-
-    <div id="zoom" onclick="this.style.display='none'">
-        <div class="zoom-box" onclick="event.stopPropagation()">
-            <div id="zHead"></div>
-            <div id="zBody"></div>
-        </div>
-    </div>
-
-    <script>
-        const API = 'https://script.google.com/macros/s/AKfycbzOyuT_zp9uedI7xYWlTr9OkE344bTgePhil42Q47gTjrpuLFugtdvouiQGlkWcnhhuAg/exec';
-
-        async function refresh() {
-            try {
-                const res = await fetch(`${API}?t=${Date.now()}`);
-                const data = await res.json();
-                if (data && data.length >= 12) {
-                    // 상단 인원: 숫자 외 제거
-                    const getNum = (t) => t.replace(/[^0-9]/g, '') || "0";
-                    document.getElementById('v1').innerText = getNum(data[0]);
-                    document.getElementById('v2').innerText = getNum(data[1]);
-                    document.getElementById('v3').innerText = getNum(data[2]);
-                    
-                    // 전광판 및 카드 업데이트
-                    document.getElementById('scrollNotice').innerHTML = data[3] || "";
-                    for (let i = 0; i < 8; i++) {
-                        const cell = document.getElementById("r" + (i + 5));
-                        if (cell) cell.innerHTML = data[i + 4] || "";
+    async function updateBoard() {
+        try {
+            const response = await fetch(API_URL);
+            const data = await response.json();
+            
+            if (Array.isArray(data)) {
+                // 1. 상단 인원수: HTML 태그를 제거하고 숫자만 추출하여 UI 유지
+                const cleanNum = (html) => html.replace(/<[^>]*>?/gm, '').replace(/[^0-9]/g, '') || "0";
+                document.getElementById('v1').innerText = cleanNum(data[0]);
+                document.getElementById('v2').innerText = cleanNum(data[1]);
+                document.getElementById('v3').innerText = cleanNum(data[2]);
+                
+                // 2. 전광판: 서식 포함하여 적용
+                document.getElementById('scrollNotice').innerHTML = data[3] || "";
+                
+                // 3. 하단 카드: 빨간색 등 시트 서식 완벽 복구
+                for(let i=0; i<8; i++) {
+                    const target = document.getElementById('r' + (i+5));
+                    if(target) {
+                        target.innerHTML = data[i+4] || ""; 
                     }
                 }
-            } catch (err) { console.warn("새로고침 중..."); }
-        }
+            }
+        } catch (error) { console.warn("데이터 갱신 중..."); }
+    }
 
-        function openZ(el) {
-            const h = el.querySelector('.card-h');
-            const b = el.querySelector('.card-b');
-            document.getElementById('zHead').innerText = h.innerText;
-            document.getElementById('zHead').style.backgroundColor = getComputedStyle(h).backgroundColor;
-            document.getElementById('zBody').innerHTML = b.innerHTML; 
-            document.getElementById('zoom').style.display = 'flex';
-        }
+    // 확대창 함수: 내부 HTML(서식)을 그대로 복사하도록 유지
+    function openZ(el) {
+        const h = el.querySelector('.card-h');
+        const b = el.querySelector('.card-b');
+        document.getElementById('zHead').innerText = h.innerText;
+        document.getElementById('zHead').style.backgroundColor = getComputedStyle(h).backgroundColor;
+        document.getElementById('zBody').innerHTML = b.innerHTML; // 서식 유지 핵심
+        document.getElementById('zoom').style.display = 'flex';
+    }
 
-        setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleString(); }, 1000);
-        window.onload = () => { refresh(); setInterval(refresh, 15000); };
-    </script>
-</body>
-</html>
+    updateBoard();
+    setInterval(updateBoard, 15000); // 15초마다 체크
+</script>
