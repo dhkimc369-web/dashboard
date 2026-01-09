@@ -2,40 +2,40 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>제조팀 업무 게시판 V3.3</title>
+    <title>제조팀 업무 게시판 V3.4 (Data Sync Fix)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
         body { background: #f1f5f9; font-family: 'Pretendard', sans-serif; margin: 0; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
         
-        /* [헤더 레이아웃] */
+        /* [상단 헤더] */
         header { background: #1a2a3a; padding: 10px 20px; display: flex; align-items: center; border-bottom: 4px solid #f39c12; flex-shrink: 0; gap: 15px; }
         
-        /* [전광판 강제 작동] */
-        .marquee-box { flex: 1; background: #0f172a; height: 48px; border-radius: 4px; overflow: hidden; position: relative; }
+        /* [전광판: 시트 4행] */
+        .marquee-box { flex: 1; background: #0f172a; height: 48px; border-radius: 4px; overflow: hidden; position: relative; border: 1px solid #334155; }
         #topNotice { 
-            position: absolute; white-space: nowrap; font-size: 1.8rem; font-weight: 900; color: #fbbf24; top: 4px;
-            animation: marquee 20s linear infinite; /* 애니메이션 속도 및 무한반복 확인 */
+            position: absolute; white-space: nowrap; font-size: 1.8rem; font-weight: 900; color: #fbbf24; top: 50%; transform: translateY(-50%);
+            animation: marqueeMove 25s linear infinite; 
         }
-        @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-150%); } }
+        @keyframes marqueeMove { 0% { left: 100%; } 100% { left: -150%; } }
 
-        /* [상단 수치 박스] */
+        /* [상단 수치: 시트 1, 2, 3행] */
         .stat-group { display: flex; gap: 8px; }
-        .stat-item { background: white; width: 100px; height: 55px; border-radius: 4px; text-align: center; border: 2px solid #cbd5e1; display: flex; flex-direction: column; justify-content: center; }
-        .stat-lbl { font-size: 11px; font-weight: 800; color: #64748b; }
+        .stat-item { background: white; width: 110px; height: 55px; border-radius: 4px; text-align: center; border: 2px solid #cbd5e1; display: flex; flex-direction: column; justify-content: center; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1); }
+        .stat-lbl { font-size: 12px; font-weight: 800; color: #64748b; margin-bottom: -2px; }
         .stat-num { font-size: 1.8rem; font-weight: 900; line-height: 1; color: #1e293b; }
 
-        /* [그리드 및 카드] */
+        /* [카드 그리드] */
         .grid-container { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 12px; padding: 15px; }
-        .card { background: white; border-radius: 8px; display: flex; flex-direction: column; border: 1px solid #e2e8f0; cursor: pointer; transition: 0.1s; overflow: hidden; }
+        .card { background: white; border-radius: 8px; display: flex; flex-direction: column; border: 1px solid #e2e8f0; cursor: pointer; overflow: hidden; }
         .card-header { padding: 8px 12px; font-size: 14px; font-weight: 800; color: white; }
         .card-body { padding: 12px; font-size: 1rem; overflow-y: auto; flex: 1; line-height: 1.5; color: #334155; white-space: pre-wrap; }
 
-        /* [확대 가독성 개선] */
+        /* [확대 시 가독성 최적화 - 폰트 사이즈 하향 조정] */
         #zoomModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 9999; align-items: center; justify-content: center; padding: 30px; }
         .modal-content { background: white; width: 95%; max-height: 90vh; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
-        #z-head { padding: 20px 30px; font-size: 2rem; font-weight: 900; color: white; }
-        #z-body { padding: 40px; font-size: 2.2rem; font-weight: 500; line-height: 1.4; color: #1e293b; overflow-y: auto; flex: 1; }
+        #z-head { padding: 20px 30px; font-size: 2.2rem; font-weight: 900; color: white; }
+        #z-body { padding: 40px; font-size: 2.2rem; font-weight: 600; line-height: 1.4; color: #1e293b; overflow-y: auto; flex: 1; }
     </style>
 </head>
 <body>
@@ -45,11 +45,11 @@
             <h1 class="text-xl font-black text-[#f39c12] leading-none">제조팀 업무 게시판</h1>
             <div id="clock" class="text-[11px] text-slate-400 mt-1 font-bold"></div>
         </div>
-        <div class="marquee-box"><div id="topNotice">데이터를 불러오고 있습니다...</div></div>
+        <div class="marquee-box"><div id="topNotice">데이터를 실시간 동기화 중입니다...</div></div>
         <div class="stat-group">
-            <div class="stat-item"><div class="stat-lbl">BBT</div><div id="val0" class="stat-num"></div></div>
-            <div class="stat-item"><div class="stat-lbl">인서트</div><div id="val1" class="stat-num"></div></div>
-            <div class="stat-item"><div class="stat-lbl">리터치</div><div id="val2" class="stat-num"></div></div>
+            <div class="stat-item"><div class="stat-lbl">BBT</div><div id="val0" class="stat-num">-</div></div>
+            <div class="stat-item"><div class="stat-lbl">인서트</div><div id="val1" class="stat-num">-</div></div>
+            <div class="stat-item"><div class="stat-lbl">리터치</div><div id="val2" class="stat-num">-</div></div>
         </div>
     </header>
 
@@ -74,28 +74,31 @@
     <script>
         const API = 'https://script.google.com/macros/s/AKfycbyFlAfiJHW0Jwrd6W_mHQ1i1ImTMzBxIF3Mp49b-NjvhY9c9yHoqz4cGHbYGgoFXX8t/exec';
 
-        async function update() {
+        async function refreshData() {
             try {
-                const r = await fetch(API + "?v=" + Date.now());
-                const d = await r.json();
-                if (!d || d.length < 4) return;
-
-                // [데이터 매핑 복구]
-                // 시트 1행(d[0]) -> BBT, 2행(d[1]) -> 인서트, 3행(d[2]) -> 리터치
-                document.getElementById('val0').innerHTML = d[0] || "0";
-                document.getElementById('val1').innerHTML = d[1] || "0";
-                document.getElementById('val2').innerHTML = d[2] || "0";
+                // 강력한 캐시 방지 처리: 쿼리스트링에 타임스탬프를 두 번 섞어 중복 요청 방지
+                const response = await fetch(`${API}?t=${new Date().getTime()}`, { cache: 'no-store' });
+                const data = await response.json();
                 
-                // 시트 4행(d[3]) -> 전광판
-                const noticeEl = document.getElementById('topNotice');
-                noticeEl.innerHTML = d[3] || "--- 공지사항이 없습니다 ---";
+                if (data && data.length >= 4) {
+                    // 상단 수치 매핑 (1, 2, 3행)
+                    document.getElementById('val0').innerHTML = data[0] || "0";
+                    document.getElementById('val1').innerHTML = data[1] || "0";
+                    document.getElementById('val2').innerHTML = data[2] || "0";
+                    
+                    // 전광판 매핑 (4행)
+                    document.getElementById('topNotice').innerHTML = data[3] || "";
 
-                // 하단 8개 박스 (5행 ~ 12행)
-                for (let i = 0; i < 8; i++) {
-                    const box = document.getElementById("row" + (i + 5));
-                    if (box) box.innerHTML = d[i + 4] || "";
+                    // 메인 카드 매핑 (5행~12행)
+                    for (let i = 0; i < 8; i++) {
+                        const cell = document.getElementById("row" + (i + 5));
+                        if (cell) cell.innerHTML = data[i + 4] || "";
+                    }
+                    console.log("Data sync complete at " + new Date().toLocaleTimeString());
                 }
-            } catch (e) { console.error("Update failed"); }
+            } catch (err) {
+                console.error("Sync Error:", err);
+            }
         }
 
         function zoom(el) {
@@ -111,7 +114,10 @@
             document.getElementById('clock').innerText = new Date().toLocaleString();
         }, 1000);
 
-        window.onload = () => { update(); setInterval(update, 15000); };
+        window.onload = () => {
+            refreshData();
+            setInterval(refreshData, 10000); // 10초마다 강제 동기화
+        };
     </script>
 </body>
 </html>
