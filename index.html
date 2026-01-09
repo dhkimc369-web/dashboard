@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>제조팀 업무 게시판 (데이터 복구본)</title>
+    <title>제조팀 업무 게시판 (서식 및 팝업 완결)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -18,13 +18,13 @@
         main { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 12px; padding: 15px; }
         .card { background: white; border-radius: 8px; display: flex; flex-direction: column; border: 1px solid #e2e8f0; cursor: pointer; overflow: hidden; }
         .card-h { padding: 8px 12px; font-size: 14px; font-weight: 800; color: white; }
-        .card-b { padding: 12px; font-size: 0.95rem; flex: 1; overflow-y: auto; white-space: pre-wrap; word-break: break-all; color: #334155; line-height: 1.6; }
-        
-        /* 팝업 알람 */
-        #alertPopup { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff1f2; border: 8px solid #be123c; padding: 50px; border-radius: 30px; z-index: 10000; text-align: center; box-shadow: 0 0 100px rgba(0,0,0,0.7); min-width: 600px; }
-        #alertPopup h2 { font-size: 4rem; font-weight: 900; color: #9f1239; margin-bottom: 20px; }
-        #alertPopup p { font-size: 2.2rem; font-weight: 800; color: #1e293b; }
-        
+        .card-b { padding: 12px; font-size: 0.95rem; flex: 1; overflow: hidden; white-space: pre-wrap; word-break: break-all; color: #334155; line-height: 1.6; }
+
+        /* 팝업 알람 스타일 */
+        #alertPopup { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff1f2; border: 8px solid #be123c; padding: 60px; border-radius: 40px; z-index: 10000; text-align: center; box-shadow: 0 0 150px rgba(0,0,0,0.8); min-width: 650px; }
+        #alertPopup h2 { font-size: 4rem; font-weight: 900; color: #9f1239; margin-bottom: 25px; }
+        #alertPopup p { font-size: 2.5rem; font-weight: 800; color: #1e293b; }
+
         #zoom { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; align-items: center; justify-content: center; padding: 30px; }
         .zoom-box { background: white; width: 95%; max-height: 90vh; border-radius: 12px; display: flex; flex-direction: column; }
         #zHead { padding: 25px 40px; font-size: 2.5rem; font-weight: 900; color: white; border-radius: 12px 12px 0 0; }
@@ -58,31 +58,36 @@
     </main>
 
     <div id="alertPopup" onclick="this.style.display='none'">
-        <h2>📢 시간 안내</h2>
+        <h2>📢 안내 드립니다</h2>
         <p id="alertMsg"></p>
-        <p class="mt-6 text-gray-400 text-lg">(화면을 클릭하면 닫힙니다)</p>
+        <p class="mt-8 text-gray-400 text-lg font-bold">(화면을 클릭하면 창이 닫힙니다)</p>
     </div>
 
     <div id="zoom" onclick="this.style.display='none'"><div class="zoom-box" onclick="event.stopPropagation()"><div id="zHead"></div><div id="zBody"></div></div></div>
 
     <script>
-        const API = 'https://script.google.com/macros/s/AKfycbz9MhNQy0qyvHHwzxbhGumhWtHl84FtfF8rgwG9zgOlY2G0xk7P_v-_77ZmmyDzqNcedA/exec';
+        const API = 'https://script.google.com/macros/s/AKfycbw5r5RHfo6zBADe65tTnd7YD1A_z39ATb-GFU-s5iYu9wj21y7L7OJbwBMeB6XzirgykQ/exec';
 
-        // 팝업 알람 설정
+        let lastCheckedMinute = -1;
         function checkAlarm() {
             const now = new Date();
-            const time = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
+            const currentMin = now.getMinutes();
+            if (currentMin === lastCheckedMinute) return; 
+            
+            lastCheckedMinute = currentMin;
+            const time = now.getHours().toString().padStart(2, '0') + ":" + currentMin.toString().padStart(2, '0');
+            
             const schedules = {
-                "08:30": "아침 조회 시간입니다. 일과를 시작하세요!",
-                "12:00": "점심 식사 시간입니다. 맛있게 드세요!",
-                "17:30": "퇴근 전 전원 OFF 및 정리정돈 확인!",
-                "20:30": "야간 근무 종료 시간입니다. 고생하셨습니다!"
+                "08:30": "📢 아침 조회 시간입니다. 일과를 시작하세요!",
+                "12:00": "🍴 즐거운 점심 시간입니다. 맛있게 드세요!",
+                "17:30": "⚠️ 퇴근 전 전원 OFF 및 정리정돈 확인!",
+                "20:30": "🌙 야간 근무 종료 시간입니다. 고생하셨습니다!"
             };
 
             if (schedules[time]) {
                 document.getElementById('alertMsg').innerText = schedules[time];
                 document.getElementById('alertPopup').style.display = 'block';
-                setTimeout(() => { document.getElementById('alertPopup').style.display = 'none'; }, 60000);
+                setTimeout(() => { document.getElementById('alertPopup').style.display = 'none'; }, 55000);
             }
         }
 
@@ -90,23 +95,18 @@
             try {
                 const res = await fetch(API);
                 const data = await res.json();
-                if (data && data.length >= 12) {
-                    document.getElementById('v1').innerText = data[0];
-                    document.getElementById('v2').innerText = data[1];
-                    document.getElementById('v3').innerText = data[2];
+                if (data) {
+                    const cleanNum = (t) => t.replace(/<[^>]*>?/gm, '');
+                    document.getElementById('v1').innerText = cleanNum(data[0]);
+                    document.getElementById('v2').innerText = cleanNum(data[1]);
+                    document.getElementById('v3').innerText = cleanNum(data[2]);
                     document.getElementById('scrollNotice').innerHTML = data[3];
-                    
-                    const redWords = /(불량|연차|주의|대기|완료|공유|준수)/g;
                     for (let i = 0; i < 8; i++) {
-                        const target = document.getElementById("r" + (i + 5));
-                        if (target) {
-                            let text = data[i+4] || "";
-                            // 시트의 색상 대신 중요한 단어를 자동으로 빨간색 강조
-                            target.innerHTML = text.replace(redWords, '<span style="color:#e11d48; font-weight:bold;">$1</span>');
-                        }
+                        const cell = document.getElementById("r" + (i + 5));
+                        if (cell) cell.innerHTML = data[i+4] || "";
                     }
                 }
-            } catch (err) { console.log("데이터 갱신 중..."); }
+            } catch (err) { console.log("갱신 중..."); }
         }
 
         function openZ(el) {
@@ -122,9 +122,8 @@
             document.getElementById('clock').innerText = new Date().toLocaleString();
             checkAlarm(); 
         }, 1000);
-        
-        refresh();
-        setInterval(refresh, 20000);
+
+        window.onload = () => { refresh(); setInterval(refresh, 20000); };
     </script>
 </body>
 </html>
