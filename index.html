@@ -2,40 +2,37 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>제조팀 업무 게시판 (서식 및 팝업 완결본)</title>
+    <title>제조팀 업무 게시판 (최종 안정화)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
         body { background: #1a2a3a; font-family: 'Pretendard', sans-serif; margin: 0; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
         header { background: #1a2a3a; padding: 10px 20px; display: flex; align-items: center; border-bottom: 3px solid #f39c12; gap: 15px; flex-shrink: 0; }
-        
-        /* 전광판 */
         .marquee-box { flex: 1; background: #0f172a; height: 48px; border-radius: 4px; overflow: hidden; position: relative; border: 1px solid #334155; }
         #scrollNotice { position: absolute; white-space: nowrap; font-size: 1.8rem; font-weight: 900; color: #fbbf24; top: 50%; transform: translateY(-50%); animation: scroll 25s linear infinite; }
         @keyframes scroll { 0% { left: 100%; } 100% { left: -180%; } }
-
+        
         /* 숫자 박스 */
         .stat-group { display: flex; gap: 8px; }
         .stat-box { background: white; width: 105px; height: 55px; border-radius: 4px; text-align: center; border: 2px solid #cbd5e1; display: flex; flex-direction: column; justify-content: center; }
         .stat-label { font-size: 11px; font-weight: 800; color: #64748b; }
         .stat-val { font-size: 1.8rem; font-weight: 900; color: #1e293b; line-height: 1; }
 
-        /* 메인 카드 */
+        /* 카드 영역 */
         main { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 12px; padding: 15px; }
-        .card { background: white; border-radius: 8px; display: flex; flex-direction: column; border: 1px solid #e2e8f0; cursor: pointer; overflow: hidden; }
+        .card { background: white; border-radius: 8px; display: flex; flex-direction: column; border: 1px solid #e2e8f0; cursor: pointer; }
         .card-h { padding: 8px 12px; font-size: 14px; font-weight: 800; color: white; }
-        .card-b { padding: 12px; font-size: 0.95rem; flex: 1; overflow: hidden; white-space: pre-wrap; word-break: break-all; color: #334155; line-height: 1.6; }
+        .card-b { padding: 12px; font-size: 0.95rem; flex: 1; overflow-y: auto; white-space: pre-wrap; word-break: break-all; color: #334155; line-height: 1.6; }
 
-        /* [수정] 팝업 알람 - 더 크고 명확하게 */
+        /* [핵심] 팝업 알람 - 무조건 보이도록 레이어 최상단 설정 */
         #alertPopup { 
             display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
             background: #fff1f2; border: 10px solid #be123c; padding: 60px; border-radius: 40px; 
-            z-index: 10000; text-align: center; box-shadow: 0 0 200px rgba(0,0,0,0.8); min-width: 800px; 
+            z-index: 100000; text-align: center; box-shadow: 0 0 300px rgba(0,0,0,0.9); min-width: 800px; 
         }
         #alertPopup h2 { font-size: 5rem; font-weight: 900; color: #9f1239; margin-bottom: 30px; }
         #alertPopup p { font-size: 3rem; font-weight: 800; color: #1e293b; line-height: 1.4; }
 
-        /* 확대창 */
         #zoom { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; align-items: center; justify-content: center; padding: 30px; }
         .zoom-box { background: white; width: 95%; max-height: 90vh; border-radius: 12px; display: flex; flex-direction: column; }
         #zHead { padding: 25px 40px; font-size: 2.5rem; font-weight: 900; color: white; border-radius: 12px 12px 0 0; }
@@ -49,7 +46,7 @@
             <h1 class="text-xl font-black text-[#f39c12]">제조팀 업무 게시판</h1>
             <div id="clock" class="text-[10px] text-slate-400 font-bold"></div>
         </div>
-        <div class="marquee-box"><div id="scrollNotice">데이터 연동 중...</div></div>
+        <div class="marquee-box"><div id="scrollNotice">데이터 연동 대기 중...</div></div>
         <div class="stat-group">
             <div class="stat-box"><div class="stat-label">BBT</div><div id="v1" class="stat-val">-</div></div>
             <div class="stat-box"><div class="stat-label">인서트</div><div id="v2" class="stat-val">-</div></div>
@@ -69,24 +66,25 @@
     </main>
 
     <div id="alertPopup" onclick="this.style.display='none'">
-        <h2>📢 업무 안내</h2>
+        <h2>📢 정기 알림</h2>
         <p id="alertMsg"></p>
-        <p class="mt-10 text-gray-400 text-xl font-bold">(화면을 클릭하면 창이 닫힙니다)</p>
+        <p class="mt-10 text-gray-400 text-xl font-bold">(클릭하면 닫힙니다)</p>
     </div>
 
     <div id="zoom" onclick="this.style.display='none'"><div class="zoom-box" onclick="event.stopPropagation()"><div id="zHead"></div><div id="zBody"></div></div></div>
 
     <script>
-        const API = 'https://script.google.com/macros/s/AKfycbyMirned21A1_V0QcMXXLadf3afn3U5AqPPYCOQ2stt0JsnVLZzZckhFYb4fy-KzkTSJA/exec';
+        const API = 'https://script.google.com/macros/s/AKfycbw7X4z1sMjx7b2xWwvTBTfgFlKRF74-8KiHequzqUbsbnFcCgUHxAROsghgugDragvwhg/exec';
 
-        // [핵심] 지정 시간 팝업 로직 강화
-        let lastAlarmTime = ""; 
+        // 팝업 알람 로직 (절대 실행 보장)
+        let lastMinute = -1;
         function checkAlarm() {
             const now = new Date();
-            const timeStr = now.getHours().toString().padStart(2, '0') + ":" + 
-                            now.getMinutes().toString().padStart(2, '0');
+            const h = now.getHours().toString().padStart(2, '0');
+            const m = now.getMinutes().toString().padStart(2, '0');
+            const currentTime = `${h}:${m}`;
 
-            if (timeStr === lastAlarmTime) return; // 같은 분에 중복 실행 방지
+            if (now.getMinutes() === lastMinute) return;
 
             const schedules = {
                 "08:30": "아침 조회 시간입니다. 일과를 시작하세요!",
@@ -95,14 +93,11 @@
                 "20:30": "야간 근무 종료 및 보안 점검 시간입니다."
             };
 
-            if (schedules[timeStr]) {
-                const popup = document.getElementById('alertPopup');
-                document.getElementById('alertMsg').innerText = schedules[timeStr];
-                popup.style.display = 'block'; 
-                lastAlarmTime = timeStr;
-                
-                // 50초 후 자동 닫기
-                setTimeout(() => { popup.style.display = 'none'; }, 50000);
+            if (schedules[currentTime]) {
+                document.getElementById('alertMsg').innerText = schedules[currentTime];
+                document.getElementById('alertPopup').style.display = 'block';
+                lastMinute = now.getMinutes();
+                setTimeout(() => { document.getElementById('alertPopup').style.display = 'none'; }, 50000);
             }
         }
 
@@ -111,21 +106,28 @@
                 const res = await fetch(API);
                 const data = await res.json();
                 if (data && data.length >= 12) {
-                    // 상단 숫자박스 (서식 제거 후 숫자만)
-                    const cleanNum = (t) => t.replace(/<[^>]*>?/gm, '');
-                    document.getElementById('v1').innerText = cleanNum(data[0]);
-                    document.getElementById('v2').innerText = cleanNum(data[1]);
-                    document.getElementById('v3').innerText = cleanNum(data[2]);
-                    
-                    // 전광판 및 카드 (시트 서식 유지)
+                    document.getElementById('v1').innerText = data[0];
+                    document.getElementById('v2').innerText = data[1];
+                    document.getElementById('v3').innerText = data[2];
                     document.getElementById('scrollNotice').innerHTML = data[3];
+
+                    // 서식 보완: 특정 키워드에 강제로 색상 부여
+                    const highlight = (text) => {
+                        return text.replace(/(불량|주의|연차|긴급|공지|대기)/g, '<span style="color:#e11d48; font-weight:bold;">$1</span>');
+                    };
+
                     for (let i = 0; i < 8; i++) {
                         const target = document.getElementById("r" + (i + 5));
-                        if (target) target.innerHTML = data[i+4] || "";
+                        if (target) target.innerHTML = highlight(data[i+4] || "");
                     }
                 }
-            } catch (err) { console.log("연동 시도 중..."); }
+            } catch (err) { console.log("갱신 중..."); }
         }
+
+        setInterval(() => { 
+            document.getElementById('clock').innerText = new Date().toLocaleString();
+            checkAlarm(); 
+        }, 1000);
 
         function openZ(el) {
             const h = el.querySelector('.card-h');
@@ -135,12 +137,6 @@
             document.getElementById('zBody').innerHTML = b.innerHTML; 
             document.getElementById('zoom').style.display = 'flex';
         }
-
-        // 1초마다 시계 및 알람 체크
-        setInterval(() => { 
-            document.getElementById('clock').innerText = new Date().toLocaleString();
-            checkAlarm(); 
-        }, 1000);
 
         window.onload = () => { refresh(); setInterval(refresh, 20000); };
     </script>
