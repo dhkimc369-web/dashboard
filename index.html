@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>제조팀 업무 게시판 (UI 고정 및 최종 수정)</title>
+    <title>제조팀 업무 게시판 (기능 복구 완료)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -22,7 +22,6 @@
         .card-h { padding: 8px 12px; font-size: 14px; font-weight: 800; color: white; }
         .card-b { padding: 12px; font-size: 0.95rem; flex: 1; overflow: hidden; white-space: pre-wrap; word-break: break-all; color: #334155; line-height: 1.6; }
 
-        /* 확대창 (팀장님 마음에 드신 스타일 유지) */
         #zoom { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; align-items: center; justify-content: center; padding: 30px; }
         .zoom-box { background: white; width: 95%; max-height: 90vh; border-radius: 12px; display: flex; flex-direction: column; }
         #zHead { padding: 25px 40px; font-size: 2.5rem; font-weight: 900; color: white; border-radius: 12px 12px 0 0; }
@@ -65,42 +64,40 @@
     <script>
         const API = 'https://script.google.com/macros/s/AKfycbyFlAfiJHW0Jwrd6W_mHQ1i1ImTMzBxIF3Mp49b-NjvhY9c9yHoqz4cGHbYGgoFXX8t/exec';
 
-        // 서식 찌꺼기가 있어도 무조건 숫자만 정밀하게 골라내는 함수
-        function getOnlyNumber(input) {
+        // 가장 원시적이지만 강력한 숫자 추출기 (B열 데이터용)
+        function forceNumber(input) {
             if (!input) return "0";
-            // 태그 제거 후 숫자 외 모든 문자 삭제
-            const plainText = input.toString().replace(/<[^>]*>?/gm, '');
-            const num = plainText.replace(/[^0-9]/g, '');
-            return num || "0";
+            // 1. 문자열로 변환 2. HTML 태그 제거 3. 숫자와 소수점 제외 모든 문자 삭제
+            const cleanText = String(input).replace(/<[^>]*>?/gm, '');
+            const numOnly = cleanText.replace(/[^0-9.]/g, '');
+            return numOnly || "0";
         }
 
-        async function update() {
+        async function refresh() {
             try {
-                const res = await fetch(`${API}?nocache=${Date.now()}`);
+                const res = await fetch(`${API}?cb=${Date.now()}`);
                 const data = await res.json();
                 
-                if (data && data.length >= 12) {
-                    // 상단 인원수 업데이트 (B열 1,2,3행)
-                    document.getElementById('v1').innerText = getOnlyNumber(data[0]);
-                    document.getElementById('v2').innerText = getOnlyNumber(data[1]);
-                    document.getElementById('v3').innerText = getOnlyNumber(data[2]);
+                if (Array.isArray(data) && data.length >= 12) {
+                    // 상단 인원수 업데이트 (B1, B2, B3 강제 타격)
+                    document.getElementById('v1').innerText = forceNumber(data[0]);
+                    document.getElementById('v2').innerText = forceNumber(data[1]);
+                    document.getElementById('v3').innerText = forceNumber(data[2]);
                     
-                    // 전광판 (내용이 있을 때만 애니메이션 활성화)
-                    const noticeEl = document.getElementById('scrollNotice');
-                    if(data[3] && data[3].toString().trim() !== "") {
-                        noticeEl.innerHTML = data[3];
-                        noticeEl.style.display = 'block';
-                    } else {
-                        noticeEl.style.display = 'none';
+                    // 전광판 업데이트
+                    if(data[3]) {
+                        document.getElementById('scrollNotice').innerHTML = data[3];
                     }
                     
-                    // 하단 8개 카드 업데이트 (서식 유지)
+                    // 하단 카드 업데이트 (서식 유지)
                     for (let i = 0; i < 8; i++) {
                         const cell = document.getElementById("r" + (i + 5));
-                        if (cell && data[i+4]) cell.innerHTML = data[i+4];
+                        if (cell && data[i+4]) {
+                            cell.innerHTML = data[i+4];
+                        }
                     }
                 }
-            } catch (e) { console.error("데이터 로드 중..."); }
+            } catch (err) { console.warn("연동 시도 중..."); }
         }
 
         function openZ(el) {
@@ -113,7 +110,7 @@
         }
 
         setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleString(); }, 1000);
-        window.onload = () => { update(); setInterval(update, 15000); };
+        window.onload = () => { refresh(); setInterval(refresh, 15000); };
     </script>
 </body>
 </html>
