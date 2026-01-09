@@ -2,24 +2,24 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>제조팀 업무 게시판 V11.0</title>
+    <title>제조팀 업무 게시판</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
         body { background: #f1f5f9; font-family: 'Pretendard', sans-serif; margin: 0; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
         
-        /* 헤더 고정 (V4.0 이전 규격) */
+        /* [V4.0 순정 헤더] */
         header { background: #1a2a3a; padding: 12px 20px; display: flex; align-items: center; color: white; border-bottom: 4px solid #f39c12; flex-shrink: 0; }
         
-        /* 전광판: CSS 애니메이션 강제 적용 (JS가 멈춰도 무조건 흐름) */
-        .marquee-container { flex: 1; margin: 0 40px; background: #0f172a; height: 40px; border-radius: 4px; overflow: hidden; position: relative; }
+        /* [V4.0 순정 전광판] - CSS로 강제 구동 */
+        .marquee-container { flex: 1; margin: 0 40px; background: #0f172a; height: 42px; border-radius: 4px; overflow: hidden; position: relative; }
         #scrollingNotice { 
-            position: absolute; white-space: nowrap; font-size: 1.4rem; font-weight: 800; color: #fbbf24; top: 6px;
+            position: absolute; white-space: nowrap; font-size: 1.5rem; font-weight: 900; color: #fbbf24; top: 5px;
             animation: marquee 25s linear infinite; 
         }
         @keyframes marquee {
             0% { left: 100%; }
-            100% { left: -150%; } /* 충분히 빠져나가게 설정 */
+            100% { left: -150%; }
         }
 
         .ot-group { display: flex; gap: 10px; }
@@ -31,21 +31,21 @@
         .card-header { padding: 8px 12px; font-size: 14px; font-weight: 800; color: white; }
         .card-body { padding: 12px; font-size: 1.1rem; overflow-y: auto; flex: 1; line-height: 1.5; color: #334155; }
 
-        /* 확대 모달: 요청하신 일반 굵기 폰트 적용 */
-        #zoomModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 9999; align-items: center; justify-content: center; }
+        /* [확대 모달] - 요청하신 일반 굵기 폰트 */
+        #zoomModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; align-items: center; justify-content: center; }
         .modal-content { background: white; width: 92%; max-width: 1200px; border-radius: 12px; overflow: hidden; }
-        #z-body { font-weight: 400 !important; } /* 굵기 제거 (Normal) */
+        #z-body { font-weight: normal !important; }
     </style>
 </head>
 <body>
 
     <header>
         <div><h1 class="text-xl font-black text-[#f39c12] leading-none">제조팀 업무 게시판</h1><div id="clock" class="text-[10px] text-slate-400 mt-1"></div></div>
-        <div class="marquee-container"><div id="scrollingNotice">...</div></div>
+        <div class="marquee-container"><div id="scrollingNotice">---</div></div>
         <div class="ot-group">
-            <div class="ot-box"><div class="text-[10px] font-bold text-slate-500">BBT</div><div id="ot0" class="ot-val">-</div></div>
-            <div class="ot-box"><div class="text-[10px] font-bold text-slate-500">인서트</div><div id="ot1" class="ot-val">-</div></div>
-            <div class="ot-box"><div class="text-[10px] font-bold text-slate-500">리터치</div><div id="ot2" class="ot-val">-</div></div>
+            <div class="ot-box"><div class="text-[10px] font-bold text-slate-500">BBT</div><div id="ot0" class="ot-val">---</div></div>
+            <div class="ot-box"><div class="text-[10px] font-bold text-slate-500">인서트</div><div id="ot1" class="ot-val">---</div></div>
+            <div class="ot-box"><div class="text-[10px] font-bold text-slate-500">리터치</div><div id="ot2" class="ot-val">---</div></div>
         </div>
     </header>
 
@@ -70,41 +70,42 @@
     <script>
         const API = 'https://script.google.com/macros/s/AKfycbyFlAfiJHW0Jwrd6W_mHQ1i1ImTMzBxIF3Mp49b-NjvhY9c9yHoqz4cGHbYGgoFXX8t/exec';
         
+        // [V4.0 순정 수신 로직]
         async function load() {
             try {
                 const response = await fetch(API + "?v=" + Date.now());
                 const data = await response.json();
-                if(!data) return;
+                if(!data || data.length < 4) return;
 
-                // [복구] 데이터가 있을 때만 즉시 화면 교체 (사라짐 방지)
-                document.getElementById('ot0').innerHTML = data[0] || "0";
-                document.getElementById('ot1').innerHTML = data[1] || "0";
-                document.getElementById('ot2').innerHTML = data[2] || "0";
+                // 상단 정보 교체
+                document.getElementById('ot0').innerText = data[0];
+                document.getElementById('ot1').innerText = data[1];
+                document.getElementById('ot2').innerText = data[2];
                 
-                // 전광판 업데이트
-                document.getElementById('scrollingNotice').innerHTML = data[3] || "";
+                // 전광판 교체
+                document.getElementById('scrollingNotice').innerHTML = data[3];
 
-                // 본문 데이터
+                // 본문 교체
                 for(let i=0; i<8; i++) {
                     const el = document.getElementById("row" + (i + 5));
                     if(el) el.innerHTML = data[i + 4] || "";
                 }
-            } catch(e) { console.log("Fetch Fail"); }
+            } catch(e) { }
         }
 
+        // 확대 기능
         function zoom(card) {
             const h = card.querySelector('.card-header');
             const b = card.querySelector('.card-body');
-            const m = document.getElementById('zoomModal');
             document.getElementById('z-head').innerText = h.innerText;
             document.getElementById('z-head').style.backgroundColor = window.getComputedStyle(h).backgroundColor;
             document.getElementById('z-body').innerHTML = b.innerHTML;
-            m.style.display = 'flex';
+            document.getElementById('zoomModal').style.display = 'flex';
         }
 
         window.onload = () => {
             load();
-            setInterval(load, 15000); // 15초 동기화
+            setInterval(load, 15000); 
             setInterval(() => {
                 document.getElementById('clock').innerText = new Date().toLocaleString('ko-KR', { hour12: false });
             }, 1000);
