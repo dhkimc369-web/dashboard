@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>제조팀 업무 게시판 (기능 복구 완료)</title>
+    <title>제조팀 업무 게시판 (UI 고정 및 기능 복구)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -29,13 +29,12 @@
     </style>
 </head>
 <body>
-
     <header>
         <div style="min-width: 175px;">
             <h1 class="text-xl font-black text-[#f39c12]">제조팀 업무 게시판</h1>
             <div id="clock" class="text-[10px] text-slate-400 font-bold"></div>
         </div>
-        <div class="marquee-box"><div id="scrollNotice">데이터를 불러오고 있습니다...</div></div>
+        <div class="marquee-box"><div id="scrollNotice">데이터 연동 중...</div></div>
         <div class="stat-group">
             <div class="stat-box"><div class="stat-label">BBT</div><div id="v1" class="stat-val">-</div></div>
             <div class="stat-box"><div class="stat-label">인서트</div><div id="v2" class="stat-val">-</div></div>
@@ -62,42 +61,27 @@
     </div>
 
     <script>
-        const API = 'https://script.google.com/macros/s/AKfycbyFlAfiJHW0Jwrd6W_mHQ1i1ImTMzBxIF3Mp49b-NjvhY9c9yHoqz4cGHbYGgoFXX8t/exec';
-
-        // 가장 원시적이지만 강력한 숫자 추출기 (B열 데이터용)
-        function forceNumber(input) {
-            if (!input) return "0";
-            // 1. 문자열로 변환 2. HTML 태그 제거 3. 숫자와 소수점 제외 모든 문자 삭제
-            const cleanText = String(input).replace(/<[^>]*>?/gm, '');
-            const numOnly = cleanText.replace(/[^0-9.]/g, '');
-            return numOnly || "0";
-        }
+        const API = 'https://script.google.com/macros/s/AKfycbzOyuT_zp9uedI7xYWlTr9OkE344bTgePhil42Q47gTjrpuLFugtdvouiQGlkWcnhhuAg/exec';
 
         async function refresh() {
             try {
-                const res = await fetch(`${API}?cb=${Date.now()}`);
+                const res = await fetch(`${API}?t=${Date.now()}`);
                 const data = await res.json();
-                
-                if (Array.isArray(data) && data.length >= 12) {
-                    // 상단 인원수 업데이트 (B1, B2, B3 강제 타격)
-                    document.getElementById('v1').innerText = forceNumber(data[0]);
-                    document.getElementById('v2').innerText = forceNumber(data[1]);
-                    document.getElementById('v3').innerText = forceNumber(data[2]);
+                if (data && data.length >= 12) {
+                    // 상단 인원: 숫자 외 제거
+                    const getNum = (t) => t.replace(/[^0-9]/g, '') || "0";
+                    document.getElementById('v1').innerText = getNum(data[0]);
+                    document.getElementById('v2').innerText = getNum(data[1]);
+                    document.getElementById('v3').innerText = getNum(data[2]);
                     
-                    // 전광판 업데이트
-                    if(data[3]) {
-                        document.getElementById('scrollNotice').innerHTML = data[3];
-                    }
-                    
-                    // 하단 카드 업데이트 (서식 유지)
+                    // 전광판 및 카드 업데이트
+                    document.getElementById('scrollNotice').innerHTML = data[3] || "";
                     for (let i = 0; i < 8; i++) {
                         const cell = document.getElementById("r" + (i + 5));
-                        if (cell && data[i+4]) {
-                            cell.innerHTML = data[i+4];
-                        }
+                        if (cell) cell.innerHTML = data[i + 4] || "";
                     }
                 }
-            } catch (err) { console.warn("연동 시도 중..."); }
+            } catch (err) { console.warn("새로고침 중..."); }
         }
 
         function openZ(el) {
