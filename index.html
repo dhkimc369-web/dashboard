@@ -2,108 +2,110 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>제조팀 업무 게시판 V11.0</title>
+    <title>제조팀 업무 게시판 V12.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
         body { background: #1a2a3a; font-family: 'Pretendard', sans-serif; margin: 0; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
         
-        /* 헤더 & 전광판 */
+        /* 헤더 및 전광판 */
         header { background: #1a2a3a; padding: 10px 20px; display: flex; align-items: center; border-bottom: 3px solid #f39c12; gap: 15px; flex-shrink: 0; }
-        .marquee-box { flex: 1; background: #0f172a; height: 46px; border-radius: 4px; overflow: hidden; position: relative; }
-        #topNotice { 
+        .marquee-container { flex: 1; background: #0f172a; height: 48px; border-radius: 4px; overflow: hidden; position: relative; border: 1px solid #334155; }
+        #noticeText { 
             position: absolute; white-space: nowrap; font-size: 1.8rem; font-weight: 900; color: #fbbf24; top: 50%; transform: translateY(-50%);
-            animation: moveText 30s linear infinite; 
+            animation: scroll 30s linear infinite; 
         }
-        @keyframes moveText { 0% { left: 100%; } 100% { left: -150%; } }
+        @keyframes scroll { 0% { left: 100%; } 100% { left: -150%; } }
 
-        /* 상단 인원 수치 */
-        .stat-wrap { display: flex; gap: 10px; }
-        .stat-box { background: white; width: 100px; height: 55px; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 2px solid #cbd5e1; }
-        .stat-title { font-size: 11px; font-weight: 800; color: #64748b; }
-        .stat-val { font-size: 1.7rem; font-weight: 900; color: #1e293b; line-height: 1; }
+        /* 상단 인원 수치 박스 - 태그 노출 방지 처리 */
+        .stat-group { display: flex; gap: 8px; }
+        .stat-box { background: white; width: 105px; height: 55px; border-radius: 4px; text-align: center; border: 2px solid #cbd5e1; display: flex; flex-direction: column; justify-content: center; }
+        .stat-label { font-size: 11px; font-weight: 800; color: #64748b; }
+        .stat-val { font-size: 1.8rem; font-weight: 900; color: #1e293b; line-height: 1; overflow: hidden; }
 
-        /* 메인 카드 영역 */
-        main { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 12px; padding: 15px; }
-        .card { background: white; border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; border: 1px solid #e2e8f0; cursor: pointer; }
+        /* 카드 그리드 레이아웃 */
+        .main-grid { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 12px; padding: 15px; }
+        .card { background: white; border-radius: 8px; display: flex; flex-direction: column; border: 1px solid #e2e8f0; cursor: pointer; overflow: hidden; }
         .card-h { padding: 8px 12px; font-size: 14px; font-weight: 800; color: white; }
         .card-b { padding: 12px; font-size: 1rem; flex: 1; overflow-y: auto; white-space: pre-wrap; line-height: 1.5; color: #334155; }
 
         /* 확대 모달 */
-        #modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
-        .modal-inner { background: white; width: 95%; max-height: 90vh; border-radius: 15px; display: flex; flex-direction: column; overflow: hidden; }
-        #modal-h { padding: 20px 30px; font-size: 2.2rem; font-weight: 900; color: white; }
-        #modal-b { padding: 40px; font-size: 2.2rem; font-weight: 600; line-height: 1.4; color: #1e293b; overflow-y: auto; }
+        #zoom { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; align-items: center; justify-content: center; padding: 25px; }
+        .zoom-box { background: white; width: 95%; max-height: 90vh; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
+        #z-h { padding: 20px 30px; font-size: 2.2rem; font-weight: 900; color: white; }
+        #z-b { padding: 40px; font-size: 2.2rem; font-weight: 600; line-height: 1.4; color: #1e293b; overflow-y: auto; }
     </style>
 </head>
 <body>
 
     <header>
-        <div style="min-width: 170px;">
-            <h1 class="text-xl font-black text-[#f39c12] leading-none">제조팀 업무 게시판</h1>
-            <div id="clock" class="text-[10px] text-slate-400 mt-1 font-bold"></div>
+        <div style="min-width: 175px;">
+            <h1 class="text-xl font-black text-[#f39c12]">제조팀 업무 게시판</h1>
+            <div id="clock" class="text-[10px] text-slate-400 font-bold"></div>
         </div>
-        <div class="marquee-box"><div id="topNotice">데이터를 불러오는 중입니다...</div></div>
-        <div class="stat-wrap">
-            <div class="stat-box"><div class="stat-title">BBT</div><div id="v1" class="stat-val">0</div></div>
-            <div class="stat-box"><div class="stat-title">인서트</div><div id="v2" class="stat-val">0</div></div>
-            <div class="stat-box"><div class="stat-title">리터치</div><div id="v3" class="stat-val">0</div></div>
+        <div class="marquee-container"><div id="noticeText">데이터 동기화 중...</div></div>
+        <div class="stat-group">
+            <div class="stat-box"><div class="stat-label">BBT</div><div id="v1" class="stat-val">-</div></div>
+            <div class="stat-box"><div class="stat-label">인서트</div><div id="v2" class="stat-val">-</div></div>
+            <div class="stat-box"><div class="stat-label">리터치</div><div id="v3" class="stat-val">-</div></div>
         </div>
     </header>
 
-    <main>
-        <div class="card" onclick="zoom(this)"><div class="card-h bg-red-500">📢 공지 사항</div><div class="card-b" id="c5"></div></div>
-        <div class="card" onclick="zoom(this)"><div class="card-h bg-purple-500">👥 근태 현황</div><div class="card-b" id="c6"></div></div>
-        <div class="card" onclick="zoom(this)"><div class="card-h bg-green-600">📦 납품 목록</div><div class="card-b" id="c7"></div></div>
-        <div class="card" onclick="zoom(this)"><div class="card-h bg-blue-600">✅ 업무 공유</div><div class="card-b" id="c8"></div></div>
-        <div class="card" onclick="zoom(this)"><div class="card-h bg-teal-600">📊 진행 현황</div><div class="card-b" id="c9"></div></div>
-        <div class="card" onclick="zoom(this)"><div class="card-h bg-orange-500">🔍 BBT 상세</div><div class="card-b" id="c10"></div></div>
-        <div class="card" onclick="zoom(this)"><div class="card-h bg-indigo-600">🔧 인서트 상세</div><div class="card-b" id="c11"></div></div>
-        <div class="card" onclick="zoom(this)"><div class="card-h bg-slate-600">⚠️ 리터치 상세</div><div class="card-b" id="c12"></div></div>
-    </main>
+    <div class="main-grid">
+        <div class="card" onclick="openZoom(this)"><div class="card-h bg-red-500">📢 공지 사항</div><div class="card-b" id="row5"></div></div>
+        <div class="card" onclick="openZoom(this)"><div class="card-h bg-purple-500">👥 근태 현황</div><div class="card-b" id="row6"></div></div>
+        <div class="card" onclick="openZoom(this)"><div class="card-h bg-green-600">📦 납품 목록</div><div class="card-b" id="row7"></div></div>
+        <div class="card" onclick="openZoom(this)"><div class="card-h bg-blue-600">✅ 업무 공유</div><div class="card-b" id="row8"></div></div>
+        <div class="card" onclick="openZoom(this)"><div class="card-h bg-teal-600">📊 진행 현황</div><div class="card-b" id="row9"></div></div>
+        <div class="card" onclick="openZoom(this)"><div class="card-h bg-orange-500">🔍 BBT 상세</div><div class="card-b" id="row10"></div></div>
+        <div class="card" onclick="openZoom(this)"><div class="card-h bg-indigo-600">🔧 인서트 상세</div><div class="card-b" id="row11"></div></div>
+        <div class="card" onclick="openZoom(this)"><div class="card-h bg-slate-600">⚠️ 리터치 상세</div><div class="card-b" id="row12"></div></div>
+    </div>
 
-    <div id="modal" onclick="this.style.display='none'">
-        <div class="modal-inner" onclick="event.stopPropagation()">
-            <div id="modal-h"></div>
-            <div id="modal-b"></div>
+    <div id="zoom" onclick="this.style.display='none'">
+        <div class="zoom-box" onclick="event.stopPropagation()">
+            <div id="z-h"></div>
+            <div id="z-b"></div>
         </div>
     </div>
 
     <script>
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyFlAfiJHW0Jwrd6W_mHQ1i1ImTMzBxIF3Mp49b-NjvhY9c9yHoqz4cGHbYGgoFXX8t/exec';
+        const API_URL = 'https://script.google.com/macros/s/AKfycbyFlAfiJHW0Jwrd6W_mHQ1i1ImTMzBxIF3Mp49b-NjvhY9c9yHoqz4cGHbYGgoFXX8t/exec';
 
-        async function updateBoard() {
-            try {
-                // 캐시 방지를 위해 랜덤 숫자 추가
-                const response = await fetch(`${SCRIPT_URL}?ts=${Date.now()}`);
-                const rows = await response.json();
-                
-                if (rows && rows.length >= 4) {
-                    // 상단 데이터 1~4행 연동
-                    document.getElementById('v1').innerText = rows[0] || "0";
-                    document.getElementById('v2').innerText = rows[1] || "0";
-                    document.getElementById('v3').innerText = rows[2] || "0";
-                    document.getElementById('topNotice').innerHTML = rows[3] || "---";
-
-                    // 하단 카드 5~12행 연동
-                    for (let i = 0; i < 8; i++) {
-                        const cell = document.getElementById("c" + (i + 5));
-                        if (cell) cell.innerHTML = rows[i + 4] || "";
-                    }
-                    console.log("Update Success");
-                }
-            } catch (e) {
-                console.error("Update Error");
-            }
+        // 텍스트에서 HTML 태그를 강제로 제거하는 안전 장치
+        function cleanText(str) {
+            if (!str) return "";
+            return str.toString().replace(/<[^>]*>?/gm, '');
         }
 
-        function zoom(el) {
+        async function loadData() {
+            try {
+                const response = await fetch(`${API_URL}?cache=${Date.now()}`);
+                const data = await response.json();
+                
+                if (data && data.length >= 4) {
+                    // 상단 숫자는 cleanText를 사용하여 태그 찌꺼기 완벽 제거
+                    document.getElementById('v1').innerText = cleanText(data[0]) || "0";
+                    document.getElementById('v2').innerText = cleanText(data[1]) || "0";
+                    document.getElementById('v3').innerText = cleanText(data[2]) || "0";
+                    
+                    // 전광판 및 카드는 시트 서식(빨간색 등) 유지를 위해 innerHTML 사용
+                    document.getElementById('noticeText').innerHTML = data[3] || "";
+                    for (let i = 0; i < 8; i++) {
+                        const cell = document.getElementById("row" + (i + 5));
+                        if (cell) cell.innerHTML = data[i + 4] || "";
+                    }
+                }
+            } catch (e) { console.log("Update failed"); }
+        }
+
+        function openZoom(el) {
             const h = el.querySelector('.card-h');
             const b = el.querySelector('.card-b');
-            document.getElementById('modal-h').innerText = h.innerText;
-            document.getElementById('modal-h').style.backgroundColor = getComputedStyle(h).backgroundColor;
-            document.getElementById('modal-b').innerHTML = b.innerHTML;
-            document.getElementById('modal').style.display = 'flex';
+            document.getElementById('z-h').innerText = h.innerText;
+            document.getElementById('z-h').style.backgroundColor = getComputedStyle(h).backgroundColor;
+            document.getElementById('z-b').innerHTML = b.innerHTML;
+            document.getElementById('zoom').style.display = 'flex';
         }
 
         setInterval(() => {
@@ -111,8 +113,8 @@
         }, 1000);
 
         window.onload = () => {
-            updateBoard();
-            setInterval(updateBoard, 15000); // 15초마다 갱신
+            loadData();
+            setInterval(loadData, 15000);
         };
     </script>
 </body>
