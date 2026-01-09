@@ -2,46 +2,43 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>제조팀 업무 게시판 Final</title>
+    <title>제조팀 업무 게시판 (v14.0 FINAL)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
         body { background: #1a2a3a; font-family: 'Pretendard', sans-serif; margin: 0; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
-        
-        /* 상단 전광판 */
         header { background: #1a2a3a; padding: 10px 20px; display: flex; align-items: center; border-bottom: 3px solid #f39c12; gap: 15px; flex-shrink: 0; }
-        .marquee-container { flex: 1; background: #0f172a; height: 48px; border-radius: 4px; overflow: hidden; position: relative; border: 1px solid #334155; }
-        #topNotice { position: absolute; white-space: nowrap; font-size: 1.8rem; font-weight: 900; color: #fbbf24; top: 50%; transform: translateY(-50%); animation: scroll 30s linear infinite; }
+        .marquee-box { flex: 1; background: #0f172a; height: 48px; border-radius: 4px; overflow: hidden; position: relative; border: 1px solid #334155; }
+        #scrollNotice { position: absolute; white-space: nowrap; font-size: 1.8rem; font-weight: 900; color: #fbbf24; top: 50%; transform: translateY(-50%); animation: scroll 30s linear infinite; }
         @keyframes scroll { 0% { left: 100%; } 100% { left: -160%; } }
-
-        /* 상단 인원 수치 */
+        
+        /* 인원 수치 박스 강화 */
         .stat-group { display: flex; gap: 8px; }
         .stat-box { background: white; width: 105px; height: 55px; border-radius: 4px; text-align: center; border: 2px solid #cbd5e1; display: flex; flex-direction: column; justify-content: center; }
         .stat-label { font-size: 11px; font-weight: 800; color: #64748b; }
         .stat-val { font-size: 1.8rem; font-weight: 900; color: #1e293b; line-height: 1; }
 
-        /* 카드 그리드 */
+        /* 그리드 및 카드 */
         main { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 12px; padding: 15px; }
-        .card { background: white; border-radius: 8px; display: flex; flex-direction: column; border: 1px solid #e2e8f0; cursor: pointer; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.1s; }
-        .card:active { transform: scale(0.98); }
+        .card { background: white; border-radius: 8px; display: flex; flex-direction: column; border: 1px solid #e2e8f0; cursor: pointer; overflow: hidden; }
         .card-h { padding: 8px 12px; font-size: 14px; font-weight: 800; color: white; }
-        .card-b { padding: 12px; font-size: 1.05rem; flex: 1; overflow: hidden; white-space: pre-wrap; line-height: 1.5; color: #334155; }
+        .card-b { padding: 12px; font-size: 1rem; flex: 1; overflow: hidden; white-space: pre-wrap; line-height: 1.5; color: #334155; }
 
-        /* 확대 모달 - z-index 최상위 */
-        #zoomLayer { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 9999; align-items: center; justify-content: center; padding: 20px; }
-        .zoom-content { background: white; width: 95%; max-height: 90vh; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
-        #z-head { padding: 25px 35px; font-size: 2.5rem; font-weight: 900; color: white; }
-        #z-body { padding: 45px; font-size: 2.5rem; font-weight: 700; line-height: 1.4; color: #1e293b; overflow-y: auto; }
+        /* 확대 창 (z-index 9999 고정) */
+        #zoomOverlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; align-items: center; justify-content: center; padding: 25px; }
+        .zoom-inner { background: white; width: 95%; max-height: 90vh; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
+        #zoomTitle { padding: 25px 35px; font-size: 2.5rem; font-weight: 900; color: white; }
+        #zoomContent { padding: 45px; font-size: 2.3rem; font-weight: 600; line-height: 1.4; color: #1e293b; overflow-y: auto; }
     </style>
 </head>
 <body>
 
     <header>
         <div style="min-width: 175px;">
-            <h1 class="text-xl font-black text-[#f39c12] leading-tight">제조팀 업무 게시판</h1>
+            <h1 class="text-xl font-black text-[#f39c12]">제조팀 업무 게시판</h1>
             <div id="clock" class="text-[10px] text-slate-400 font-bold"></div>
         </div>
-        <div class="marquee-container"><div id="topNotice">데이터 로딩 중...</div></div>
+        <div class="marquee-box"><div id="scrollNotice">데이터를 불러오는 중입니다...</div></div>
         <div class="stat-group">
             <div class="stat-box"><div class="stat-label">BBT</div><div id="v1" class="stat-val">-</div></div>
             <div class="stat-box"><div class="stat-label">인서트</div><div id="v2" class="stat-val">-</div></div>
@@ -50,40 +47,57 @@
     </header>
 
     <main>
-        <div class="card" onclick="zoomIn(this)"><div class="card-h bg-red-500">📢 공지 사항</div><div class="card-b" id="r5"></div></div>
-        <div class="card" onclick="zoomIn(this)"><div class="card-h bg-purple-500">👥 근태 현황</div><div class="card-b" id="r6"></div></div>
-        <div class="card" onclick="zoomIn(this)"><div class="card-h bg-green-600">📦 납품 목록</div><div class="card-b" id="r7"></div></div>
-        <div class="card" onclick="zoomIn(this)"><div class="card-h bg-blue-600">✅ 업무 공유</div><div class="card-b" id="r8"></div></div>
-        <div class="card" onclick="zoomIn(this)"><div class="card-h bg-teal-600">📊 진행 현황</div><div class="card-b" id="r9"></div></div>
-        <div class="card" onclick="zoomIn(this)"><div class="card-h bg-orange-500">🔍 BBT 상세</div><div class="card-b" id="r10"></div></div>
-        <div class="card" onclick="zoomIn(this)"><div class="card-h bg-indigo-600">🔧 인서트 상세</div><div class="card-b" id="r11"></div></div>
-        <div class="card" onclick="zoomIn(this)"><div class="card-h bg-slate-600">⚠️ 리터치 상세</div><div class="card-b" id="r12"></div></div>
+        <div class="card" onclick="openFull(this)"><div class="card-h bg-red-500">📢 공지 사항</div><div class="card-b" id="r5"></div></div>
+        <div class="card" onclick="openFull(this)"><div class="card-h bg-purple-500">👥 근태 현황</div><div class="card-b" id="r6"></div></div>
+        <div class="card" onclick="openFull(this)"><div class="card-h bg-green-600">📦 납품 목록</div><div class="card-b" id="r7"></div></div>
+        <div class="card" onclick="openFull(this)"><div class="card-h bg-blue-600">✅ 업무 공유</div><div class="card-b" id="r8"></div></div>
+        <div class="card" onclick="openFull(this)"><div class="card-h bg-teal-600">📊 진행 현황</div><div class="card-b" id="r9"></div></div>
+        <div class="card" onclick="openFull(this)"><div class="card-h bg-orange-500">🔍 BBT 상세</div><div class="card-b" id="r10"></div></div>
+        <div class="card" onclick="openFull(this)"><div class="card-h bg-indigo-600">🔧 인서트 상세</div><div class="card-b" id="r11"></div></div>
+        <div class="card" onclick="openFull(this)"><div class="card-h bg-slate-600">⚠️ 리터치 상세</div><div class="card-b" id="r12"></div></div>
     </main>
 
-    <div id="zoomLayer" onclick="this.style.display='none'">
-        <div class="zoom-content" onclick="event.stopPropagation()">
-            <div id="z-head"></div>
-            <div id="z-body"></div>
+    <div id="zoomOverlay" onclick="this.style.display='none'">
+        <div class="zoom-inner" onclick="event.stopPropagation()">
+            <div id="zoomTitle"></div>
+            <div id="zoomContent"></div>
         </div>
     </div>
 
     <script>
-        const API = 'https://script.google.com/macros/s/AKfycbyFlAfiJHW0Jwrd6W_mHQ1i1ImTMzBxIF3Mp49b-NjvhY9c9yHoqz4cGHbYGgoFXX8t/exec';
+        const API_URL = 'https://script.google.com/macros/s/AKfycbyFlAfiJHW0Jwrd6W_mHQ1i1ImTMzBxIF3Mp49b-NjvhY9c9yHoqz4cGHbYGgoFXX8t/exec';
 
-        async function update() {
+        async function fetchData() {
             try {
-                const res = await fetch(`${API}?t=${Date.now()}`);
-                const data = await res.json();
+                const response = await fetch(`${API_URL}?cache=${Date.now()}`);
+                const data = await response.json();
                 if (data && data.length >= 4) {
-                    // 상단 인원: 숫자만 추출하여 매핑 (0을 5로, 1을 3으로 등 시트 위치 고정)
-                    document.getElementById('v1').innerText = data[0].toString().replace(/[^0-9]/g, "") || "0";
-                    document.getElementById('v2').innerText = data[1].toString().replace(/[^0-9]/g, "") || "0";
-                    document.getElementById('v3').innerText = data[2].toString().replace(/[^0-9]/g, "") || "0";
+                    // 숫자만 강제로 추출하는 로직 (텍스트가 섞여있어도 숫자만 뽑아냄)
+                    const extractNum = (val) => val.toString().replace(/[^0-9]/g, "") || "0";
+                    document.getElementById('v1').innerText = extractNum(data[0]);
+                    document.getElementById('v2').innerText = extractNum(data[1]);
+                    document.getElementById('v3').innerText = extractNum(data[2]);
                     
-                    // 전광판
-                    document.getElementById('topNotice').innerHTML = data[3] || "";
-                    
-                    // 하단 8개 카드
+                    document.getElementById('scrollNotice').innerHTML = data[3] || "";
                     for (let i = 0; i < 8; i++) {
-                        const target = document.getElementById("r" + (i + 5));
-                        if (target) target.innerHTML = data[i + 4] || "";
+                        const cell = document.getElementById("r" + (i + 5));
+                        if (cell) cell.innerHTML = data[i + 4] || "";
+                    }
+                }
+            } catch (e) { console.error("Update fail"); }
+        }
+
+        function openFull(el) {
+            const h = el.querySelector('.card-h');
+            const b = el.querySelector('.card-b');
+            document.getElementById('zoomTitle').innerText = h.innerText;
+            document.getElementById('zoomTitle').style.backgroundColor = getComputedStyle(h).backgroundColor;
+            document.getElementById('zoomContent').innerHTML = b.innerHTML;
+            document.getElementById('zoomOverlay').style.display = 'flex';
+        }
+
+        setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleString(); }, 1000);
+        window.onload = () => { fetchData(); setInterval(fetchData, 15000); };
+    </script>
+</body>
+</html>
