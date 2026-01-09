@@ -2,112 +2,91 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>제조팀 업무 게시판 (Final Fix)</title>
+    <title>제조팀 업무 게시판 Final</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
         body { background: #1a2a3a; font-family: 'Pretendard', sans-serif; margin: 0; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
         
-        /* 헤더 디자인 */
-        header { background: #1a2a3a; padding: 10px 20px; display: flex; align-items: center; border-bottom: 3px solid #f39c12; gap: 15px; flex-shrink: 0; }
-        .marquee-container { flex: 1; background: #0f172a; height: 48px; border-radius: 4px; overflow: hidden; position: relative; border: 1px solid #334155; }
+        /* 상단 헤더 - 전광판 공간 확보 */
+        header { background: #1a2a3a; padding: 12px 20px; display: flex; align-items: center; border-bottom: 3px solid #f39c12; gap: 20px; flex-shrink: 0; }
+        .marquee-area { flex: 1; background: #0f172a; height: 50px; border-radius: 6px; overflow: hidden; position: relative; }
         #topNotice { 
             position: absolute; white-space: nowrap; font-size: 1.8rem; font-weight: 900; color: #fbbf24; top: 50%; transform: translateY(-50%);
-            animation: scrollText 30s linear infinite; 
+            animation: scrollText 25s linear infinite; 
         }
-        @keyframes scrollText { 0% { left: 100%; } 100% { left: -160%; } }
+        @keyframes scrollText { 0% { left: 100%; } 100% { left: -150%; } }
 
-        /* 상단 인원 박스 (숫자만 표시) */
-        .stat-group { display: flex; gap: 8px; }
-        .stat-box { background: white; width: 105px; height: 55px; border-radius: 4px; text-align: center; border: 2px solid #cbd5e1; display: flex; flex-direction: column; justify-content: center; }
-        .stat-label { font-size: 11px; font-weight: 800; color: #64748b; }
-        .stat-val { font-size: 1.8rem; font-weight: 900; color: #1e293b; line-height: 1; }
+        /* 인원 표시 창 - 숫자 가독성 최적화 */
+        .stat-group { display: flex; gap: 12px; }
+        .stat-card { background: white; width: 110px; height: 60px; border-radius: 6px; text-align: center; border: 2px solid #cbd5e1; display: flex; flex-direction: column; justify-content: center; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1); }
+        .stat-label { font-size: 12px; font-weight: 800; color: #64748b; margin-bottom: -2px; }
+        .stat-num { font-size: 2rem; font-weight: 900; color: #1e293b; line-height: 1; letter-spacing: -1px; }
 
-        /* 메인 카드 그리드 */
-        .grid-container { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 12px; padding: 15px; }
-        .card { background: white; border-radius: 8px; display: flex; flex-direction: column; border: 1px solid #e2e8f0; cursor: pointer; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .card-header { padding: 8px 12px; font-size: 14px; font-weight: 800; color: white; }
-        .card-body { padding: 12px; font-size: 1rem; flex: 1; overflow-y: auto; white-space: pre-wrap; line-height: 1.5; color: #334155; }
-
-        /* 확대 모달 */
-        #modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; align-items: center; justify-content: center; padding: 25px; }
-        .modal-content { background: white; width: 95%; max-height: 90vh; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
-        #m-header { padding: 20px 30px; font-size: 2.2rem; font-weight: 900; color: white; }
-        #m-body { padding: 40px; font-size: 2.2rem; font-weight: 600; line-height: 1.4; color: #1e293b; overflow-y: auto; }
+        /* 메인 카드 레이아웃 */
+        main { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 15px; padding: 15px; }
+        .card { background: white; border-radius: 10px; display: flex; flex-direction: column; border: 1px solid #e2e8f0; cursor: pointer; overflow: hidden; }
+        .card-h { padding: 10px 15px; font-size: 15px; font-weight: 800; color: white; }
+        .card-b { padding: 15px; font-size: 1.1rem; flex: 1; overflow-y: auto; white-space: pre-wrap; line-height: 1.6; color: #334155; }
     </style>
 </head>
 <body>
 
     <header>
-        <div style="min-width: 175px;">
-            <h1 class="text-xl font-black text-[#f39c12]">제조팀 업무 게시판</h1>
-            <div id="clock" class="text-[10px] text-slate-400 font-bold"></div>
+        <div style="min-width: 180px;">
+            <h1 class="text-2xl font-black text-[#f39c12]">제조팀 게시판</h1>
+            <div id="clock" class="text-xs text-slate-400 font-bold"></div>
         </div>
-        <div class="marquee-container"><div id="topNotice">실시간 데이터를 동기화 중입니다...</div></div>
+        <div class="marquee-area"><div id="topNotice">데이터 로딩 중...</div></div>
         <div class="stat-group">
-            <div class="stat-box"><div class="stat-label">BBT</div><div id="stat1" class="stat-val">-</div></div>
-            <div class="stat-box"><div class="stat-label">인서트</div><div id="stat2" class="stat-val">-</div></div>
-            <div class="stat-box"><div class="stat-label">리터치</div><div id="stat3" class="stat-val">-</div></div>
+            <div class="stat-card"><div class="stat-label">BBT</div><div id="v1" class="stat-num">0</div></div>
+            <div class="stat-card"><div class="stat-label">인서트</div><div id="v2" class="stat-num">0</div></div>
+            <div class="stat-card"><div class="stat-label">리터치</div><div id="v3" class="stat-num">0</div></div>
         </div>
     </header>
 
-    <div class="grid-container">
-        <div class="card" onclick="openZoom(this)"><div class="card-header bg-red-500">📢 공지 사항</div><div class="card-body" id="row5"></div></div>
-        <div class="card" onclick="openZoom(this)"><div class="card-header bg-purple-500">👥 근태 현황</div><div class="card-body" id="row6"></div></div>
-        <div class="card" onclick="openZoom(this)"><div class="card-header bg-green-600">📦 납품 목록</div><div class="card-body" id="row7"></div></div>
-        <div class="card" onclick="openZoom(this)"><div class="card-header bg-blue-600">✅ 업무 공유</div><div class="card-body" id="row8"></div></div>
-        <div class="card" onclick="openZoom(this)"><div class="card-header bg-teal-600">📊 진행 현황</div><div class="card-body" id="row9"></div></div>
-        <div class="card" onclick="openZoom(this)"><div class="card-header bg-orange-500">🔍 BBT 상세</div><div class="card-body" id="row10"></div></div>
-        <div class="card" onclick="openZoom(this)"><div class="card-header bg-indigo-600">🔧 인서트 상세</div><div class="card-body" id="row11"></div></div>
-        <div class="card" onclick="openZoom(this)"><div class="card-header bg-slate-600">⚠️ 리터치 상세</div><div class="card-body" id="row12"></div></div>
-    </div>
-
-    <div id="modal" onclick="this.style.display='none'">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <div id="m-header"></div>
-            <div id="m-body"></div>
-        </div>
-    </div>
+    <main>
+        <div class="card"><div class="card-h bg-red-500">📢 공지 사항</div><div class="card-b" id="c5"></div></div>
+        <div class="card"><div class="card-h bg-purple-500">👥 근태 현황</div><div class="card-b" id="c6"></div></div>
+        <div class="card"><div class="card-h bg-green-600">📦 납품 목록</div><div class="card-b" id="c7"></div></div>
+        <div class="card"><div class="card-h bg-blue-600">✅ 업무 공유</div><div class="card-b" id="c8"></div></div>
+        <div class="card"><div class="card-h bg-teal-600">📊 진행 현황</div><div class="card-b" id="c9"></div></div>
+        <div class="card"><div class="card-h bg-orange-500">🔍 BBT 상세</div><div class="card-b" id="c10"></div></div>
+        <div class="card"><div class="card-h bg-indigo-600">🔧 인서트 상세</div><div class="card-b" id="c11"></div></div>
+        <div class="card"><div class="card-h bg-slate-600">⚠️ 리터치 상세</div><div class="card-b" id="c12"></div></div>
+    </main>
 
     <script>
-        const URL = 'https://script.google.com/macros/s/AKfycbyFlAfiJHW0Jwrd6W_mHQ1i1ImTMzBxIF3Mp49b-NjvhY9c9yHoqz4cGHbYGgoFXX8t/exec';
+        const API = 'https://script.google.com/macros/s/AKfycbyFlAfiJHW0Jwrd6W_mHQ1i1ImTMzBxIF3Mp49b-NjvhY9c9yHoqz4cGHbYGgoFXX8t/exec';
 
-        async function refresh() {
+        async function update() {
             try {
-                const res = await fetch(`${URL}?v=${Date.now()}`);
-                const data = await res.json();
+                const res = await fetch(`${API}?t=${Date.now()}`);
+                const rows = await res.json();
                 
-                if (data && data.length >= 4) {
-                    // 상단 숫자 박스: 텍스트 섞여있어도 숫자만 추출 (예: "BBT_연장 5" -> "5")
-                    const getNum = (val) => val.toString().replace(/[^0-9]/g, "") || "0";
-                    document.getElementById('stat1').innerText = getNum(data[0]);
-                    document.getElementById('stat2').innerText = getNum(data[1]);
-                    document.getElementById('stat3').innerText = getNum(data[2]);
+                if (rows && rows.length >= 4) {
+                    // [해결] 텍스트에서 '진짜 숫자'만 찾아내기 (00000 방지)
+                    const extractNum = (text) => {
+                        const match = text.toString().replace(/<[^>]*>?/gm, '').match(/\d+/);
+                        return match ? match[0] : "0";
+                    };
+
+                    document.getElementById('v1').innerText = extractNum(rows[0]);
+                    document.getElementById('v2').innerText = extractNum(rows[1]);
+                    document.getElementById('v3').innerText = extractNum(rows[2]);
                     
-                    // 전광판 및 메인 카드: 서식 유지
-                    document.getElementById('topNotice').innerHTML = data[3] || "";
+                    // [해결] 전광판 및 하단 카드 서식 적용
+                    document.getElementById('topNotice').innerHTML = rows[3] || "";
                     for (let i = 0; i < 8; i++) {
-                        const target = document.getElementById("row" + (i + 5));
-                        if (target) target.innerHTML = data[i + 4] || "";
+                        const el = document.getElementById("c" + (i + 5));
+                        if (el) el.innerHTML = rows[i + 4] || "";
                     }
                 }
-            } catch (e) { console.error("Update Error"); }
+            } catch (e) { console.log("Refresh Failed"); }
         }
 
-        function openZoom(el) {
-            const h = el.querySelector('.card-header');
-            const b = el.querySelector('.card-body');
-            document.getElementById('m-header').innerText = h.innerText;
-            document.getElementById('m-header').style.backgroundColor = getComputedStyle(h).backgroundColor;
-            document.getElementById('m-body').innerHTML = b.innerHTML;
-            document.getElementById('modal').style.display = 'flex';
-        }
-
-        setInterval(() => {
-            document.getElementById('clock').innerText = new Date().toLocaleString();
-        }, 1000);
-
-        window.onload = () => { refresh(); setInterval(refresh, 15000); };
+        setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleString(); }, 1000);
+        window.onload = () => { update(); setInterval(update, 20000); };
     </script>
 </body>
 </html>
