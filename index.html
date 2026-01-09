@@ -1,90 +1,99 @@
-<style>
-    .header-container {
-        background: #1a2a3a;
-        height: 80px;
-        display: flex;
-        align-items: center;
-        padding: 0 20px;
-        border-bottom: 4px solid #f39c12;
-        gap: 20px;
-    }
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>제조팀 업무 게시판 (Final Stable)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+        body { background: #f1f5f9; font-family: 'Pretendard', sans-serif; margin: 0; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+        
+        /* 1. 상단 대시보드 (V3.0 스타일 복원) */
+        header { background: #1a2a3a; padding: 12px 20px; display: flex; align-items: center; border-bottom: 4px solid #f39c12; flex-shrink: 0; gap: 20px; }
+        
+        /* 2. 전광판: CSS로만 구동 (절대 멈추지 않음) */
+        .marquee-box { flex: 1; background: #0f172a; height: 45px; border-radius: 4px; overflow: hidden; position: relative; }
+        #topNotice { 
+            position: absolute; white-space: nowrap; font-size: 1.6rem; font-weight: 900; color: #fbbf24; top: 6px;
+            animation: moveLeft 25s linear infinite; 
+        }
+        @keyframes moveLeft { 0% { left: 100%; } 100% { left: -150%; } }
 
-    /* 전광판: CSS 애니메이션으로 24시간 무한 반복 */
-    .news-ticker {
-        flex: 1;
-        background: #0f172a;
-        height: 50px;
-        border-radius: 4px;
-        position: relative;
-        overflow: hidden;
-    }
-    #topTicker {
-        position: absolute;
-        white-space: nowrap;
-        color: #fbbf24;
-        font-size: 1.7rem;
-        font-weight: 900;
-        line-height: 50px;
-        animation: tickerLoop 25s linear infinite;
-    }
-    @keyframes tickerLoop {
-        0% { transform: translateX(100%); }
-        100% { transform: translateX(-150%); }
-    }
+        /* 3. 상단 수치 박스 (태그 노출 방지 디자인) */
+        .stat-group { display: flex; gap: 10px; }
+        .stat-item { background: white; width: 100px; height: 55px; border-radius: 4px; text-align: center; border: 2px solid #cbd5e1; display: flex; flex-direction: column; justify-content: center; }
+        .stat-lbl { font-size: 11px; font-weight: 800; color: #64748b; }
+        .stat-num { font-size: 1.8rem; font-weight: 900; color: #1e293b; line-height: 1; }
 
-    /* 수치 박스: 태그가 노출될 공간 자체를 주지 않음 */
-    .stat-group { display: flex; gap: 8px; }
-    .stat-card {
-        background: white;
-        width: 110px;
-        height: 60px;
-        border-radius: 4px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        border: 2px solid #cbd5e1;
-    }
-    .stat-title { font-size: 11px; font-weight: 800; color: #64748b; }
-    .stat-num { font-size: 2rem; font-weight: 900; color: #1e293b; line-height: 1; }
-</style>
+        /* 4. 하단 카드 그리드 (image_e3855e.png의 빈 공간을 채움) */
+        .grid-container { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 12px; padding: 15px; }
+        .card { background: white; border-radius: 8px; display: flex; flex-direction: column; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .card-header { padding: 8px 12px; font-size: 14px; font-weight: 800; color: white; border-radius: 7px 7px 0 0; }
+        .card-body { padding: 12px; font-size: 1.1rem; overflow-y: auto; flex: 1; line-height: 1.5; color: #334155; }
+    </style>
+</head>
+<body>
 
-<div class="header-container">
-    <div style="min-width: 160px;">
-        <h1 style="color:#f39c12; font-size: 22px; font-weight: 900; margin: 0;">제조팀 게시판</h1>
-        <div id="currentTime" style="color:#94a3b8; font-size: 12px;"></div>
+    <header>
+        <div style="min-width: 160px;">
+            <h1 class="text-xl font-black text-[#f39c12] leading-none">제조팀 업무 게시판</h1>
+            <div id="clock" class="text-[11px] text-slate-400 mt-1 font-bold"></div>
+        </div>
+        <div class="marquee-box"><div id="topNotice">데이터를 연결 중입니다...</div></div>
+        <div class="stat-group">
+            <div class="stat-item"><div class="stat-lbl">BBT</div><div id="val0" class="stat-num">0</div></div>
+            <div class="stat-item"><div class="stat-lbl">인서트</div><div id="val1" class="stat-num">0</div></div>
+            <div class="stat-item"><div class="stat-lbl">리터치</div><div id="val2" class="stat-num">0</div></div>
+        </div>
+    </header>
+
+    <div class="grid-container">
+        <div class="card"><div class="card-header bg-red-500">📢 공지 사항</div><div class="card-body" id="row5"></div></div>
+        <div class="card"><div class="card-header bg-purple-500">👥 근태 현황</div><div class="card-body" id="row6"></div></div>
+        <div class="card"><div class="card-header bg-green-600">📦 납품 목록</div><div class="card-body" id="row7"></div></div>
+        <div class="card"><div class="card-header bg-blue-600">✅ 업무 공유</div><div class="card-body" id="row8"></div></div>
+        <div class="card"><div class="card-header bg-teal-600">📊 진행 현황</div><div class="card-body" id="row9"></div></div>
+        <div class="card"><div class="card-header bg-orange-500">🔍 BBT 상세</div><div class="card-body" id="row10"></div></div>
+        <div class="card"><div class="card-header bg-indigo-600">🔧 인서트 상세</div><div class="card-body" id="row11"></div></div>
+        <div class="card"><div class="card-header bg-slate-600">⚠️ 리터치 상세</div><div class="card-body" id="row12"></div></div>
     </div>
 
-    <div class="news-ticker">
-        <div id="topTicker">--- 공지사항을 불러오는 중입니다 ---</div>
-    </div>
+    <script>
+        const API_URL = 'https://script.google.com/macros/s/AKfycbyFlAfiJHW0Jwrd6W_mHQ1i1ImTMzBxIF3Mp49b-NjvhY9c9yHoqz4cGHbYGgoFXX8t/exec';
 
-    <div class="stat-group">
-        <div class="stat-card"><div class="stat-title">BBT</div><div id="box0" class="stat-num">0</div></div>
-        <div class="stat-card"><div class="stat-title">인서트</div><div id="box1" class="stat-num">0</div></div>
-        <div class="stat-card"><div class="stat-title">리터치</div><div id="box2" class="stat-num">0</div></div>
-    </div>
-</div>
+        async function fetchData() {
+            try {
+                const response = await fetch(API_URL + "?v=" + Date.now());
+                const data = await response.json();
+                if (!data) return;
 
-<script>
-    function refreshTopDisplay(data) {
-        if (!data || data.length < 4) return;
+                // [해결 1] 상단 수치는 textContent로 주입하여 <span> 태그 노출 방지
+                document.getElementById('val0').textContent = data[0];
+                document.getElementById('val1').textContent = data[1];
+                document.getElementById('val2').textContent = data[2];
 
-        // [핵심] innerHTML이 아닌 textContent를 사용하여 
-        // <span> 같은 태그가 들어와도 무조건 '글자'로만 처리합니다.
-        document.getElementById('box0').textContent = data[0];
-        document.getElementById('box1').textContent = data[1];
-        document.getElementById('box2').textContent = data[2];
+                // [해결 2] 전광판은 데이터가 올 때만 교체 (중간에 비우지 않음)
+                document.getElementById('topNotice').textContent = data[3];
 
-        // 전광판은 업무 내용을 그대로 보여줌
-        document.getElementById('topTicker').textContent = data[3];
-    }
+                // [해결 3] 하단 카드 데이터 순차적 주입
+                for (let i = 0; i < 8; i++) {
+                    const cell = document.getElementById("row" + (i + 5));
+                    if (cell) cell.innerHTML = data[i + 4] || "";
+                }
+            } catch (err) { console.error("Data fetch error"); }
+        }
 
-    // 시계는 멈추지 않게 별도 구동
-    setInterval(() => {
-        const now = new Date();
-        document.getElementById('currentTime').textContent = 
-            now.getFullYear() + ". " + (now.getMonth()+1) + ". " + now.getDate() + ". " + 
-            now.getHours() + "시 " + now.getMinutes() + "분";
-    }, 1000);
-</script>
+        // 시간 업데이트 (초단위)
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById('clock').textContent = now.toLocaleString();
+        }, 1000);
+
+        window.onload = () => {
+            fetchData();
+            setInterval(fetchData, 20000); // 20초마다 갱신
+        };
+    </script>
+</body>
+</html>
