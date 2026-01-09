@@ -3,34 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>제조팀 업무 게시판 V4.5</title>
+    <title>제조팀 업무 게시판 V4.6</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
         body { background-color: #f1f5f9; height: 100vh; display: flex; flex-direction: column; overflow: hidden; font-family: 'Pretendard', sans-serif; }
+        
+        /* 헤더 및 전광판 레이아웃 */
         header { background: #1a2a3a; padding: 10px 25px; display: flex; align-items: center; justify-content: space-between; color: white; border-bottom: 4px solid #f39c12; flex-shrink: 0; }
         .logo-group h1 { font-size: 1.4rem; font-weight: 900; color: #f39c12; }
-        
-        /* 전광판 위치 강제 조정 */
         .marquee-box { flex: 1; background: #0f172a; padding: 8px 20px; border-radius: 6px; overflow: hidden; margin: 0 30px; border: 1px solid #334155; position: relative; height: 44px; }
-        #scrollingNotice { 
-            position: absolute; 
-            white-space: nowrap; 
-            font-size: 1.3rem; 
-            font-weight: 800; 
-            color: #fbbf24; 
-            top: 50%; 
-            transform: translateY(-50%); 
-            left: 100%; /* 처음엔 화면 오른쪽 끝 */
-        }
+        #scrollingNotice { position: absolute; white-space: nowrap; font-size: 1.3rem; font-weight: 800; color: #fbbf24; top: 8px; left: 100%; display: inline-block; }
         
+        /* 인원 카드 - V4.0 스타일 유지 */
         .ot-card { background: #ffffff; padding: 4px 12px; border-radius: 6px; display: flex; flex-direction: column; align-items: center; min-width: 95px; border: 2px solid #cbd5e1; }
         .ot-num { font-size: 1.8rem; font-weight: 900; color: #1e293b; }
 
+        /* 메인 그리드 */
         .main-grid { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 15px; padding: 20px; }
         .card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; overflow: hidden; }
-        .card-body { padding: 18px; overflow-y: auto; flex: 1; font-size: 1.05rem; color: #334155; line-height: 1.5; }
+        .card-body { padding: 18px; overflow-y: auto; flex: 1; font-size: 1.05rem; color: #334155; line-height: 1.5; white-space: normal; }
         
+        /* 팝업 스타일 */
         #msgPopup { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 10001; align-items: center; justify-content: center; }
         .popup-inner { background: #fff; width: 650px; border-radius: 30px; border: 12px solid #ef4444; padding: 50px; text-align: center; }
     </style>
@@ -46,8 +40,8 @@
     </div>
 
     <header>
-        <div class="logo-group"><h1>제조팀 업무 게시판 V4.5</h1><div id="clock" class="text-xs text-slate-400">Loading...</div></div>
-        <div class="marquee-box"><div id="scrollingNotice">데이터를 불러오고 있습니다...</div></div>
+        <div class="logo-group"><h1>제조팀 업무 게시판 V4.6</h1><div id="clock" class="text-xs text-slate-400">Loading...</div></div>
+        <div class="marquee-box"><div id="scrollingNotice">현장 데이터를 동기화 중입니다...</div></div>
         <div class="flex gap-2">
             <div class="ot-card"><label class="text-[10px] font-bold text-slate-500">BBT</label><span id="ot0" class="ot-num">0</span></div>
             <div class="ot-card"><label class="text-[10px] font-bold text-slate-500">인서트</label><span id="ot1" class="ot-num">0</span></div>
@@ -69,13 +63,11 @@
     <script>
         const API_URL = 'https://script.google.com/macros/s/AKfycbyFlAfiJHW0Jwrd6W_mHQ1i1ImTMzBxIF3Mp49b-NjvhY9c9yHoqz4cGHbYGgoFXX8t/exec';
         let lastMsg = "";
-        let currentPos = window.innerWidth;
+        let pos = window.innerWidth;
 
-        // 인원 칸에서 순수 텍스트만 뽑아내는 함수
-        function stripHtml(html) {
-            let tmp = document.createElement("DIV");
-            tmp.innerHTML = html;
-            return tmp.textContent || tmp.innerText || "0";
+        // HTML 태그 제거 함수 (인원 숫자 전용)
+        function cleanText(str) {
+            return String(str || "0").replace(/<[^>]*>?/gm, '').trim();
         }
 
         async function update() {
@@ -83,22 +75,24 @@
                 const res = await fetch(API_URL + "?v=" + Date.now());
                 const data = await res.json();
                 
-                // 1. 인원 정보 (태그 제거 후 숫자만)
-                document.getElementById('ot0').innerText = stripHtml(data[0]);
-                document.getElementById('ot1').innerText = stripHtml(data[1]);
-                document.getElementById('ot2').innerText = stripHtml(data[2]);
+                // 1. 인원 정보 (순수 숫자만 출력)
+                document.getElementById('ot0').innerText = cleanText(data[0]);
+                document.getElementById('ot1').innerText = cleanText(data[1]);
+                document.getElementById('ot2').innerText = cleanText(data[2]);
                 
-                // 2. 전광판 및 본문
+                // 2. 전광판 (서식 포함)
                 document.getElementById('scrollingNotice').innerHTML = data[3] || "";
+                
+                // 3. 본문 8칸 (서식 포함)
                 for(let i=4; i<12; i++) {
                     const box = document.getElementById("row" + (i + 1));
                     if(box) box.innerHTML = data[i] || "";
                 }
 
-                // 3. 팝업
+                // 4. 팝업 (B13:메시지, B14:시간)
                 const now = new Date();
                 const curT = now.getHours().toString().padStart(2,'0') + ":" + now.getMinutes().toString().padStart(2,'0');
-                const targetT = String(data[13] || "").trim();
+                const targetT = cleanText(data[13]);
                 const msg = data[12] || "";
 
                 if (targetT === curT && msg !== "" && lastMsg !== msg) {
@@ -106,25 +100,24 @@
                     document.getElementById('msgPopup').style.display = 'flex';
                     lastMsg = msg;
                 }
-            } catch (e) { console.error(e); }
+            } catch (e) { console.error("업데이트 에러:", e); }
         }
 
-        function animate() {
+        // 전광판 애니메이션 (가장 단순하고 확실한 로직)
+        function move() {
             const el = document.getElementById('scrollingNotice');
             if (el) {
-                currentPos -= 1.8; 
-                if (currentPos < -el.offsetWidth - 50) {
-                    currentPos = window.innerWidth;
-                }
-                el.style.left = currentPos + 'px';
+                pos -= 1.5;
+                if (pos < -el.offsetWidth - 50) pos = window.innerWidth;
+                el.style.left = pos + 'px';
             }
-            requestAnimationFrame(animate);
+            requestAnimationFrame(move);
         }
 
         window.onload = () => {
             update();
-            animate();
-            setInterval(update, 20000);
+            move();
+            setInterval(update, 20000); // 20초마다 데이터 갱신
             setInterval(() => {
                 document.getElementById('clock').innerText = new Date().toLocaleString('ko-KR', { hour12: false });
             }, 1000);
