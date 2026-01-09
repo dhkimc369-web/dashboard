@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>제조팀 업무 게시판 (최종 안정화)</title>
+    <title>제조팀 업무 게시판 (연동 복구 버전)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -18,13 +18,12 @@
         .stat-val { font-size: 1.8rem; font-weight: 900; color: #1e293b; line-height: 1; }
 
         main { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 12px; padding: 15px; }
-        .card { background: white; border-radius: 8px; display: flex; flex-direction: column; border: 1px solid #e2e8f0; cursor: pointer; overflow: hidden; transition: 0.2s; }
-        .card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        .card { background: white; border-radius: 8px; display: flex; flex-direction: column; border: 1px solid #e2e8f0; cursor: pointer; overflow: hidden; }
         .card-h { padding: 8px 12px; font-size: 14px; font-weight: 800; color: white; }
         .card-b { padding: 12px; font-size: 0.95rem; flex: 1; overflow: hidden; white-space: pre-wrap; word-break: break-all; color: #334155; line-height: 1.6; }
 
-        #zoom { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 9999; align-items: center; justify-content: center; padding: 30px; }
-        .zoom-box { background: white; width: 95%; max-height: 92vh; border-radius: 12px; display: flex; flex-direction: column; }
+        #zoom { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; align-items: center; justify-content: center; padding: 30px; }
+        .zoom-box { background: white; width: 95%; max-height: 90vh; border-radius: 12px; display: flex; flex-direction: column; }
         #zHead { padding: 25px 40px; font-size: 2.5rem; font-weight: 900; color: white; border-radius: 12px 12px 0 0; }
         #zBody { padding: 45px; font-size: 2.2rem; font-weight: 600; line-height: 1.6; color: #1e293b; overflow-y: auto; white-space: pre-wrap; }
     </style>
@@ -36,7 +35,7 @@
             <h1 class="text-xl font-black text-[#f39c12]">제조팀 업무 게시판</h1>
             <div id="clock" class="text-[10px] text-slate-400 font-bold"></div>
         </div>
-        <div class="marquee-box"><div id="scrollNotice">데이터 연동 중...</div></div>
+        <div class="marquee-box"><div id="scrollNotice">데이터를 불러오는 중입니다...</div></div>
         <div class="stat-group">
             <div class="stat-box"><div class="stat-label">BBT</div><div id="v1" class="stat-val">-</div></div>
             <div class="stat-box"><div class="stat-label">인서트</div><div id="v2" class="stat-val">-</div></div>
@@ -63,41 +62,37 @@
     </div>
 
     <script>
-        // 여기에 현재 잘 나오고 있는 그 URL을 정확히 넣어주세요
-        const API = '여기에_앱스_스크립트_URL을_붙여넣으세요';
+        // 팀장님의 URL을 여기에 넣으세요
+        const API = 'https://script.google.com/macros/s/AKfycbx73F80_7iQW-66X8k3qK-g73-q6-7-q6-7/exec'; 
 
         async function refresh() {
             try {
                 const res = await fetch(API);
+                if (!res.ok) throw new Error('네트워크 응답 없음');
                 const data = await res.json();
                 
                 if (data && data.length >= 12) {
-                    // 상단 인원수 적용 (가져오신 "5", "3", "3" 데이터 매칭)
+                    // 상단 인원수
                     document.getElementById('v1').innerText = data[0];
                     document.getElementById('v2').innerText = data[1];
                     document.getElementById('v3').innerText = data[2];
                     
-                    // 전광판 적용
-                    document.getElementById('scrollNotice').innerHTML = data[3] || "";
+                    // 전광판
+                    document.getElementById('scrollNotice').innerHTML = data[3];
                     
-                    // 하단 8개 카드 및 서식 복구 (중요 단어 빨간색 처리)
+                    // 하단 8개 카드 및 서식 강조
+                    const redKeywords = /(불량|연차|대기|공유|완료|준수|주의|Holing|불량 대응분)/g;
                     for (let i = 0; i < 8; i++) {
                         const cell = document.getElementById("r" + (i + 5));
                         if (cell) {
                             let text = data[i+4] || "";
-                            // 시트에서 가져온 줄바꿈 문자(<br>)를 실제 줄바꿈으로 변경
-                            text = text.split('<br>').join('\n'); 
-                            
-                            // [서식 복구] 빨간색으로 나와야 할 단어들을 정교하게 강조
-                            const redKeywords = /(불량|연차|대기|공유|완료|준수|주의|확인 완료|요청 완료|진행)/g;
-                            const formattedText = text.replace(redKeywords, '<span style="color:#e11d48; font-weight:bold;">$1</span>');
-                            
-                            cell.innerHTML = formattedText;
+                            cell.innerHTML = text.replace(redKeywords, '<span style="color:#e11d48; font-weight:bold;">$1</span>');
                         }
                     }
                 }
             } catch (err) {
-                console.log("연동 에러 발생, 재시도 중...");
+                document.getElementById('scrollNotice').innerText = "연동 실패: URL을 다시 확인해 주세요.";
+                console.error(err);
             }
         }
 
@@ -111,8 +106,8 @@
         }
 
         setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleString(); }, 1000);
-        refresh(); 
-        setInterval(refresh, 15000); // 15초마다 자동 갱신
+        window.onload = refresh;
+        setInterval(refresh, 20000); 
     </script>
 </body>
 </html>
