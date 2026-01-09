@@ -3,87 +3,122 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>제조팀 업무 게시판 V5.1</title>
+    <title>제조팀 업무 게시판 V5.2</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
         body { background-color: #f1f5f9; height: 100vh; display: flex; flex-direction: column; overflow: hidden; font-family: 'Pretendard', sans-serif; margin: 0; }
         
-        /* [V4.0 복구] 상단 헤더 레이아웃 */
+        /* 헤더: V4.0 규격 그대로 복원 */
         header { background: #1a2a3a; padding: 10px 25px; display: flex; align-items: center; justify-content: space-between; color: white; border-bottom: 4px solid #f39c12; flex-shrink: 0; }
         .logo-group h1 { font-size: 1.4rem; font-weight: 900; color: #f39c12; }
         
-        /* [V4.0 복구] 전광판 애니메이션 영역 */
+        /* 전광판: 가장 안정적인 V4.0 방식 */
         .marquee-box { flex: 1; background: #0f172a; padding: 8px 20px; border-radius: 6px; overflow: hidden; margin: 0 30px; border: 1px solid #334155; position: relative; height: 44px; }
         #scrollingNotice { position: absolute; white-space: nowrap; font-size: 1.3rem; font-weight: 800; color: #fbbf24; top: 8px; left: 100%; }
         
-        /* [V4.0 복구] 인원 정보 카드 */
+        /* 인원 박스: V4.0 디자인 및 폰트 고정 */
         .ot-card { background: #ffffff; padding: 4px 12px; border-radius: 6px; display: flex; flex-direction: column; align-items: center; min-width: 95px; border: 2px solid #cbd5e1; }
-        .ot-label { font-size: 10px; font-weight: bold; color: #64748b; margin-bottom: -2px; }
         .ot-num { font-size: 1.8rem; font-weight: 900; color: #1e293b; line-height: 1.2; }
 
-        /* 메인 그리드 및 카드 */
+        /* 본문 그리드 */
         .main-grid { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 15px; padding: 20px; }
-        .card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; overflow: hidden; cursor: pointer; transition: transform 0.2s; }
-        .card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        .card-body { padding: 18px; overflow-y: auto; flex: 1; font-size: 1.05rem; color: #334155; line-height: 1.6; white-space: pre-wrap; }
+        .card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; overflow: hidden; cursor: pointer; }
+        .card-body { padding: 18px; overflow-y: auto; flex: 1; font-size: 1.05rem; color: #334155; line-height: 1.6; }
         
-        /* [기능 추가] 카드 확대 모달 */
-        #zoomModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 10000; align-items: center; justify-content: center; padding: 40px; }
-        .modal-content { background: white; width: 100%; max-width: 1000px; max-height: 85vh; border-radius: 20px; display: flex; flex-direction: column; overflow: hidden; }
-        .modal-header { padding: 20px 30px; color: white; font-size: 1.8rem; font-weight: 900; }
-        .modal-body { padding: 40px; font-size: 2rem; line-height: 1.6; overflow-y: auto; color: #1e293b; font-weight: 700; }
+        /* 확대 모달 전용 스타일 */
+        #zoomModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 9999; align-items: center; justify-content: center; padding: 30px; }
+        .modal-inner { background: white; width: 100%; max-width: 1100px; height: 80vh; border-radius: 20px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
+        #modalHead { padding: 25px; color: white; font-size: 2rem; font-weight: 900; }
+        #modalText { padding: 40px; font-size: 2.2rem; line-height: 1.5; overflow-y: auto; flex: 1; color: #1e293b; font-weight: 700; }
     </style>
 </head>
 <body>
 
-    <div id="zoomModal" onclick="closeZoom()">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <div id="modalHeader" class="modal-header"></div>
-            <div id="modalBody" class="modal-body"></div>
-            <button onclick="closeZoom()" class="p-4 bg-slate-800 text-white font-bold text-xl">닫기</button>
+    <div id="zoomModal" onclick="this.style.display='none'">
+        <div class="modal-inner" onclick="event.stopPropagation()">
+            <div id="modalHead"></div>
+            <div id="modalText"></div>
+            <button onclick="document.getElementById('zoomModal').style.display='none'" class="p-4 bg-slate-800 text-white font-bold text-xl">닫기</button>
         </div>
     </div>
 
     <header>
-        <div class="logo-group"><h1>제조팀 업무 게시판 V5.1</h1><div id="clock" class="text-xs text-slate-400">Loading...</div></div>
-        <div class="marquee-box"><div id="scrollingNotice">데이터를 실시간 동기화 중입니다...</div></div>
+        <div class="logo-group"><h1>제조팀 업무 게시판 V5.2</h1><div id="clock" class="text-xs text-slate-400">Loading...</div></div>
+        <div class="marquee-box"><div id="scrollingNotice">데이터 연결 중...</div></div>
         <div class="flex gap-2">
-            <div class="ot-card"><span class="ot-label">BBT</span><span id="ot0" class="ot-num">0</span></div>
-            <div class="ot-card"><span class="ot-label">인서트</span><span id="ot1" class="ot-num">0</span></div>
-            <div class="ot-card"><span class="ot-label">리터치</span><span id="ot2" class="ot-num">0</span></div>
+            <div class="ot-card"><span class="text-[10px] font-bold text-slate-500">BBT</span><span id="ot0" class="ot-num">0</span></div>
+            <div class="ot-card"><span class="text-[10px] font-bold text-slate-500">인서트</span><span id="ot1" class="ot-num">0</span></div>
+            <div class="ot-card"><span class="text-[10px] font-bold text-slate-500">리터치</span><span id="ot2" class="ot-num">0</span></div>
         </div>
     </header>
 
     <div class="main-grid">
-        <div class="card" onclick="zoomCard(this)"><div class="p-2 bg-red-500 text-white font-bold text-xs">📢 공지 사항</div><div class="card-body" id="row5"></div></div>
-        <div class="card" onclick="zoomCard(this)"><div class="p-2 bg-purple-500 text-white font-bold text-xs">👥 근태 현황</div><div class="card-body" id="row6"></div></div>
-        <div class="card" onclick="zoomCard(this)"><div class="p-2 bg-green-500 text-white font-bold text-xs">📦 납품 목록</div><div class="card-body" id="row7"></div></div>
-        <div class="card" onclick="zoomCard(this)"><div class="p-2 bg-blue-500 text-white font-bold text-xs">✅ 업무 공유</div><div class="card-body" id="row8"></div></div>
-        <div class="card" onclick="zoomCard(this)"><div class="p-2 bg-teal-500 text-white font-bold text-xs">📊 진행 현황</div><div class="card-body" id="row9"></div></div>
-        <div class="card" onclick="zoomCard(this)"><div class="p-2 bg-orange-500 text-white font-bold text-xs">🔍 BBT 상세</div><div class="card-body" id="row10"></div></div>
-        <div class="card" onclick="zoomCard(this)"><div class="p-2 bg-indigo-500 text-white font-bold text-xs">🔧 인서트 상세</div><div class="card-body" id="row11"></div></div>
-        <div class="card" onclick="zoomCard(this)"><div class="p-2 bg-slate-500 text-white font-bold text-xs">⚠️ 리터치 상세</div><div class="card-body" id="row12"></div></div>
+        <div class="card" onclick="zoom(this)"><div class="p-2 bg-red-500 text-white font-bold text-xs">📢 공지 사항</div><div class="card-body" id="row5"></div></div>
+        <div class="card" onclick="zoom(this)"><div class="p-2 bg-purple-500 text-white font-bold text-xs">👥 근태 현황</div><div class="card-body" id="row6"></div></div>
+        <div class="card" onclick="zoom(this)"><div class="p-2 bg-green-500 text-white font-bold text-xs">📦 납품 목록</div><div class="card-body" id="row7"></div></div>
+        <div class="card" onclick="zoom(this)"><div class="p-2 bg-blue-500 text-white font-bold text-xs">✅ 업무 공유</div><div class="card-body" id="row8"></div></div>
+        <div class="card" onclick="zoom(this)"><div class="p-2 bg-teal-500 text-white font-bold text-xs">📊 진행 현황</div><div class="card-body" id="row9"></div></div>
+        <div class="card" onclick="zoom(this)"><div class="p-2 bg-orange-500 text-white font-bold text-xs">🔍 BBT 상세</div><div class="card-body" id="row10"></div></div>
+        <div class="card" onclick="zoom(this)"><div class="p-2 bg-indigo-500 text-white font-bold text-xs">🔧 인서트 상세</div><div class="card-body" id="row11"></div></div>
+        <div class="card" onclick="zoom(this)"><div class="p-2 bg-slate-500 text-white font-bold text-xs">⚠️ 리터치 상세</div><div class="card-body" id="row12"></div></div>
     </div>
 
     <script>
         const API_URL = 'https://script.google.com/macros/s/AKfycbyFlAfiJHW0Jwrd6W_mHQ1i1ImTMzBxIF3Mp49b-NjvhY9c9yHoqz4cGHbYGgoFXX8t/exec';
         let pos = window.innerWidth;
 
-        // [V4.0 기반 데이터 수신]
+        // [V4.0 순정 업데이트 로직] 가장 에러 없는 방식
         async function update() {
             try {
                 const res = await fetch(API_URL + "?v=" + Date.now());
                 const data = await res.json();
                 
-                if (data) {
-                    // 상단 인원 (숫자)
+                if (data && data.length > 0) {
+                    // 상단 인원 및 전광판
                     document.getElementById('ot0').innerHTML = data[0] || '0';
                     document.getElementById('ot1').innerHTML = data[1] || '0';
                     document.getElementById('ot2').innerHTML = data[2] || '0';
-                    
-                    // 전광판
                     document.getElementById('scrollingNotice').innerHTML = data[3] || "";
                     
                     // 본문 8칸
-                    for
+                    for(let i=0; i<8; i++) {
+                        const cell = document.getElementById("row" + (i + 5));
+                        if(cell) cell.innerHTML = data[i + 4] || "";
+                    }
+                }
+            } catch (e) { console.error("Update Error:", e); }
+        }
+
+        // 전광판 애니메이션
+        function animate() {
+            const el = document.getElementById('scrollingNotice');
+            if (el) {
+                pos -= 1.8;
+                if (pos < -el.offsetWidth - 50) pos = window.innerWidth;
+                el.style.left = pos + 'px';
+            }
+            requestAnimationFrame(animate);
+        }
+
+        // 확대 기능
+        function zoom(el) {
+            const title = el.querySelector('div:first-child');
+            const body = el.querySelector('.card-body');
+            document.getElementById('modalHead').innerText = title.innerText;
+            document.getElementById('modalHead').style.backgroundColor = window.getComputedStyle(title).backgroundColor;
+            document.getElementById('modalText').innerHTML = body.innerHTML;
+            document.getElementById('zoomModal').style.display = 'flex';
+        }
+
+        window.onload = () => {
+            update();
+            animate();
+            setInterval(update, 15000);
+            setInterval(() => {
+                document.getElementById('clock').innerText = new Date().toLocaleString('ko-KR', { hour12: false });
+            }, 1000);
+        };
+    </script>
+</body>
+</html>
