@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>제조팀 업무 게시판 V4.3</title>
+    <title>제조팀 업무 게시판 V4.4</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -11,11 +11,10 @@
         header { background: #1a2a3a; padding: 10px 25px; display: flex; align-items: center; justify-content: space-between; color: white; border-bottom: 4px solid #f39c12; flex-shrink: 0; }
         .logo-group h1 { font-size: 1.4rem; font-weight: 900; color: #f39c12; }
         .marquee-box { flex: 1; background: #0f172a; padding: 8px 20px; border-radius: 6px; overflow: hidden; margin: 0 30px; border: 1px solid #334155; position: relative; height: 44px; }
-        #scrollingNotice { position: absolute; white-space: nowrap; font-size: 1.3rem; font-weight: 800; color: #fbbf24; top: 50%; transform: translateY(-50%); display: inline-block; will-change: left; left: 100%; }
+        #scrollingNotice { position: absolute; white-space: nowrap; font-size: 1.3rem; font-weight: 800; color: #fbbf24; top: 50%; transform: translateY(-50%); display: inline-block; left: 100%; }
         
         .ot-card { background: #ffffff; padding: 4px 12px; border-radius: 6px; display: flex; flex-direction: column; align-items: center; min-width: 95px; border: 2px solid #cbd5e1; }
-        .ot-num { font-size: 2rem; font-weight: 900; color: #1e293b; display: inline-block; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .num-bump { transform: scale(1.4); color: #f39c12; }
+        .ot-num { font-size: 2rem; font-weight: 900; color: #1e293b; }
 
         .main-grid { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 15px; padding: 20px; }
         .card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; overflow: hidden; cursor: pointer; }
@@ -36,8 +35,8 @@
     </div>
 
     <header>
-        <div class="logo-group"><h1>제조팀 업무 게시판 V4.3</h1><div id="clock" class="text-xs text-slate-400">Loading...</div></div>
-        <div class="marquee-box"><div id="scrollingNotice">현장 데이터를 동기화 중입니다...</div></div>
+        <div class="logo-group"><h1>제조팀 업무 게시판 V4.4</h1><div id="clock" class="text-xs text-slate-400">Loading...</div></div>
+        <div class="marquee-box"><div id="scrollingNotice">데이터를 동기화 중입니다...</div></div>
         <div class="flex gap-2">
             <div class="ot-card"><label class="text-[10px] font-bold text-slate-500">BBT</label><span id="ot0" class="ot-num">0</span></div>
             <div class="ot-card"><label class="text-[10px] font-bold text-slate-500">인서트</label><span id="ot1" class="ot-num">0</span></div>
@@ -61,46 +60,26 @@
         let lastMsg = "";
         let currentPos = window.innerWidth;
 
-        // 안정적인 숫자 업데이트 함수
-        function updateNum(id, newVal) {
-            const el = document.getElementById(id);
-            if (!el) return;
-            const cleanVal = String(newVal || "0");
-            if (el.innerText !== cleanVal) {
-                el.innerText = cleanVal;
-                el.classList.add('num-bump');
-                setTimeout(() => el.classList.remove('num-bump'), 400);
-            }
-        }
-
         async function update() {
             try {
                 const res = await fetch(API_URL + "?v=" + Date.now());
-                if (!res.ok) throw new Error('Network response was not ok');
                 const data = await res.json();
                 
-                if (!Array.isArray(data)) return;
-
-                // 1. 인원 업데이트
-                updateNum('ot0', data[0]);
-                updateNum('ot1', data[1]);
-                updateNum('ot2', data[2]);
+                // 1. 인원 정보 (B1~B3) - 태그 제거하고 숫자만 추출
+                document.getElementById('ot0').innerText = String(data[0] || "0").replace(/<[^>]*>?/gm, '');
+                document.getElementById('ot1').innerText = String(data[1] || "0").replace(/<[^>]*>?/gm, '');
+                document.getElementById('ot2').innerText = String(data[2] || "0").replace(/<[^>]*>?/gm, '');
                 
                 // 2. 전광판 (B4)
-                const noticeEl = document.getElementById('scrollingNotice');
-                if (noticeEl && data[3] !== undefined) {
-                    if (noticeEl.innerHTML !== String(data[3])) {
-                        noticeEl.innerHTML = data[3];
-                    }
-                }
+                document.getElementById('scrollingNotice').innerHTML = data[3] || "";
                 
                 // 3. 본문 (B5~B12)
                 for(let i=4; i<12; i++) {
                     const box = document.getElementById("row" + (i + 1));
-                    if(box && data[i] !== undefined) box.innerHTML = data[i];
+                    if(box) box.innerHTML = data[i] || "";
                 }
 
-                // 4. 팝업 (B13, B14)
+                // 4. 팝업 (B13:메시지, B14:시간)
                 const now = new Date();
                 const curT = now.getHours().toString().padStart(2,'0') + ":" + now.getMinutes().toString().padStart(2,'0');
                 const targetT = String(data[13] || "").trim();
@@ -111,15 +90,12 @@
                     document.getElementById('msgPopup').style.display = 'flex';
                     lastMsg = msg;
                 }
-            } catch (e) { 
-                console.error("데이터 동기화 실패:", e);
-                document.getElementById('scrollingNotice').innerText = "데이터 연결 재시도 중...";
-            }
+            } catch (e) { console.error(e); }
         }
 
         function animate() {
             const el = document.getElementById('scrollingNotice');
-            if (el && el.offsetWidth > 0) {
+            if (el) {
                 currentPos -= 1.8; 
                 if (currentPos < -el.offsetWidth - 50) {
                     currentPos = window.innerWidth;
@@ -132,10 +108,9 @@
         window.onload = () => {
             update();
             animate();
-            setInterval(update, 15000); // 15초 주기로 단축
+            setInterval(update, 20000);
             setInterval(() => {
-                const clock = document.getElementById('clock');
-                if(clock) clock.innerText = new Date().toLocaleString('ko-KR', { hour12: false });
+                document.getElementById('clock').innerText = new Date().toLocaleString('ko-KR', { hour12: false });
             }, 1000);
         };
     </script>
