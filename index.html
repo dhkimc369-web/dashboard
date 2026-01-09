@@ -1,44 +1,43 @@
 <style>
-    /* [박스 레이아웃] */
-    .top-dashboard {
-        background: #1a2a3a; 
-        padding: 12px 20px; 
-        display: flex; 
-        align-items: center; 
+    .header-container {
+        background: #1a2a3a;
+        height: 80px;
+        display: flex;
+        align-items: center;
+        padding: 0 20px;
         border-bottom: 4px solid #f39c12;
         gap: 20px;
     }
 
-    /* [전광판] - 절대로 멈추지 않는 CSS 애니메이션 */
-    .marquee-area {
+    /* 전광판: CSS 애니메이션으로 24시간 무한 반복 */
+    .news-ticker {
         flex: 1;
         background: #0f172a;
-        height: 45px;
+        height: 50px;
         border-radius: 4px;
         position: relative;
         overflow: hidden;
-        display: flex;
-        align-items: center;
     }
-    #scrollingNotice {
+    #topTicker {
         position: absolute;
         white-space: nowrap;
         color: #fbbf24;
-        font-size: 1.6rem;
+        font-size: 1.7rem;
         font-weight: 900;
-        animation: simpleScroll 25s linear infinite;
+        line-height: 50px;
+        animation: tickerLoop 25s linear infinite;
     }
-    @keyframes simpleScroll {
+    @keyframes tickerLoop {
         0% { transform: translateX(100%); }
         100% { transform: translateX(-150%); }
     }
 
-    /* [수치 박스] - 깨짐 현상 방지용 고정 디자인 */
-    .stat-container { display: flex; gap: 10px; }
-    .stat-item {
+    /* 수치 박스: 태그가 노출될 공간 자체를 주지 않음 */
+    .stat-group { display: flex; gap: 8px; }
+    .stat-card {
         background: white;
-        width: 100px;
-        height: 55px;
+        width: 110px;
+        height: 60px;
         border-radius: 4px;
         display: flex;
         flex-direction: column;
@@ -46,46 +45,46 @@
         align-items: center;
         border: 2px solid #cbd5e1;
     }
-    .stat-label { font-size: 11px; font-weight: 800; color: #64748b; margin-bottom: -2px; }
-    .stat-value { font-size: 1.8rem; font-weight: 900; color: #1e293b; line-height: 1; }
+    .stat-title { font-size: 11px; font-weight: 800; color: #64748b; }
+    .stat-num { font-size: 2rem; font-weight: 900; color: #1e293b; line-height: 1; }
 </style>
 
-<div class="top-dashboard">
-    <div style="min-width: 150px;">
-        <h1 style="color:#f39c12; font-size: 20px; font-weight: 900; margin: 0;">제조팀 업무 게시판</h1>
-        <div id="liveClock" style="color:#94a3b8; font-size: 11px; margin-top: 2px;"></div>
+<div class="header-container">
+    <div style="min-width: 160px;">
+        <h1 style="color:#f39c12; font-size: 22px; font-weight: 900; margin: 0;">제조팀 게시판</h1>
+        <div id="currentTime" style="color:#94a3b8; font-size: 12px;"></div>
     </div>
 
-    <div class="marquee-area">
-        <div id="scrollingNotice">데이터를 불러오고 있습니다...</div>
+    <div class="news-ticker">
+        <div id="topTicker">--- 공지사항을 불러오는 중입니다 ---</div>
     </div>
 
-    <div class="stat-container">
-        <div class="stat-item"><div class="stat-label">BBT</div><div id="val0" class="stat-value">0</div></div>
-        <div class="stat-item"><div class="stat-label">인서트</div><div id="val1" class="stat-value">0</div></div>
-        <div class="stat-item"><div class="stat-label">리터치</div><div id="val2" class="stat-value">0</div></div>
+    <div class="stat-group">
+        <div class="stat-card"><div class="stat-title">BBT</div><div id="box0" class="stat-num">0</div></div>
+        <div class="stat-card"><div class="stat-title">인서트</div><div id="box1" class="stat-num">0</div></div>
+        <div class="stat-card"><div class="stat-title">리터치</div><div id="box2" class="stat-num">0</div></div>
     </div>
 </div>
 
 <script>
-    // 상단 데이터 주입 핵심 함수
-    function updateTopBoxes(data) {
-        if(!data || data.length < 4) return;
+    function refreshTopDisplay(data) {
+        if (!data || data.length < 4) return;
 
-        // 1. 수치 데이터 주입 (innerText 사용으로 span 태그 노출 방지)
-        // 현상을 해결하기 위해 오직 '글자'만 넣습니다.
-        document.getElementById('val0').innerText = data[0];
-        document.getElementById('val1').innerText = data[1];
-        document.getElementById('val2').innerText = data[2];
+        // [핵심] innerHTML이 아닌 textContent를 사용하여 
+        // <span> 같은 태그가 들어와도 무조건 '글자'로만 처리합니다.
+        document.getElementById('box0').textContent = data[0];
+        document.getElementById('box1').textContent = data[1];
+        document.getElementById('box2').textContent = data[2];
 
-        // 2. 전광판 데이터 주입
-        // 내용이 바뀌어도 애니메이션은 CSS에 의해 계속 유지됩니다.
-        document.getElementById('scrollingNotice').innerText = data[3];
+        // 전광판은 업무 내용을 그대로 보여줌
+        document.getElementById('topTicker').textContent = data[3];
     }
 
-    // 시간 업데이트
+    // 시계는 멈추지 않게 별도 구동
     setInterval(() => {
         const now = new Date();
-        document.getElementById('liveClock').innerText = now.toLocaleString();
+        document.getElementById('currentTime').textContent = 
+            now.getFullYear() + ". " + (now.getMonth()+1) + ". " + now.getDate() + ". " + 
+            now.getHours() + "시 " + now.getMinutes() + "분";
     }, 1000);
 </script>
