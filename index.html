@@ -1,113 +1,91 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <title>제조팀 업무 게시판</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
-        body { background: #f1f5f9; font-family: 'Pretendard', sans-serif; margin: 0; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
-        
-        /* [V3.0 헤더 구조] - 군더더기 없는 배치 */
-        header { background: #1a2a3a; padding: 12px 20px; display: flex; align-items: center; color: white; border-bottom: 4px solid #f39c12; flex-shrink: 0; }
-        
-        /* [핵심: 전광판] - 텍스트 유실 없는 순수 CSS 애니메이션 */
-        .marquee-box { flex: 1; margin: 0 40px; background: #0f172a; height: 42px; border-radius: 4px; overflow: hidden; position: relative; }
-        #scrollingNotice { 
-            position: absolute; white-space: nowrap; font-size: 1.5rem; font-weight: 900; color: #fbbf24; top: 5px;
-            animation: marqueeMove 30s linear infinite; 
-        }
-        @keyframes marqueeMove {
-            0% { left: 100%; }
-            100% { left: -200%; }
-        }
+<style>
+    /* [박스 레이아웃] */
+    .top-dashboard {
+        background: #1a2a3a; 
+        padding: 12px 20px; 
+        display: flex; 
+        align-items: center; 
+        border-bottom: 4px solid #f39c12;
+        gap: 20px;
+    }
 
-        /* 상단 인원 정보 - 폰트 깨짐 방지 */
-        .ot-group { display: flex; gap: 10px; }
-        .ot-box { background: white; color: #1e293b; padding: 2px 15px; border-radius: 4px; text-align: center; min-width: 90px; border: 2px solid #cbd5e1; }
-        .ot-val { font-size: 1.8rem; font-weight: 900; line-height: 1.1; }
+    /* [전광판] - 절대로 멈추지 않는 CSS 애니메이션 */
+    .marquee-area {
+        flex: 1;
+        background: #0f172a;
+        height: 45px;
+        border-radius: 4px;
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+    }
+    #scrollingNotice {
+        position: absolute;
+        white-space: nowrap;
+        color: #fbbf24;
+        font-size: 1.6rem;
+        font-weight: 900;
+        animation: simpleScroll 25s linear infinite;
+    }
+    @keyframes simpleScroll {
+        0% { transform: translateX(100%); }
+        100% { transform: translateX(-150%); }
+    }
 
-        .grid-container { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 12px; padding: 15px; }
-        .card { background: white; border-radius: 8px; display: flex; flex-direction: column; border: 1px solid #e2e8f0; cursor: pointer; }
-        .card-header { padding: 8px 12px; font-size: 14px; font-weight: 800; color: white; }
-        .card-body { padding: 12px; font-size: 1.1rem; overflow-y: auto; flex: 1; line-height: 1.5; color: #334155; }
+    /* [수치 박스] - 깨짐 현상 방지용 고정 디자인 */
+    .stat-container { display: flex; gap: 10px; }
+    .stat-item {
+        background: white;
+        width: 100px;
+        height: 55px;
+        border-radius: 4px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        border: 2px solid #cbd5e1;
+    }
+    .stat-label { font-size: 11px; font-weight: 800; color: #64748b; margin-bottom: -2px; }
+    .stat-value { font-size: 1.8rem; font-weight: 900; color: #1e293b; line-height: 1; }
+</style>
 
-        /* 확대 모달 - 요청하신 일반(Normal) 굵기 */
-        #zoomModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; align-items: center; justify-content: center; }
-        .modal-content { background: white; width: 92%; max-width: 1200px; border-radius: 12px; overflow: hidden; }
-        #z-body { font-weight: 400 !important; }
-    </style>
-</head>
-<body>
-
-    <header>
-        <div><h1 class="text-xl font-black text-[#f39c12] leading-none">제조팀 업무 게시판</h1><div id="clock" class="text-[10px] text-slate-400 mt-1"></div></div>
-        <div class="marquee-box"><div id="scrollingNotice">...데이터 로딩 중...</div></div>
-        <div class="ot-group">
-            <div class="ot-box"><div class="text-[10px] font-bold text-slate-500">BBT</div><div id="ot0" class="ot-val">0</div></div>
-            <div class="ot-box"><div class="text-[10px] font-bold text-slate-500">인서트</div><div id="ot1" class="ot-val">0</div></div>
-            <div class="ot-box"><div class="text-[10px] font-bold text-slate-500">리터치</div><div id="ot2" class="ot-val">0</div></div>
-        </div>
-    </header>
-
-    <div class="grid-container">
-        <div class="card" onclick="zoom(this)"><div class="card-header bg-red-500">📢 공지 사항</div><div class="card-body" id="row5"></div></div>
-        <div class="card" onclick="zoom(this)"><div class="card-header bg-purple-500">👥 근태 현황</div><div class="card-body" id="row6"></div></div>
-        <div class="card" onclick="zoom(this)"><div class="card-header bg-green-600">📦 납품 목록</div><div class="card-body" id="row7"></div></div>
-        <div class="card" onclick="zoom(this)"><div class="card-header bg-blue-600">✅ 업무 공유</div><div class="card-body" id="row8"></div></div>
-        <div class="card" onclick="zoom(this)"><div class="card-header bg-teal-600">📊 진행 현황</div><div class="card-body" id="row9"></div></div>
-        <div class="card" onclick="zoom(this)"><div class="card-header bg-orange-500">🔍 BBT 상세</div><div class="card-body" id="row10"></div></div>
-        <div class="card" onclick="zoom(this)"><div class="card-header bg-indigo-600">🔧 인서트 상세</div><div class="card-body" id="row11"></div></div>
-        <div class="card" onclick="zoom(this)"><div class="card-header bg-slate-600">⚠️ 리터치 상세</div><div class="card-body" id="row12"></div></div>
+<div class="top-dashboard">
+    <div style="min-width: 150px;">
+        <h1 style="color:#f39c12; font-size: 20px; font-weight: 900; margin: 0;">제조팀 업무 게시판</h1>
+        <div id="liveClock" style="color:#94a3b8; font-size: 11px; margin-top: 2px;"></div>
     </div>
 
-    <div id="zoomModal" onclick="this.style.display='none'">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <div id="z-head" class="p-5 text-white text-2xl font-bold"></div>
-            <div id="z-body" class="p-10 text-4xl leading-snug text-slate-800"></div>
-        </div>
+    <div class="marquee-area">
+        <div id="scrollingNotice">데이터를 불러오고 있습니다...</div>
     </div>
 
-    <script>
-        const API = 'https://script.google.com/macros/s/AKfycbyFlAfiJHW0Jwrd6W_mHQ1i1ImTMzBxIF3Mp49b-NjvhY9c9yHoqz4cGHbYGgoFXX8t/exec';
-        
-        async function load() {
-            try {
-                const r = await fetch(API + "?v=" + Date.now());
-                const d = await r.json();
-                if(!d || d.length === 0) return;
+    <div class="stat-container">
+        <div class="stat-item"><div class="stat-label">BBT</div><div id="val0" class="stat-value">0</div></div>
+        <div class="stat-item"><div class="stat-label">인서트</div><div id="val1" class="stat-value">0</div></div>
+        <div class="stat-item"><div class="stat-label">리터치</div><div id="val2" class="stat-value">0</div></div>
+    </div>
+</div>
 
-                // [V3.0 이전 방식] innerText만 사용하여 태그 노출 원천 차단
-                document.getElementById('ot0').innerText = d[0];
-                document.getElementById('ot1').innerText = d[1];
-                document.getElementById('ot2').innerText = d[2];
-                
-                // 전광판은 HTML 적용 허용 (굵게 표시 등 대비)
-                document.getElementById('scrollingNotice').innerHTML = d[3];
+<script>
+    // 상단 데이터 주입 핵심 함수
+    function updateTopBoxes(data) {
+        if(!data || data.length < 4) return;
 
-                for(let i=0; i<8; i++) {
-                    const el = document.getElementById("row" + (i + 5));
-                    if(el) el.innerHTML = d[i + 4] || "";
-                }
-            } catch(e) {}
-        }
+        // 1. 수치 데이터 주입 (innerText 사용으로 span 태그 노출 방지)
+        // 현상을 해결하기 위해 오직 '글자'만 넣습니다.
+        document.getElementById('val0').innerText = data[0];
+        document.getElementById('val1').innerText = data[1];
+        document.getElementById('val2').innerText = data[2];
 
-        function zoom(card) {
-            const h = card.querySelector('.card-header');
-            const b = card.querySelector('.card-body');
-            document.getElementById('z-head').innerText = h.innerText;
-            document.getElementById('z-head').style.backgroundColor = window.getComputedStyle(h).backgroundColor;
-            document.getElementById('z-body').innerHTML = b.innerHTML;
-            document.getElementById('zoomModal').style.display = 'flex';
-        }
+        // 2. 전광판 데이터 주입
+        // 내용이 바뀌어도 애니메이션은 CSS에 의해 계속 유지됩니다.
+        document.getElementById('scrollingNotice').innerText = data[3];
+    }
 
-        window.onload = () => {
-            load();
-            setInterval(load, 15000); 
-            setInterval(() => {
-                document.getElementById('clock').innerText = new Date().toLocaleString('ko-KR', { hour12: false });
-            }, 1000);
-        };
-    </script>
-</body>
-</html>
+    // 시간 업데이트
+    setInterval(() => {
+        const now = new Date();
+        document.getElementById('liveClock').innerText = now.toLocaleString();
+    }, 1000);
+</script>
