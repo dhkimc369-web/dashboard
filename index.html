@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>제조팀 업무 게시판 V4.7_Restore</title>
+    <title>제조팀 업무 게시판</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -11,13 +11,13 @@
         /* [V4.7 순정 헤더] */
         header { background: #1a2a3a; padding: 12px 20px; display: flex; align-items: center; color: white; border-bottom: 4px solid #f39c12; flex-shrink: 0; }
         
-        /* [V4.7 순정 전광판] - JS 계산 없이 무한 반복되는 구조 */
-        .marquee-box { flex: 1; margin: 0 40px; background: #0f172a; height: 42px; border-radius: 4px; overflow: hidden; position: relative; }
+        /* [V4.7 순정 전광판] - CSS 애니메이션으로 멈춤 현상 원천 차단 */
+        .marquee-container { flex: 1; margin: 0 40px; background: #0f172a; height: 42px; border-radius: 4px; overflow: hidden; position: relative; }
         #scrollingNotice { 
             position: absolute; white-space: nowrap; font-size: 1.5rem; font-weight: 900; color: #fbbf24; top: 5px;
-            animation: marqueeV4 25s linear infinite; 
+            animation: marquee 25s linear infinite; 
         }
-        @keyframes marqueeV4 {
+        @keyframes marquee {
             0% { left: 100%; }
             100% { left: -150%; }
         }
@@ -31,21 +31,21 @@
         .card-header { padding: 8px 12px; font-size: 14px; font-weight: 800; color: white; }
         .card-body { padding: 12px; font-size: 1.1rem; overflow-y: auto; flex: 1; line-height: 1.5; color: #334155; }
 
-        /* [모달 폰트 수정] - 요청하신 대로 굵게 하지 않음 (Normal) */
+        /* [확대 모달] - 일반 굵기 폰트 */
         #zoomModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; align-items: center; justify-content: center; }
         .modal-content { background: white; width: 92%; max-width: 1200px; border-radius: 12px; overflow: hidden; }
-        #z-body { font-weight: 400 !important; } 
+        #z-body { font-weight: 400 !important; }
     </style>
 </head>
 <body>
 
     <header>
-        <div><h1 class="text-xl font-black text-[#f39c12] leading-none">제조팀 업무 게시판 V4.7</h1><div id="clock" class="text-[10px] text-slate-400 mt-1"></div></div>
-        <div class="marquee-box"><div id="scrollingNotice">데이터를 불러오는 중입니다...</div></div>
+        <div><h1 class="text-xl font-black text-[#f39c12] leading-none">제조팀 업무 게시판</h1><div id="clock" class="text-[10px] text-slate-400 mt-1"></div></div>
+        <div class="marquee-container"><div id="scrollingNotice">---</div></div>
         <div class="ot-group">
-            <div class="ot-box"><div class="text-[10px] font-bold text-slate-500">BBT</div><div id="ot0" class="ot-val">0</div></div>
-            <div class="ot-box"><div class="text-[10px] font-bold text-slate-500">인서트</div><div id="ot1" class="ot-val">0</div></div>
-            <div class="ot-box"><div class="text-[10px] font-bold text-slate-500">리터치</div><div id="ot2" class="ot-val">0</div></div>
+            <div class="ot-box"><div class="text-[10px] font-bold text-slate-500">BBT</div><div id="ot0" class="ot-val">---</div></div>
+            <div class="ot-box"><div class="text-[10px] font-bold text-slate-500">인서트</div><div id="ot1" class="ot-val">---</div></div>
+            <div class="ot-box"><div class="text-[10px] font-bold text-slate-500">리터치</div><div id="ot2" class="ot-val">---</div></div>
         </div>
     </header>
 
@@ -76,7 +76,7 @@
                 const data = await response.json();
                 if(!data) return;
 
-                // [V4.7 핵심 로직] 데이터 존재 시 즉시 화면 교체 (중간에 지우는 과정 없음)
+                // [V4.7 핵심] 기존 데이터 유지하며 새 데이터로 즉시 교체
                 document.getElementById('ot0').innerText = data[0];
                 document.getElementById('ot1').innerText = data[1];
                 document.getElementById('ot2').innerText = data[2];
@@ -86,7 +86,7 @@
                     const el = document.getElementById("row" + (i + 5));
                     if(el) el.innerHTML = data[i + 4] || "";
                 }
-            } catch(e) { console.error("Data Load Error"); }
+            } catch(e) { }
         }
 
         function zoom(card) {
