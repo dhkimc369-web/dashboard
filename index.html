@@ -8,10 +8,10 @@
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
         body { background: #f1f5f9; font-family: 'Pretendard', sans-serif; margin: 0; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
         
-        /* [V4.0 순정 헤더] */
+        /* [V4.0 순정 헤더 구성] */
         header { background: #1a2a3a; padding: 12px 20px; display: flex; align-items: center; color: white; border-bottom: 4px solid #f39c12; flex-shrink: 0; }
         
-        /* [V4.0 순정 전광판] - CSS로 강제 구동 */
+        /* [V4.0 순정 전광판] - CSS로 구동하여 멈춤 현상 원천 차단 */
         .marquee-container { flex: 1; margin: 0 40px; background: #0f172a; height: 42px; border-radius: 4px; overflow: hidden; position: relative; }
         #scrollingNotice { 
             position: absolute; white-space: nowrap; font-size: 1.5rem; font-weight: 900; color: #fbbf24; top: 5px;
@@ -22,6 +22,7 @@
             100% { left: -150%; }
         }
 
+        /* [상단 인원 박스] - 단순 텍스트 주입용 */
         .ot-group { display: flex; gap: 10px; }
         .ot-box { background: white; color: #1e293b; padding: 2px 15px; border-radius: 4px; text-align: center; min-width: 90px; border: 2px solid #cbd5e1; }
         .ot-val { font-size: 1.8rem; font-weight: 900; line-height: 1.1; }
@@ -31,10 +32,10 @@
         .card-header { padding: 8px 12px; font-size: 14px; font-weight: 800; color: white; }
         .card-body { padding: 12px; font-size: 1.1rem; overflow-y: auto; flex: 1; line-height: 1.5; color: #334155; }
 
-        /* [확대 모달] - 요청하신 일반 굵기 폰트 */
+        /* 확대 모달 - 요청하신 일반 굵기 폰트 적용 */
         #zoomModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; align-items: center; justify-content: center; }
         .modal-content { background: white; width: 92%; max-width: 1200px; border-radius: 12px; overflow: hidden; }
-        #z-body { font-weight: normal !important; }
+        #z-body { font-weight: 400 !important; } /* 굵게 하지 말 것 */
     </style>
 </head>
 <body>
@@ -70,22 +71,18 @@
     <script>
         const API = 'https://script.google.com/macros/s/AKfycbyFlAfiJHW0Jwrd6W_mHQ1i1ImTMzBxIF3Mp49b-NjvhY9c9yHoqz4cGHbYGgoFXX8t/exec';
         
-        // [V4.0 순정 수신 로직]
         async function load() {
             try {
                 const response = await fetch(API + "?v=" + Date.now());
                 const data = await response.json();
                 if(!data || data.length < 4) return;
 
-                // 상단 정보 교체
+                // [V4.0 순정 방식] 데이터 가공 없이 그대로 주입
                 document.getElementById('ot0').innerText = data[0];
                 document.getElementById('ot1').innerText = data[1];
                 document.getElementById('ot2').innerText = data[2];
-                
-                // 전광판 교체
                 document.getElementById('scrollingNotice').innerHTML = data[3];
 
-                // 본문 교체
                 for(let i=0; i<8; i++) {
                     const el = document.getElementById("row" + (i + 5));
                     if(el) el.innerHTML = data[i + 4] || "";
@@ -93,7 +90,6 @@
             } catch(e) { }
         }
 
-        // 확대 기능
         function zoom(card) {
             const h = card.querySelector('.card-header');
             const b = card.querySelector('.card-body');
