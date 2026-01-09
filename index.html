@@ -50,4 +50,69 @@
         <div class="card" onclick="openZ(this)"><div class="card-h bg-green-600">📦 납품 목록</div><div class="card-b" id="r7"></div></div>
         <div class="card" onclick="openZ(this)"><div class="card-h bg-blue-600">✅ 업무 공유</div><div class="card-b" id="r8"></div></div>
         <div class="card" onclick="openZ(this)"><div class="card-h bg-teal-600">📊 진행 현황</div><div class="card-b" id="r9"></div></div>
-        <div class="card" onclick="openZ(this)"><div class="card-h bg-orange-500">🔍 BBT 상세</div><div class
+        <div class="card" onclick="openZ(this)"><div class="card-h bg-orange-500">🔍 BBT 상세</div><div class="card-b" id="r10"></div></div>
+        <div class="card" onclick="openZ(this)"><div class="card-h bg-indigo-600">🔧 인서트 상세</div><div class="card-b" id="r11"></div></div>
+        <div class="card" onclick="openZ(this)"><div class="card-h bg-slate-600">⚠️ 리터치 상세</div><div class="card-b" id="r12"></div></div>
+    </main>
+
+    <div id="zoom" onclick="this.style.display='none'">
+        <div class="zoom-box" onclick="event.stopPropagation()">
+            <div id="zHead"></div>
+            <div id="zBody"></div>
+        </div>
+    </div>
+
+    <script>
+        // 여기에 현재 잘 나오고 있는 그 URL을 정확히 넣어주세요
+        const API = '여기에_앱스_스크립트_URL을_붙여넣으세요';
+
+        async function refresh() {
+            try {
+                const res = await fetch(API);
+                const data = await res.json();
+                
+                if (data && data.length >= 12) {
+                    // 상단 인원수 적용 (가져오신 "5", "3", "3" 데이터 매칭)
+                    document.getElementById('v1').innerText = data[0];
+                    document.getElementById('v2').innerText = data[1];
+                    document.getElementById('v3').innerText = data[2];
+                    
+                    // 전광판 적용
+                    document.getElementById('scrollNotice').innerHTML = data[3] || "";
+                    
+                    // 하단 8개 카드 및 서식 복구 (중요 단어 빨간색 처리)
+                    for (let i = 0; i < 8; i++) {
+                        const cell = document.getElementById("r" + (i + 5));
+                        if (cell) {
+                            let text = data[i+4] || "";
+                            // 시트에서 가져온 줄바꿈 문자(<br>)를 실제 줄바꿈으로 변경
+                            text = text.split('<br>').join('\n'); 
+                            
+                            // [서식 복구] 빨간색으로 나와야 할 단어들을 정교하게 강조
+                            const redKeywords = /(불량|연차|대기|공유|완료|준수|주의|확인 완료|요청 완료|진행)/g;
+                            const formattedText = text.replace(redKeywords, '<span style="color:#e11d48; font-weight:bold;">$1</span>');
+                            
+                            cell.innerHTML = formattedText;
+                        }
+                    }
+                }
+            } catch (err) {
+                console.log("연동 에러 발생, 재시도 중...");
+            }
+        }
+
+        function openZ(el) {
+            const h = el.querySelector('.card-h');
+            const b = el.querySelector('.card-b');
+            document.getElementById('zHead').innerText = h.innerText;
+            document.getElementById('zHead').style.backgroundColor = getComputedStyle(h).backgroundColor;
+            document.getElementById('zBody').innerHTML = b.innerHTML; 
+            document.getElementById('zoom').style.display = 'flex';
+        }
+
+        setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleString(); }, 1000);
+        refresh(); 
+        setInterval(refresh, 15000); // 15초마다 자동 갱신
+    </script>
+</body>
+</html>
