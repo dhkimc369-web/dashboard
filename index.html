@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>제조팀 업무 게시판 (서식 복구 완료)</title>
+    <title>제조팀 업무 게시판 (UI 고정 및 기능 수정)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -10,7 +10,7 @@
         header { background: #1a2a3a; padding: 10px 20px; display: flex; align-items: center; border-bottom: 3px solid #f39c12; gap: 15px; flex-shrink: 0; }
         .marquee-box { flex: 1; background: #0f172a; height: 48px; border-radius: 4px; overflow: hidden; position: relative; border: 1px solid #334155; }
         #scrollNotice { position: absolute; white-space: nowrap; font-size: 1.8rem; font-weight: 900; color: #fbbf24; top: 50%; transform: translateY(-50%); animation: scroll 25s linear infinite; }
-        @keyframes scroll { 0% { left: 100%; } 100% { left: -150%; } }
+        @keyframes scroll { 0% { left: 100%; } 100% { left: -160%; } }
         
         .stat-group { display: flex; gap: 8px; }
         .stat-box { background: white; width: 105px; height: 55px; border-radius: 4px; text-align: center; border: 2px solid #cbd5e1; display: flex; flex-direction: column; justify-content: center; }
@@ -19,12 +19,9 @@
 
         main { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 12px; padding: 15px; }
         .card { background: white; border-radius: 8px; display: flex; flex-direction: column; border: 1px solid #e2e8f0; cursor: pointer; transition: 0.2s; overflow: hidden; }
-        .card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
         .card-h { padding: 8px 12px; font-size: 14px; font-weight: 800; color: white; }
-        /* 서식 유지를 위해 innerHTML 사용 대기 */
         .card-b { padding: 12px; font-size: 0.95rem; flex: 1; overflow: hidden; white-space: pre-wrap; word-break: break-all; color: #334155; line-height: 1.6; }
 
-        /* 확대창 (팀장님 요청으로 기존 스타일 고수) */
         #zoom { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; align-items: center; justify-content: center; padding: 30px; }
         .zoom-box { background: white; width: 95%; max-height: 90vh; border-radius: 12px; display: flex; flex-direction: column; }
         #zHead { padding: 25px 40px; font-size: 2.5rem; font-weight: 900; color: white; border-radius: 12px 12px 0 0; }
@@ -38,7 +35,7 @@
             <h1 class="text-xl font-black text-[#f39c12]">제조팀 업무 게시판</h1>
             <div id="clock" class="text-[10px] text-slate-400 font-bold"></div>
         </div>
-        <div class="marquee-box"><div id="scrollNotice">데이터 연동 중...</div></div>
+        <div class="marquee-box"><div id="scrollNotice">실시간 데이터를 연동하는 중입니다...</div></div>
         <div class="stat-group">
             <div class="stat-box"><div class="stat-label">BBT</div><div id="v1" class="stat-val">-</div></div>
             <div class="stat-box"><div class="stat-label">인서트</div><div id="v2" class="stat-val">-</div></div>
@@ -67,11 +64,11 @@
     <script>
         const API = 'https://script.google.com/macros/s/AKfycbyFlAfiJHW0Jwrd6W_mHQ1i1ImTMzBxIF3Mp49b-NjvhY9c9yHoqz4cGHbYGgoFXX8t/exec';
 
-        // 숫자만 안전하게 추출하는 함수
-        function pickNum(html) {
-            if(!html) return "0";
-            let clean = html.toString().replace(/<\/?[^>]+(>|$)/g, ""); // 태그 제거
-            return clean.replace(/[^0-9]/g, "") || "0";
+        // 무조건 숫자만 골라내는 마법의 필터
+        function forceNumber(raw) {
+            if(!raw) return "0";
+            let cleanText = raw.toString().replace(/<\/?[^>]+(>|$)/g, ""); // 태그 제거
+            return cleanText.replace(/[^0-9]/g, "") || "0"; // 숫자만 남기기
         }
 
         async function refresh() {
@@ -80,21 +77,23 @@
                 const data = await res.json();
                 
                 if (data && data.length >= 12) {
-                    // 상단 인원수 업데이트
-                    document.getElementById('v1').innerText = pickNum(data[0]);
-                    document.getElementById('v2').innerText = pickNum(data[1]);
-                    document.getElementById('v3').innerText = pickNum(data[2]);
+                    // 상단 인원수 (B열 1, 2, 3행 타격)
+                    document.getElementById('v1').innerText = forceNumber(data[0]);
+                    document.getElementById('v2').innerText = forceNumber(data[1]);
+                    document.getElementById('v3').innerText = forceNumber(data[2]);
                     
-                    // 전광판 (텍스트만)
-                    document.getElementById('scrollNotice').innerHTML = data[3];
+                    // 전광판 (비어있지 않을 때만 업데이트하여 증발 방지)
+                    if(data[3] && data[3].trim() !== "") {
+                        document.getElementById('scrollNotice').innerHTML = data[3];
+                    }
                     
-                    // 각 카드 내용 업데이트 (innerHTML로 서식 유지)
+                    // 하단 카드 (서식 유지하며 업데이트)
                     for (let i = 0; i < 8; i++) {
                         const cell = document.getElementById("r" + (i + 5));
-                        if (cell) cell.innerHTML = data[i + 4];
+                        if (cell && data[i+4]) cell.innerHTML = data[i + 4];
                     }
                 }
-            } catch (err) { console.error("Data Load Error"); }
+            } catch (err) { console.error("연동 실패, 다음 주기를 기다립니다."); }
         }
 
         function openZ(el) {
@@ -102,7 +101,7 @@
             const b = el.querySelector('.card-b');
             document.getElementById('zHead').innerText = h.innerText;
             document.getElementById('zHead').style.backgroundColor = getComputedStyle(h).backgroundColor;
-            document.getElementById('zBody').innerHTML = b.innerHTML; // 확대창에서도 색상 유지
+            document.getElementById('zBody').innerHTML = b.innerHTML; 
             document.getElementById('zoom').style.display = 'flex';
         }
 
