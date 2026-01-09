@@ -2,52 +2,50 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>제조팀 업무 게시판 V3.1 (Stable)</title>
+    <title>제조팀 업무 게시판 V3.2</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
         body { background: #f1f5f9; font-family: 'Pretendard', sans-serif; margin: 0; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
         
-        /* [상단 헤더] */
-        header { background: #1a2a3a; padding: 10px 20px; display: flex; align-items: center; border-bottom: 4px solid #f39c12; flex-shrink: 0; gap: 20px; }
-        
-        /* [전광판] - innerHTML로 태그 해석 완료 */
-        .marquee-box { flex: 1; background: #0f172a; height: 45px; border-radius: 4px; overflow: hidden; position: relative; }
+        /* [상단 헤더 및 전광판] */
+        header { background: #1a2a3a; padding: 10px 20px; display: flex; align-items: center; border-bottom: 4px solid #f39c12; flex-shrink: 0; gap: 15px; }
+        .marquee-box { flex: 1; background: #0f172a; height: 48px; border-radius: 4px; overflow: hidden; position: relative; border: 1px solid #334155; }
         #topNotice { 
-            position: absolute; white-space: nowrap; font-size: 1.6rem; font-weight: 900; color: #fbbf24; top: 4px;
-            animation: marqueeMove 25s linear infinite; 
+            position: absolute; white-space: nowrap; font-size: 1.7rem; font-weight: 900; color: #fbbf24; top: 50%; transform: translateY(-50%);
+            animation: marquee 25s linear infinite; 
         }
-        @keyframes marqueeMove { 0% { left: 100%; } 100% { left: -150%; } }
+        @keyframes marquee { 0% { left: 100%; } 100% { left: -150%; } }
 
-        /* [수치 박스] */
+        /* [수치 박스: 시트 스타일 그대로 수용] */
         .stat-group { display: flex; gap: 8px; }
-        .stat-item { background: white; width: 100px; height: 50px; border-radius: 4px; text-align: center; border: 2px solid #cbd5e1; display: flex; flex-direction: column; justify-content: center; }
-        .stat-lbl { font-size: 11px; font-weight: 800; color: #64748b; }
-        .stat-num { font-size: 1.6rem; font-weight: 900; line-height: 1; }
+        .stat-item { background: white; width: 100px; height: 55px; border-radius: 4px; text-align: center; border: 2px solid #cbd5e1; display: flex; flex-direction: column; justify-content: center; }
+        .stat-lbl { font-size: 11px; font-weight: 800; color: #64748b; margin-bottom: -2px; }
+        .stat-num { font-size: 1.8rem; font-weight: 900; line-height: 1; }
 
-        /* [메인 카드 그리드] */
+        /* [하단 카드 그리드] */
         .grid-container { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 12px; padding: 15px; }
-        .card { background: white; border-radius: 8px; display: flex; flex-direction: column; border: 1px solid #e2e8f0; cursor: pointer; transition: 0.1s; }
-        .card:hover { border-color: #94a3b8; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-        .card-header { padding: 6px 12px; font-size: 14px; font-weight: 800; color: white; border-radius: 7px 7px 0 0; }
-        .card-body { padding: 12px; font-size: 1.05rem; overflow-y: auto; flex: 1; line-height: 1.5; color: #334155; }
+        .card { background: white; border-radius: 8px; display: flex; flex-direction: column; border: 1px solid #e2e8f0; cursor: pointer; transition: 0.1s; overflow: hidden; }
+        .card:active { transform: scale(0.98); }
+        .card-header { padding: 8px 12px; font-size: 14px; font-weight: 800; color: white; display: flex; align-items: center; gap: 5px; }
+        .card-body { padding: 12px; font-size: 1.05rem; overflow-y: auto; flex: 1; line-height: 1.5; color: #334155; white-space: pre-wrap; }
 
-        /* [확대 모달 및 가독성 개선] */
-        #zoomModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9999; align-items: center; justify-content: center; padding: 40px; }
-        .modal-content { background: white; width: 90%; max-height: 85vh; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
-        #z-head { padding: 20px 30px; font-size: 2rem; font-weight: 900; color: white; }
-        /* 확대 시 폰트 사이즈 조정 (기존 대비 축소하여 가독성 증대) */
-        #z-body { padding: 40px; font-size: 2.8rem; font-weight: 500; line-height: 1.4; color: #1e293b; overflow-y: auto; flex: 1; white-space: pre-wrap; }
+        /* [박스 확대 모달: 가독성 강화] */
+        #zoomModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 9999; align-items: center; justify-content: center; padding: 40px; }
+        .modal-content { background: white; width: 95%; max-height: 85vh; border-radius: 15px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); display: flex; flex-direction: column; }
+        #z-head { padding: 25px 40px; font-size: 2.5rem; font-weight: 900; color: white; }
+        /* 폰트 사이즈를 적절히 줄여(2.5rem) 가독성 확보 */
+        #z-body { padding: 50px; font-size: 2.5rem; font-weight: 600; line-height: 1.4; color: #1e293b; overflow-y: auto; flex: 1; white-space: pre-wrap; }
     </style>
 </head>
 <body>
 
     <header>
-        <div style="min-width: 160px;">
+        <div style="min-width: 170px;">
             <h1 class="text-xl font-black text-[#f39c12] leading-none">제조팀 업무 게시판</h1>
             <div id="clock" class="text-[11px] text-slate-400 mt-1 font-bold"></div>
         </div>
-        <div class="marquee-box"><div id="topNotice">데이터 수신 중...</div></div>
+        <div class="marquee-box"><div id="topNotice">데이터를 불러오는 중입니다...</div></div>
         <div class="stat-group">
             <div class="stat-item"><div class="stat-lbl">BBT</div><div id="val0" class="stat-num"></div></div>
             <div class="stat-item"><div class="stat-lbl">인서트</div><div id="val1" class="stat-num"></div></div>
@@ -76,44 +74,40 @@
     <script>
         const API = 'https://script.google.com/macros/s/AKfycbyFlAfiJHW0Jwrd6W_mHQ1i1ImTMzBxIF3Mp49b-NjvhY9c9yHoqz4cGHbYGgoFXX8t/exec';
 
-        async function update() {
+        async function load() {
             try {
-                const res = await fetch(API + "?v=" + Date.now());
-                const data = await res.json();
-                if (!data) return;
+                const r = await fetch(API + "?v=" + Date.now());
+                const d = await r.json();
+                if (!d) return;
 
-                // [핵심] innerHTML 사용으로 태그 노출 방지 및 스타일 적용
-                document.getElementById('val0').innerHTML = data[0];
-                document.getElementById('val1').innerHTML = data[1];
-                document.getElementById('val2').innerHTML = data[2];
-                document.getElementById('topNotice').innerHTML = data[3];
+                // [해결] innerHTML로 시트의 span 태그를 그대로 실행함
+                document.getElementById('val0').innerHTML = d[0];
+                document.getElementById('val1').innerHTML = d[1];
+                document.getElementById('val2').innerHTML = d[2];
+                document.getElementById('topNotice').innerHTML = d[3];
 
                 for (let i = 0; i < 8; i++) {
                     const el = document.getElementById("row" + (i + 5));
-                    if (el) el.innerHTML = data[i + 4] || "";
+                    if (el) el.innerHTML = d[i + 4] || "";
                 }
-            } catch (e) { console.error("Update error"); }
+            } catch (e) { console.error("Update fail"); }
         }
 
+        // [복구 및 개선] 박스 확대 시 폰트 사이즈 조정
         function zoom(el) {
             const h = el.querySelector('.card-header');
             const b = el.querySelector('.card-body');
-            const modal = document.getElementById('zoomModal');
-            
             document.getElementById('z-head').innerText = h.innerText;
             document.getElementById('z-head').style.backgroundColor = window.getComputedStyle(h).backgroundColor;
             document.getElementById('z-body').innerHTML = b.innerHTML;
-            modal.style.display = 'flex';
+            document.getElementById('zoomModal').style.display = 'flex';
         }
 
         setInterval(() => {
             document.getElementById('clock').innerText = new Date().toLocaleString();
         }, 1000);
 
-        window.onload = () => {
-            update();
-            setInterval(update, 15000); // 15초 주기 갱신
-        };
+        window.onload = () => { load(); setInterval(load, 15000); };
     </script>
 </body>
 </html>
