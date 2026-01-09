@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>제조팀 업무 게시판 (데이터 정화 버전)</title>
+    <title>제조팀 업무 게시판 (Final Stable)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -18,14 +18,15 @@
         .stat-val { font-size: 1.8rem; font-weight: 900; color: #1e293b; line-height: 1; }
 
         main { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 12px; padding: 15px; }
-        .card { background: white; border-radius: 8px; display: flex; flex-direction: column; border: 1px solid #e2e8f0; cursor: pointer; }
-        .card-h { padding: 8px 12px; font-size: 14px; font-weight: 800; color: white; pointer-events: none; }
+        .card { background: white; border-radius: 8px; display: flex; flex-direction: column; border: 1px solid #e2e8f0; cursor: pointer; overflow: hidden; }
+        .card-h { padding: 8px 12px; font-size: 14px; font-weight: 800; color: white; }
         .card-b { padding: 12px; font-size: 1rem; flex: 1; overflow: hidden; white-space: pre-wrap; line-height: 1.5; color: #334155; pointer-events: none; }
 
-        #zoomLayer { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10000; align-items: center; justify-content: center; padding: 25px; }
-        .zoom-box { background: white; width: 95%; max-height: 90vh; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
+        /* 확대 레이어 - 가장 확실한 최상위 설정 */
+        #zoomLayer { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 99999; align-items: center; justify-content: center; padding: 25px; }
+        .zoom-box { background: white; width: 95%; max-height: 90vh; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 0 50px rgba(0,0,0,0.5); }
         #zTitle { padding: 25px 35px; font-size: 2.5rem; font-weight: 900; color: white; }
-        #zBody { padding: 45px; font-size: 2.3rem; font-weight: 600; line-height: 1.4; color: #1e293b; overflow-y: auto; }
+        #zBody { padding: 45px; font-size: 2.3rem; font-weight: 600; line-height: 1.5; color: #1e293b; overflow-y: auto; white-space: pre-wrap; }
     </style>
 </head>
 <body>
@@ -35,7 +36,7 @@
             <h1 class="text-xl font-black text-[#f39c12]">제조팀 업무 게시판</h1>
             <div id="clock" class="text-[10px] text-slate-400 font-bold"></div>
         </div>
-        <div class="marquee-box"><div id="scrollNotice">데이터 연결 중...</div></div>
+        <div class="marquee-box"><div id="scrollNotice">데이터 연동 확인 중...</div></div>
         <div class="stat-group">
             <div class="stat-box"><div class="stat-label">BBT</div><div id="v1" class="stat-val">-</div></div>
             <div class="stat-box"><div class="stat-label">인서트</div><div id="v2" class="stat-val">-</div></div>
@@ -44,14 +45,14 @@
     </header>
 
     <main>
-        <div class="card" onclick="openZoom(this)"><div class="card-h bg-red-500">📢 공지 사항</div><div class="card-b" id="r5"></div></div>
-        <div class="card" onclick="openZoom(this)"><div class="card-h bg-purple-500">👥 근태 현황</div><div class="card-b" id="r6"></div></div>
-        <div class="card" onclick="openZoom(this)"><div class="card-h bg-green-600">📦 납품 목록</div><div class="card-b" id="r7"></div></div>
-        <div class="card" onclick="openZoom(this)"><div class="card-h bg-blue-600">✅ 업무 공유</div><div class="card-b" id="r8"></div></div>
-        <div class="card" onclick="openZoom(this)"><div class="card-h bg-teal-600">📊 진행 현황</div><div class="card-b" id="r9"></div></div>
-        <div class="card" onclick="openZoom(this)"><div class="card-h bg-orange-500">🔍 BBT 상세</div><div class="card-b" id="r10"></div></div>
-        <div class="card" onclick="openZoom(this)"><div class="card-h bg-indigo-600">🔧 인서트 상세</div><div class="card-b" id="r11"></div></div>
-        <div class="card" onclick="openZoom(this)"><div class="card-h bg-slate-600">⚠️ 리터치 상세</div><div class="card-b" id="r12"></div></div>
+        <div class="card" onclick="zoom(this)"><div class="card-h bg-red-500">📢 공지 사항</div><div class="card-b" id="r5"></div></div>
+        <div class="card" onclick="zoom(this)"><div class="card-h bg-purple-500">👥 근태 현황</div><div class="card-b" id="r6"></div></div>
+        <div class="card" onclick="zoom(this)"><div class="card-h bg-green-600">📦 납품 목록</div><div class="card-b" id="r7"></div></div>
+        <div class="card" onclick="zoom(this)"><div class="card-h bg-blue-600">✅ 업무 공유</div><div class="card-b" id="r8"></div></div>
+        <div class="card" onclick="zoom(this)"><div class="card-h bg-teal-600">📊 진행 현황</div><div class="card-b" id="r9"></div></div>
+        <div class="card" onclick="zoom(this)"><div class="card-h bg-orange-500">🔍 BBT 상세</div><div class="card-b" id="r10"></div></div>
+        <div class="card" onclick="zoom(this)"><div class="card-h bg-indigo-600">🔧 인서트 상세</div><div class="card-b" id="r11"></div></div>
+        <div class="card" onclick="zoom(this)"><div class="card-h bg-slate-600">⚠️ 리터치 상세</div><div class="card-b" id="r12"></div></div>
     </main>
 
     <div id="zoomLayer" onclick="this.style.display='none'">
@@ -62,46 +63,51 @@
     </div>
 
     <script>
-        const URL = 'https://script.google.com/macros/s/AKfycbyFlAfiJHW0Jwrd6W_mHQ1i1ImTMzBxIF3Mp49b-NjvhY9c9yHoqz4cGHbYGgoFXX8t/exec';
+        const API = 'https://script.google.com/macros/s/AKfycbyFlAfiJHW0Jwrd6W_mHQ1i1ImTMzBxIF3Mp49b-NjvhY9c9yHoqz4cGHbYGgoFXX8t/exec';
 
-        // [핵심] HTML 태그를 완전히 제거하는 세척 도구
-        function stripHTML(text) {
+        // 줄바꿈은 유지하고 태그만 제거하는 강화된 클리너
+        function cleanContent(html) {
+            if(!html) return "";
+            let text = html.toString().replace(/<br\s*\/?>/gi, '\n'); // <br>을 실제 줄바꿈으로 변경
+            text = text.replace(/<\/p>/gi, '\n'); // </p> 태그를 줄바꿈으로 변경
             const temp = document.createElement("div");
             temp.innerHTML = text;
             return temp.textContent || temp.innerText || "";
         }
 
-        async function load() {
+        async function update() {
             try {
-                const res = await fetch(`${URL}?ts=${Date.now()}`);
+                const res = await fetch(`${API}?nocache=${Date.now()}`);
                 const data = await res.json();
+                
                 if (data && data.length >= 4) {
-                    // 상단 수치 정화 (숫자만 남기기)
-                    document.getElementById('v1').innerText = stripHTML(data[0]).replace(/[^0-9]/g, "") || "0";
-                    document.getElementById('v2').innerText = stripHTML(data[1]).replace(/[^0-9]/g, "") || "0";
-                    document.getElementById('v3').innerText = stripHTML(data[2]).replace(/[^0-9]/g, "") || "0";
+                    // 상단 숫자: 텍스트 제거 후 순수 숫자만 추출
+                    document.getElementById('v1').innerText = cleanContent(data[0]).replace(/[^0-9]/g, "") || "0";
+                    document.getElementById('v2').innerText = cleanContent(data[1]).replace(/[^0-9]/g, "") || "0";
+                    document.getElementById('v3').innerText = cleanContent(data[2]).replace(/[^0-9]/g, "") || "0";
                     
-                    // 전광판 및 카드 정화
-                    document.getElementById('scrollNotice').innerText = stripHTML(data[3]);
+                    document.getElementById('scrollNotice').innerText = cleanContent(data[3]);
+                    
                     for (let i = 0; i < 8; i++) {
                         const cell = document.getElementById("r" + (i + 5));
-                        if (cell) cell.innerText = stripHTML(data[i + 4]);
+                        if (cell) cell.innerText = cleanContent(data[i + 4]);
                     }
                 }
-            } catch (err) { console.error("Update error"); }
+            } catch (e) { console.error("Update error"); }
         }
 
-        function openZoom(el) {
+        function zoom(el) {
             const h = el.querySelector('.card-h');
             const b = el.querySelector('.card-b');
+            const layer = document.getElementById('zoomLayer');
             document.getElementById('zTitle').innerText = h.innerText;
             document.getElementById('zTitle').style.backgroundColor = getComputedStyle(h).backgroundColor;
-            document.getElementById('zBody').innerText = b.innerText;
-            document.getElementById('zoomLayer').style.display = 'flex';
+            document.getElementById('zBody').innerText = b.innerText; // 줄바꿈이 포함된 텍스트 그대로 표시
+            layer.style.display = 'flex';
         }
 
         setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleString(); }, 1000);
-        window.onload = () => { load(); setInterval(load, 15000); };
+        window.onload = () => { update(); setInterval(update, 15000); };
     </script>
 </body>
 </html>
