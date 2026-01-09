@@ -2,56 +2,57 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>제조팀 업무 게시판 V3.3 Final</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>제조팀 업무 게시판 V4.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
         body { background-color: #f1f5f9; height: 100vh; display: flex; flex-direction: column; overflow: hidden; font-family: 'Pretendard', sans-serif; }
+        
+        /* 상단 헤더 */
         header { background: #1a2a3a; padding: 10px 25px; display: flex; align-items: center; justify-content: space-between; color: white; border-bottom: 4px solid #f39c12; flex-shrink: 0; }
         .logo-group h1 { font-size: 1.4rem; font-weight: 900; color: #f39c12; }
         .marquee-box { flex: 1; background: #0f172a; padding: 8px 20px; border-radius: 6px; overflow: hidden; margin: 0 30px; border: 1px solid #334155; position: relative; height: 44px; }
         .marquee-text { position: absolute; white-space: nowrap; font-size: 1.2rem; font-weight: 800; color: #fbbf24; top: 8px; left: 100%; }
+        
+        /* 인원 카드 */
         .ot-card { background: #ffffff; padding: 4px 12px; border-radius: 6px; display: flex; flex-direction: column; align-items: center; min-width: 95px; border: 2px solid #cbd5e1; }
         .ot-num { font-size: 1.8rem; font-weight: 900; color: #1e293b; }
 
-        /* 게시판 본문 - 줄바꿈 서식 유지 핵심 설정 */
+        /* [핵심] 시간 지정 알림 팝업창 */
+        #msgPopup { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 10001; align-items: center; justify-content: center; }
+        .popup-inner { background: #fff; width: 650px; border-radius: 30px; border: 12px solid #ef4444; padding: 50px; text-align: center; box-shadow: 0 0 50px rgba(0,0,0,0.5); }
+        .popup-inner h2 { font-size: 3.5rem; font-weight: 900; color: #ef4444; margin-bottom: 20px; }
+        .popup-inner div { font-size: 2.2rem; font-weight: 800; color: #1a2a3a; margin-bottom: 40px; line-height: 1.4; word-break: break-all; }
+        .popup-inner button { background: #1a2a3a; color: white; padding: 15px 60px; border-radius: 15px; font-size: 1.6rem; font-weight: bold; cursor: pointer; }
+
+        /* 메인 그리드 */
         .main-grid { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 15px; padding: 20px; }
         .card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; overflow: hidden; cursor: pointer; }
-        .card-body { 
-            padding: 18px; 
-            overflow-y: auto; 
-            flex: 1; 
-            font-size: 1.05rem; 
-            color: #334155; 
-            line-height: 1.6; 
-            white-space: pre-wrap; /* 이 설정이 시트의 엔터(줄바꿈)를 화면에 그대로 보여줍니다 */
-            word-break: break-all;
-        }
+        .card-body { padding: 18px; overflow-y: auto; flex: 1; font-size: 1.05rem; color: #334155; line-height: 1.5; }
         
+        /* 카드 확대 기능 */
         .card.expanded { position: fixed !important; top: 5vh; left: 5vw; width: 90vw; height: 90vh; z-index: 9999; border: 6px solid #f39c12; box-shadow: 0 0 100px rgba(0,0,0,0.8); }
-        .card.expanded .card-body { font-size: 1.6rem; padding: 40px; }
-
-        #msgPopup { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 10001; align-items: center; justify-content: center; }
-        .popup-inner { background: #fff; width: 600px; border-radius: 20px; border: 12px solid #ef4444; padding: 50px; text-align: center; }
+        .card.expanded .card-body { font-size: 1.8rem; padding: 40px; }
     </style>
 </head>
 <body>
 
     <div id="msgPopup">
         <div class="popup-inner">
-            <h2 class="text-4xl font-black text-red-600 mb-4">📢 현장 알림</h2>
-            <p id="targetMsg" class="text-2xl font-bold mb-8 white-space-pre-wrap"></p>
-            <button onclick="document.getElementById('msgPopup').style.display='none'" class="bg-slate-800 text-white px-10 py-3 rounded-lg font-bold">확인</button>
+            <h2>🚨 긴급 공지</h2>
+            <div id="targetMsg">공지 내용을 불러오는 중...</div>
+            <button onclick="document.getElementById('msgPopup').style.display='none'">확인하였습니다</button>
         </div>
     </div>
 
     <header>
-        <div class="logo-group"><h1>제조팀 업무 게시판 V3.3</h1><div id="clock" class="text-xs text-slate-400">Loading...</div></div>
-        <div class="marquee-box"><div id="scrollingNotice" class="marquee-text">데이터 동기화 중...</div></div>
+        <div class="logo-group"><h1>제조팀 업무 게시판 V4.0</h1><div id="clock" class="text-xs text-slate-400">Loading...</div></div>
+        <div class="marquee-box"><div id="scrollingNotice" class="marquee-text">현장 데이터 동기화 중...</div></div>
         <div class="flex gap-2">
-            <div class="ot-card"><label class="text-[10px] font-bold text-slate-500">BBT</label><span id="ot0" class="ot-num">0</span></div>
-            <div class="ot-card"><label class="text-[10px] font-bold text-slate-500">인서트</label><span id="ot1" class="ot-num">0</span></div>
-            <div class="ot-card"><label class="text-[10px] font-bold text-slate-500">리터치</label><span id="ot2" class="ot-num">0</span></div>
+            <div class="ot-card"><label class="text-[10px] font-bold text-slate-500 uppercase">BBT</label><span id="ot0" class="ot-num">0</span></div>
+            <div class="ot-card"><label class="text-[10px] font-bold text-slate-500 uppercase">인서트</label><span id="ot1" class="ot-num">0</span></div>
+            <div class="ot-card"><label class="text-[10px] font-bold text-slate-500 uppercase">리터치</label><span id="ot2" class="ot-num">0</span></div>
         </div>
     </header>
 
@@ -67,61 +68,61 @@
     </div>
 
     <script>
-        // 여기에 새 배포 URL을 넣으세요
-        const API_URL = 'https://script.google.com/macros/s/AKfycbzFGU3zpBB3JErRZo_Kj2WbBHtuvW3WLVdAysCLg1slGEQ5YmV4E2LyXDNjX8YicuiAfA/exec';
-        let lastMsg = "";
+        const API_URL = 'https://script.google.com/macros/s/AKfycbx6WNEPlskbi7fjNawihlMTslmsBcvZBLOeWVIgI1DYEbS0Q_tLRSB6co6GwKEtsIDNGQ/exec';
+        let lastPopupMsg = "";
 
         async function update() {
             try {
                 const res = await fetch(API_URL + "?v=" + Date.now());
                 const data = await res.json();
                 
-                // 1. 인원 (숫자만 표시)
-                document.getElementById('ot0').innerText = String(data[0] || "0").replace(/[^0-9]/g, "");
-                document.getElementById('ot1').innerText = String(data[1] || "0").replace(/[^0-9]/g, "");
-                document.getElementById('ot2').innerText = String(data[2] || "0").replace(/[^0-9]/g, "");
+                // 1. 인원 (B1~B3)
+                document.getElementById('ot0').innerText = data[0] || "0";
+                document.getElementById('ot1').innerText = data[1] || "0";
+                document.getElementById('ot2').innerText = data[2] || "0";
                 
-                // 2. 전광판
-                document.getElementById('scrollingNotice').innerText = data[3] || "";
+                // 2. 전광판 (B4) - 서식 적용
+                document.getElementById('scrollingNotice').innerHTML = data[3] || "";
                 
-                // 3. 본문 (B5~B12)
+                // 3. 본문 (B5~B12) - 서식 적용(innerHTML)
                 for(let i=4; i<12; i++) {
                     const box = document.getElementById("row" + (i + 1));
-                    if(box) box.textContent = data[i] || ""; // 서식 유지를 위해 textContent 사용
+                    if(box) box.innerHTML = data[i] || "";
                 }
 
-                // 4. 팝업 알람 (B13: 메시지, B14: 시간)
+                // 4. [팝업 로직] B13:메시지, B14:시간
                 const now = new Date();
                 const curT = now.getHours().toString().padStart(2,'0') + ":" + now.getMinutes().toString().padStart(2,'0');
-                const timeMatch = String(data[13] || "").match(/\d{2}:\d{2}/);
-                const targetT = timeMatch ? timeMatch[0] : "";
-                const msg = String(data[12] || "").trim();
+                
+                const targetT = String(data[13] || "").trim(); // GAS에서 보내준 HH:mm
+                const msg = data[12] || ""; // 서식이 포함된 메시지
 
-                if (targetT === curT && msg !== "" && lastMsg !== msg) {
-                    document.getElementById('targetMsg').textContent = msg;
+                // 시간이 일치하고 메시지가 비어있지 않으며, 이전 팝업과 내용이 다를 때만 실행
+                if (targetT === curT && msg !== "" && lastPopupMsg !== msg) {
+                    document.getElementById('targetMsg').innerHTML = msg;
                     document.getElementById('msgPopup').style.display = 'flex';
-                    lastMsg = msg;
+                    lastPopupMsg = msg;
                 }
-            } catch (e) { console.error("연결 오류:", e); }
+            } catch (e) { console.error("업데이트 실패:", e); }
         }
 
         let pos = window.innerWidth;
-        function animate() {
+        function move() {
             const el = document.getElementById('scrollingNotice');
             pos -= 1.5;
             if (pos < -el.offsetWidth - 50) pos = window.innerWidth;
             el.style.left = pos + 'px';
-            requestAnimationFrame(animate);
+            requestAnimationFrame(move);
         }
 
         window.onload = () => {
-            animate(); update();
+            move(); update();
             setInterval(update, 20000);
             setInterval(() => {
-                document.getElementById('clock').innerText = new Date().toLocaleString();
+                const now = new Date();
+                document.getElementById('clock').innerText = now.toLocaleString('ko-KR', { hour12: false });
             }, 1000);
         };
     </script>
 </body>
 </html>
-
