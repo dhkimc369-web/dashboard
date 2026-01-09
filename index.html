@@ -3,21 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>제조팀 업무 게시판 V4.4</title>
+    <title>제조팀 업무 게시판 V4.5</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
         body { background-color: #f1f5f9; height: 100vh; display: flex; flex-direction: column; overflow: hidden; font-family: 'Pretendard', sans-serif; }
         header { background: #1a2a3a; padding: 10px 25px; display: flex; align-items: center; justify-content: space-between; color: white; border-bottom: 4px solid #f39c12; flex-shrink: 0; }
         .logo-group h1 { font-size: 1.4rem; font-weight: 900; color: #f39c12; }
+        
+        /* 전광판 위치 강제 조정 */
         .marquee-box { flex: 1; background: #0f172a; padding: 8px 20px; border-radius: 6px; overflow: hidden; margin: 0 30px; border: 1px solid #334155; position: relative; height: 44px; }
-        #scrollingNotice { position: absolute; white-space: nowrap; font-size: 1.3rem; font-weight: 800; color: #fbbf24; top: 50%; transform: translateY(-50%); display: inline-block; left: 100%; }
+        #scrollingNotice { 
+            position: absolute; 
+            white-space: nowrap; 
+            font-size: 1.3rem; 
+            font-weight: 800; 
+            color: #fbbf24; 
+            top: 50%; 
+            transform: translateY(-50%); 
+            left: 100%; /* 처음엔 화면 오른쪽 끝 */
+        }
         
         .ot-card { background: #ffffff; padding: 4px 12px; border-radius: 6px; display: flex; flex-direction: column; align-items: center; min-width: 95px; border: 2px solid #cbd5e1; }
-        .ot-num { font-size: 2rem; font-weight: 900; color: #1e293b; }
+        .ot-num { font-size: 1.8rem; font-weight: 900; color: #1e293b; }
 
         .main-grid { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 15px; padding: 20px; }
-        .card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; overflow: hidden; cursor: pointer; }
+        .card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; overflow: hidden; }
         .card-body { padding: 18px; overflow-y: auto; flex: 1; font-size: 1.05rem; color: #334155; line-height: 1.5; }
         
         #msgPopup { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 10001; align-items: center; justify-content: center; }
@@ -35,8 +46,8 @@
     </div>
 
     <header>
-        <div class="logo-group"><h1>제조팀 업무 게시판 V4.4</h1><div id="clock" class="text-xs text-slate-400">Loading...</div></div>
-        <div class="marquee-box"><div id="scrollingNotice">데이터를 동기화 중입니다...</div></div>
+        <div class="logo-group"><h1>제조팀 업무 게시판 V4.5</h1><div id="clock" class="text-xs text-slate-400">Loading...</div></div>
+        <div class="marquee-box"><div id="scrollingNotice">데이터를 불러오고 있습니다...</div></div>
         <div class="flex gap-2">
             <div class="ot-card"><label class="text-[10px] font-bold text-slate-500">BBT</label><span id="ot0" class="ot-num">0</span></div>
             <div class="ot-card"><label class="text-[10px] font-bold text-slate-500">인서트</label><span id="ot1" class="ot-num">0</span></div>
@@ -45,14 +56,14 @@
     </header>
 
     <div class="main-grid">
-        <div class="card" onclick="this.classList.toggle('expanded')"><div class="p-2 bg-red-500 text-white font-bold text-xs">📢 공지 사항</div><div class="card-body" id="row5"></div></div>
-        <div class="card" onclick="this.classList.toggle('expanded')"><div class="p-2 bg-purple-500 text-white font-bold text-xs">👥 근태 현황</div><div class="card-body" id="row6"></div></div>
-        <div class="card" onclick="this.classList.toggle('expanded')"><div class="p-2 bg-green-500 text-white font-bold text-xs">📦 납품 목록</div><div class="card-body" id="row7"></div></div>
-        <div class="card" onclick="this.classList.toggle('expanded')"><div class="p-2 bg-blue-500 text-white font-bold text-xs">✅ 업무 공유</div><div class="card-body" id="row8"></div></div>
-        <div class="card" onclick="this.classList.toggle('expanded')"><div class="p-2 bg-teal-500 text-white font-bold text-xs">📊 진행 현황</div><div class="card-body" id="row9"></div></div>
-        <div class="card" onclick="this.classList.toggle('expanded')"><div class="p-2 bg-orange-500 text-white font-bold text-xs">🔍 BBT 상세</div><div class="card-body" id="row10"></div></div>
-        <div class="card" onclick="this.classList.toggle('expanded')"><div class="p-2 bg-indigo-500 text-white font-bold text-xs">🔧 인서트 상세</div><div class="card-body" id="row11"></div></div>
-        <div class="card" onclick="this.classList.toggle('expanded')"><div class="p-2 bg-slate-500 text-white font-bold text-xs">⚠️ 리터치 상세</div><div class="card-body" id="row12"></div></div>
+        <div class="card"><div class="p-2 bg-red-500 text-white font-bold text-xs">📢 공지 사항</div><div class="card-body" id="row5"></div></div>
+        <div class="card"><div class="p-2 bg-purple-500 text-white font-bold text-xs">👥 근태 현황</div><div class="card-body" id="row6"></div></div>
+        <div class="card"><div class="p-2 bg-green-500 text-white font-bold text-xs">📦 납품 목록</div><div class="card-body" id="row7"></div></div>
+        <div class="card"><div class="p-2 bg-blue-500 text-white font-bold text-xs">✅ 업무 공유</div><div class="card-body" id="row8"></div></div>
+        <div class="card"><div class="p-2 bg-teal-500 text-white font-bold text-xs">📊 진행 현황</div><div class="card-body" id="row9"></div></div>
+        <div class="card"><div class="p-2 bg-orange-500 text-white font-bold text-xs">🔍 BBT 상세</div><div class="card-body" id="row10"></div></div>
+        <div class="card"><div class="p-2 bg-indigo-500 text-white font-bold text-xs">🔧 인서트 상세</div><div class="card-body" id="row11"></div></div>
+        <div class="card"><div class="p-2 bg-slate-500 text-white font-bold text-xs">⚠️ 리터치 상세</div><div class="card-body" id="row12"></div></div>
     </div>
 
     <script>
@@ -60,26 +71,31 @@
         let lastMsg = "";
         let currentPos = window.innerWidth;
 
+        // 인원 칸에서 순수 텍스트만 뽑아내는 함수
+        function stripHtml(html) {
+            let tmp = document.createElement("DIV");
+            tmp.innerHTML = html;
+            return tmp.textContent || tmp.innerText || "0";
+        }
+
         async function update() {
             try {
                 const res = await fetch(API_URL + "?v=" + Date.now());
                 const data = await res.json();
                 
-                // 1. 인원 정보 (B1~B3) - 태그 제거하고 숫자만 추출
-                document.getElementById('ot0').innerText = String(data[0] || "0").replace(/<[^>]*>?/gm, '');
-                document.getElementById('ot1').innerText = String(data[1] || "0").replace(/<[^>]*>?/gm, '');
-                document.getElementById('ot2').innerText = String(data[2] || "0").replace(/<[^>]*>?/gm, '');
+                // 1. 인원 정보 (태그 제거 후 숫자만)
+                document.getElementById('ot0').innerText = stripHtml(data[0]);
+                document.getElementById('ot1').innerText = stripHtml(data[1]);
+                document.getElementById('ot2').innerText = stripHtml(data[2]);
                 
-                // 2. 전광판 (B4)
+                // 2. 전광판 및 본문
                 document.getElementById('scrollingNotice').innerHTML = data[3] || "";
-                
-                // 3. 본문 (B5~B12)
                 for(let i=4; i<12; i++) {
                     const box = document.getElementById("row" + (i + 1));
                     if(box) box.innerHTML = data[i] || "";
                 }
 
-                // 4. 팝업 (B13:메시지, B14:시간)
+                // 3. 팝업
                 const now = new Date();
                 const curT = now.getHours().toString().padStart(2,'0') + ":" + now.getMinutes().toString().padStart(2,'0');
                 const targetT = String(data[13] || "").trim();
