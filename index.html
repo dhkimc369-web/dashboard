@@ -7,9 +7,10 @@
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
         body { background: #1a2a3a; font-family: 'Pretendard', sans-serif; margin: 0; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+        
         header { background: #1a2a3a; padding: 10px 20px; display: flex; align-items: center; border-bottom: 3px solid #f39c12; gap: 15px; flex-shrink: 0; }
         
-        /* [전광판] 검정 배경 + 주황 글씨 */
+        /* [전광판] */
         .marquee-box { flex: 1; background: #000000; height: 50px; border-radius: 4px; overflow: hidden; position: relative; border: none; }
         #scrollNotice { 
             position: absolute; white-space: nowrap; font-size: 2rem; 
@@ -17,10 +18,10 @@
             top: 50%; transform: translateY(-50%); left: 100%; display: inline-block; 
         }
 
-        /* [인원 현황] 라벨(A열)과 값(B열) 표시 */
+        /* [인원 현황] */
         .stat-group { display: flex; gap: 8px; }
         .stat-box { background: #000000; min-width: 110px; height: 55px; border-radius: 4px; text-align: center; border: 2px solid #cbd5e1; display: flex; flex-direction: column; justify-content: center; }
-        .stat-label { font-size: 12px; font-weight: 700; color: #cbd5e1; margin-bottom: 2px; } /* 라벨 스타일 */
+        .stat-label { font-size: 13px; font-weight: 700; color: #cbd5e1; margin-bottom: 2px; }
         .stat-val { font-size: 2.2rem; font-weight: 900; line-height: 1; color: #ffffff !important; }
 
         main { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 12px; padding: 15px; overflow: hidden; }
@@ -28,6 +29,10 @@
         .card-h { padding: 8px 12px; font-size: 14px; font-weight: 800; color: white; flex-shrink: 0; }
         .card-b { padding: 12px; font-size: 1rem; flex: 1; overflow-y: auto; line-height: 1.6; word-break: break-all; }
 
+        /* 링크 스타일 (자료공유용) */
+        .card-b a:hover { opacity: 0.7; }
+
+        /* 팝업 및 확대 */
         #zoom, #alertOverlay { display: none; position: fixed; inset: 0; z-index: 999999; align-items: center; justify-content: center; background: rgba(0,0,0,0.9); }
         .zoom-box { background: white; width: 95%; max-height: 90vh; border-radius: 15px; display: flex; flex-direction: column; overflow: hidden; }
         #zHead { padding: 25px 45px; font-size: 3rem; font-weight: 900; color: white; }
@@ -38,19 +43,17 @@
 <body onclick="closePopupManual()">
 
     <header>
-        <div style="min-width: 175px;">
-            <h1 class="text-xl font-black text-[#f39c12]">제조팀 업무 게시판</h1>
-            <div id="clock" class="text-[10px] text-slate-400 font-bold"></div>
+        <div style="width: 320px; flex-shrink: 0;">
+            <h1 class="text-3xl font-black text-[#f39c12] mb-1">제조팀 업무 게시판</h1>
+            <div id="clock" class="text-xl text-slate-300 font-bold"></div>
         </div>
+        
         <div class="marquee-box"><div id="scrollNotice">시스템 연결 중...</div></div>
         
         <div class="stat-group">
-            <div class="stat-box">
-                <div id="l1" class="stat-label"></div> <div id="v1" class="stat-val">-</div> </div>
-            <div class="stat-box">
-                <div id="l2" class="stat-label"></div> <div id="v2" class="stat-val">-</div> </div>
-            <div class="stat-box">
-                <div id="l3" class="stat-label"></div> <div id="v3" class="stat-val">-</div> </div>
+            <div class="stat-box"><div id="l1" class="stat-label"></div><div id="v1" class="stat-val">-</div></div>
+            <div class="stat-box"><div id="l2" class="stat-label"></div><div id="v2" class="stat-val">-</div></div>
+            <div class="stat-box"><div id="l3" class="stat-label"></div><div id="v3" class="stat-val">-</div></div>
         </div>
     </header>
 
@@ -59,7 +62,9 @@
         <div class="card" onclick="openZ(this)"><div class="card-h bg-purple-500">👥 근태 현황</div><div class="card-b" id="r6"></div></div>
         <div class="card" onclick="openZ(this)"><div class="card-h bg-green-600">📦 납품 목록</div><div class="card-b" id="r7"></div></div>
         <div class="card" onclick="openZ(this)"><div class="card-h bg-blue-600">✅ 업무 공유</div><div class="card-b" id="r8"></div></div>
-        <div class="card" onclick="openZ(this)"><div class="card-h bg-teal-600">📊 진행 현황</div><div class="card-b" id="r9"></div></div>
+        
+        <div class="card" onclick="openZ(this)"><div class="card-h bg-teal-600">📁 자료 공유</div><div class="card-b" id="r9"></div></div>
+        
         <div class="card" onclick="openZ(this)"><div class="card-h bg-orange-500">🔍 BBT 상세</div><div class="card-b" id="r10"></div></div>
         <div class="card" onclick="openZ(this)"><div class="card-h bg-indigo-600">🔧 인서트 상세</div><div class="card-b" id="r11"></div></div>
         <div class="card" onclick="openZ(this)"><div class="card-h bg-slate-600">⚠️ 리터치 상세</div><div class="card-b" id="r12"></div></div>
@@ -76,11 +81,16 @@
     <div id="zoom" onclick="this.style.display='none'"><div class="zoom-box" onclick="event.stopPropagation()"><div id="zHead"></div><div id="zBody"></div></div></div>
 
     <script>
-        const API = 'https://script.google.com/macros/s/AKfycbyiOX_P7mKL6eyVRoH7IAxR4EPquD_0do6yJtWm9O0AtmLCgvztYqMREopqwoGijLCNJw/exec';
+        const API = 'https://script.google.com/macros/s/AKfycbzq6xQgodaopUjqSh6181VQ_ccnCLNRnU73YiYWltlr40Naeg-JmhZCe8TOkl5drC-YDw/exec';
         let marqueeTimer;
-        
         let popupData = { msg: "", start: "", end: "" };
         let isClosed = false;
+
+        const stripHtml = (html) => {
+            let tmp = document.createElement("DIV");
+            tmp.innerHTML = html;
+            return tmp.textContent || tmp.innerText || "";
+        };
 
         function startMarquee() {
             const el = document.getElementById('scrollNotice');
@@ -106,26 +116,25 @@
         function closePopupManual() {
             document.getElementById('alertOverlay').style.display = 'none';
             isClosed = true;
-            setTimeout(() => { isClosed = false; }, 60000); // 1분 후 재알림 가능
+            setTimeout(() => { isClosed = false; }, 60000);
         }
 
         function checkTime() {
             const now = new Date();
             const ts = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
             document.getElementById('clock').innerText = now.toLocaleString();
-
+            
             const overlay = document.getElementById('alertOverlay');
             const msgBox = document.getElementById('alertMsg');
             
-            // 시트 연동 팝업 (B13~B15)
-            // 데이터가 있고, 현재 시간이 범위 내에 있고, 사용자가 닫지 않았다면
+            // 시트 팝업
             if (popupData.start && popupData.end && popupData.msg && !isClosed) {
                 if (ts >= popupData.start && ts <= popupData.end) {
                     if (overlay.style.display !== 'flex' || msgBox.innerText !== popupData.msg) {
                         msgBox.innerText = popupData.msg;
                         overlay.style.display = 'flex';
                     }
-                    return; // 시트 팝업 우선
+                    return;
                 }
             }
 
@@ -137,7 +146,6 @@
                     overlay.style.display = 'flex';
                 }
             } else if (!fixed[ts] && !(ts >= popupData.start && ts <= popupData.end)) {
-                // 시간 벗어나면 닫힘 상태 초기화
                 isClosed = false;
             }
         }
@@ -147,31 +155,26 @@
                 const res = await fetch(API);
                 const data = await res.json();
                 
-                // 1. 인원 현황 (라벨 + 값)
-                // A1->l1, B1->v1 연결
                 document.getElementById('l1').innerText = data.stats[0].label || "BBT";
-                document.getElementById('v1').innerText = data.stats[0].value || "0";
-                
+                document.getElementById('v1').innerText = stripHtml(data.stats[0].value) || "0";
                 document.getElementById('l2').innerText = data.stats[1].label || "인서트";
-                document.getElementById('v2').innerText = data.stats[1].value || "0";
-                
+                document.getElementById('v2').innerText = stripHtml(data.stats[1].value) || "0";
                 document.getElementById('l3').innerText = data.stats[2].label || "리터치";
-                document.getElementById('v3').innerText = data.stats[2].value || "0";
+                document.getElementById('v3').innerText = stripHtml(data.stats[2].value) || "0";
 
-                // 2. 전광판
-                document.getElementById('scrollNotice').innerText = data.marquee;
+                document.getElementById('scrollNotice').innerText = stripHtml(data.marquee);
                 startMarquee();
 
-                // 3. 카드 8개 (서식 포함)
                 for (let i = 0; i < 8; i++) {
                     const card = document.getElementById("r" + (i + 5));
                     if (card) card.innerHTML = data.cards[i] || "";
                 }
 
-                // 4. 팝업 데이터 저장 (공백 제거)
-                popupData.msg = (data.popup.msg || "").trim();
-                popupData.start = (data.popup.start || "").trim();
-                popupData.end = (data.popup.end || "").trim();
+                if (data.popup) {
+                    popupData.msg = (data.popup.msg || "").trim();
+                    popupData.start = (data.popup.start || "").trim();
+                    popupData.end = (data.popup.end || "").trim();
+                }
 
             } catch (e) { console.error("Update Fail"); }
         }
