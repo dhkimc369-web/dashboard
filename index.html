@@ -2,45 +2,46 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>제조팀 업무 통합 게시판</title>
+    <title>제조팀 업무 게시판</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
         body { background: #1a2a3a; font-family: 'Pretendard', sans-serif; margin: 0; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
         
-        /* [상단 헤더] */
         header { background: #1a2a3a; padding: 10px 20px; display: flex; align-items: center; border-bottom: 3px solid #f39c12; gap: 15px; flex-shrink: 0; }
         
-        /* [어제 성공한 전광판 엔진 스타일] */
-        .marquee-box { flex: 1; background: #0f172a; height: 50px; border-radius: 4px; overflow: hidden; position: relative; border: 1px solid #334155; }
+        /* [문제 해결 1] 전광판 배경을 '흰색'으로 변경 -> 글자가 검정이어도 잘 보임 */
+        .marquee-box { flex: 1; background: #ffffff; height: 50px; border-radius: 4px; overflow: hidden; position: relative; border: 2px solid #334155; }
         #scrollNotice { position: absolute; white-space: nowrap; font-size: 2rem; font-weight: 900; top: 50%; transform: translateY(-50%); left: 100%; display: inline-block; }
 
-        /* [성공한 숫자판 레이아웃] */
+        /* [문제 해결 2] 인원 현황 배경을 '흰색'으로 변경 -> 어떤 색 글자든 잘 보임 */
         .stat-group { display: flex; gap: 8px; }
-        .stat-box { background: white; min-width: 95px; height: 55px; border-radius: 4px; text-align: center; border: 2px solid #cbd5e1; display: flex; flex-direction: column; justify-content: center; }
+        .stat-box { background: #ffffff; min-width: 100px; height: 55px; border-radius: 4px; text-align: center; border: 2px solid #cbd5e1; display: flex; flex-direction: column; justify-content: center; }
         .stat-val { font-size: 2.2rem; font-weight: 900; line-height: 1; }
 
-        /* [성공한 카드 및 확대 창] */
         main { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 12px; padding: 15px; overflow: hidden; }
-        .card { background: white; border-radius: 8px; display: flex; flex-direction: column; border: 1px solid #e2e8f0; cursor: pointer; overflow: hidden; }
+        .card { background: white; border-radius: 8px; display: flex; flex-direction: column; border: 1px solid #e2e8f0; cursor: pointer; overflow: hidden; height: 100%; }
         .card-h { padding: 8px 12px; font-size: 14px; font-weight: 800; color: white; flex-shrink: 0; }
         .card-b { padding: 12px; font-size: 1rem; flex: 1; overflow-y: auto; line-height: 1.6; word-break: break-all; }
 
-        #zoom, #alertOverlay { display: none; position: fixed; inset: 0; z-index: 9999; align-items: center; justify-content: center; background: rgba(0,0,0,0.9); }
+        /* [팝업 및 확대창 스타일] */
+        #zoom, #alertOverlay { display: none; position: fixed; inset: 0; z-index: 99999; align-items: center; justify-content: center; background: rgba(0,0,0,0.9); }
         .zoom-box { background: white; width: 95%; max-height: 90vh; border-radius: 15px; display: flex; flex-direction: column; overflow: hidden; }
         #zHead { padding: 25px 45px; font-size: 3rem; font-weight: 900; color: white; }
-        #zBody { padding: 45px; font-size: 2.8rem; font-weight: 700; line-height: 1.4; overflow-y: auto; white-space: pre-wrap; }
-        .alert-box { background: white; border: 12px solid #be123c; padding: 60px; border-radius: 40px; text-align: center; }
+        #zBody { padding: 45px; font-size: 2.8rem; font-weight: 700; line-height: 1.4; overflow-y: auto; }
+        
+        /* 팝업 강조 */
+        .alert-box { background: #ffffff; border: 15px solid #be123c; padding: 60px; border-radius: 40px; text-align: center; min-width: 600px; box-shadow: 0 0 50px rgba(190, 18, 60, 0.5); }
     </style>
 </head>
-<body>
+<body onclick="console.log('User Active')">
 
     <header>
         <div style="min-width: 175px;">
             <h1 class="text-xl font-black text-[#f39c12]">제조팀 업무 게시판</h1>
             <div id="clock" class="text-[10px] text-slate-400 font-bold"></div>
         </div>
-        <div class="marquee-box"><div id="scrollNotice">데이터 연결 중...</div></div>
+        <div class="marquee-box"><div id="scrollNotice">시스템 대기 중...</div></div>
         <div class="stat-group">
             <div class="stat-box"><div id="v1" class="stat-val"></div></div>
             <div class="stat-box"><div id="v2" class="stat-val"></div></div>
@@ -60,19 +61,23 @@
     </main>
 
     <div id="alertOverlay" onclick="this.style.display='none'">
-        <div class="alert-box"><h2 class="text-7xl font-black text-rose-700 mb-8">📢 알림</h2><p id="alertMsg" class="text-5xl font-bold"></p></div>
+        <div class="alert-box">
+            <h2 class="text-7xl font-black text-rose-700 mb-8">🔔 알 림</h2>
+            <p id="alertMsg" class="text-5xl font-bold text-slate-900"></p>
+        </div>
     </div>
 
     <div id="zoom" onclick="this.style.display='none'"><div class="zoom-box" onclick="event.stopPropagation()"><div id="zHead"></div><div id="zBody"></div></div></div>
 
     <script>
-        const API = 'https://script.google.com/macros/s/AKfycbwAwqrAQYy6JyXIJ6w7C_qJM3PPaFtp3-135CvtH9OGefjcqXwRRngNEm6Yh_4uIn6rhQ/exec';
+        const API = 'https://script.google.com/macros/s/AKfycbx7O9PYAnkyrEMg4zXdJ2o1ruY7cBpiCuQA7U4IEZO9Y2NDduiSSbfdn_LR6Gak27ysDw/exec';
         let lastAlarm = "";
         let marqueeTimer;
 
-        // [어제 성공한 전광판 무한 스크롤 엔진]
+        // [전광판 엔진]
         function startMarquee() {
             const el = document.getElementById('scrollNotice');
+            if(!el) return;
             let pos = el.parentElement.offsetWidth;
             clearInterval(marqueeTimer);
             marqueeTimer = setInterval(() => {
@@ -82,57 +87,76 @@
             }, 20);
         }
 
-        // [오늘 성공한 서식 유지 확대 로직]
+        // [확대 기능]
         function openZ(el) {
             const h = el.querySelector('.card-h');
             const b = el.querySelector('.card-b');
             document.getElementById('zHead').innerText = h.innerText;
             document.getElementById('zHead').style.backgroundColor = getComputedStyle(h).backgroundColor;
-            document.getElementById('zBody').innerHTML = b.innerHTML; // 서식 유지
+            document.getElementById('zBody').innerHTML = b.innerHTML;
             document.getElementById('zoom').style.display = 'flex';
         }
 
-        // [시간 및 알람 로직]
+        // [문제 해결 3] 팝업 로직 정밀 분석 및 분리
         function checkTime() {
             const now = new Date();
-            const ts = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
+            // 시:분 포맷 (예: 08:30)
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            const ts = hours + ":" + minutes;
+
             document.getElementById('clock').innerText = now.toLocaleString();
+
+            // 이미 알림이 뜬 시간이면 패스 (중복 실행 방지)
             if (ts === lastAlarm) return;
-            const alarms = {"08:30": "조회 시작", "12:00": "점심 시간", "17:30": "정리 정돈", "20:30": "야간 종료"};
+
+            const alarms = {
+                "08:30": "아침 조회가 시작되었습니다.",
+                "12:00": "점심 맛있게 드세요!",
+                "17:30": "퇴근 전 정리정돈 및 전원 확인!",
+                "20:30": "야간 근무 종료 시간입니다."
+            };
+
             if (alarms[ts]) {
+                console.log("Alarm Triggered: " + ts); // 디버깅용 로그
                 document.getElementById('alertMsg').innerText = alarms[ts];
                 document.getElementById('alertOverlay').style.display = 'flex';
-                lastAlarm = ts;
-                setTimeout(() => document.getElementById('alertOverlay').style.display='none', 55000);
+                lastAlarm = ts; // 알림 실행 기록
+                
+                // 50초 후 자동 닫힘 (1분 내에 중복 실행 방지됨)
+                setTimeout(() => { 
+                    document.getElementById('alertOverlay').style.display = 'none'; 
+                }, 50000);
             }
         }
 
-        // [핵심: 어제의 데이터 매핑 + 오늘의 서식 적용]
+        // [데이터 갱신]
         async function refresh() {
             try {
                 const res = await fetch(API);
                 const data = await res.json();
                 
-                // 1. 숫자 데이터 (B1~B3) - 성공했던 위치 그대로 매핑
+                // 1. 숫자 (B1~B3)
                 document.getElementById('v1').innerHTML = data[0];
                 document.getElementById('v2').innerHTML = data[1];
                 document.getElementById('v3').innerHTML = data[2];
 
-                // 2. 전광판 (B4) - 내용 넣고 애니메이션 시작
+                // 2. 전광판 (B4)
                 document.getElementById('scrollNotice').innerHTML = data[3];
                 startMarquee();
 
-                // 3. 카드 데이터 (B5~B12) - 서식 유지하며 삽입
+                // 3. 카드 (B5~B12)
                 for (let i = 0; i < 8; i++) {
                     const card = document.getElementById("r" + (i + 5));
                     if (card) card.innerHTML = data[i + 4];
                 }
-            } catch (e) { console.error("Update Error"); }
+            } catch (e) { console.error("Data Error"); }
         }
 
-        setInterval(checkTime, 1000);
-        refresh();
-        setInterval(refresh, 30000);
+        // 시스템 시작
+        setInterval(checkTime, 1000); // 1초마다 시계 감시 (팝업용)
+        refresh(); // 즉시 실행
+        setInterval(refresh, 20000); // 20초마다 데이터 갱신
     </script>
 </body>
 </html>
