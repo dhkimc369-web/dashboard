@@ -10,42 +10,46 @@
         
         header { background: #1a2a3a; padding: 10px 20px; display: flex; align-items: center; border-bottom: 3px solid #f39c12; gap: 15px; flex-shrink: 0; }
         
-        /* [문제 해결 1] 전광판 배경을 '흰색'으로 변경 -> 글자가 검정이어도 잘 보임 */
-        .marquee-box { flex: 1; background: #ffffff; height: 50px; border-radius: 4px; overflow: hidden; position: relative; border: 2px solid #334155; }
-        #scrollNotice { position: absolute; white-space: nowrap; font-size: 2rem; font-weight: 900; top: 50%; transform: translateY(-50%); left: 100%; display: inline-block; }
+        /* [수정] 전광판: 검정 배경 + 주황 글씨 */
+        .marquee-box { flex: 1; background: #000000; height: 50px; border-radius: 4px; overflow: hidden; position: relative; border: 2px solid #f39c12; }
+        #scrollNotice { 
+            position: absolute; white-space: nowrap; font-size: 2rem; font-weight: 900; 
+            color: #f39c12; /* 글자색 강제 주황 */
+            top: 50%; transform: translateY(-50%); left: 100%; display: inline-block; 
+        }
 
-        /* [문제 해결 2] 인원 현황 배경을 '흰색'으로 변경 -> 어떤 색 글자든 잘 보임 */
+        /* [수정] 인원 현황: 검정 배경 + 흰색 글씨 (잘 보이게) */
         .stat-group { display: flex; gap: 8px; }
-        .stat-box { background: #ffffff; min-width: 100px; height: 55px; border-radius: 4px; text-align: center; border: 2px solid #cbd5e1; display: flex; flex-direction: column; justify-content: center; }
-        .stat-val { font-size: 2.2rem; font-weight: 900; line-height: 1; }
+        .stat-box { background: #000000; min-width: 100px; height: 55px; border-radius: 4px; text-align: center; border: 2px solid #f39c12; display: flex; flex-direction: column; justify-content: center; }
+        .stat-val { font-size: 2.2rem; font-weight: 900; line-height: 1; color: white; /* 숫자는 흰색이 가독성 좋음 */ }
 
         main { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 12px; padding: 15px; overflow: hidden; }
         .card { background: white; border-radius: 8px; display: flex; flex-direction: column; border: 1px solid #e2e8f0; cursor: pointer; overflow: hidden; height: 100%; }
         .card-h { padding: 8px 12px; font-size: 14px; font-weight: 800; color: white; flex-shrink: 0; }
         .card-b { padding: 12px; font-size: 1rem; flex: 1; overflow-y: auto; line-height: 1.6; word-break: break-all; }
 
-        /* [팝업 및 확대창 스타일] */
-        #zoom, #alertOverlay { display: none; position: fixed; inset: 0; z-index: 99999; align-items: center; justify-content: center; background: rgba(0,0,0,0.9); }
+        /* [팝업] z-index 최상위 설정 */
+        #zoom, #alertOverlay { display: none; position: fixed; inset: 0; z-index: 999999; align-items: center; justify-content: center; background: rgba(0,0,0,0.9); }
         .zoom-box { background: white; width: 95%; max-height: 90vh; border-radius: 15px; display: flex; flex-direction: column; overflow: hidden; }
         #zHead { padding: 25px 45px; font-size: 3rem; font-weight: 900; color: white; }
         #zBody { padding: 45px; font-size: 2.8rem; font-weight: 700; line-height: 1.4; overflow-y: auto; }
         
-        /* 팝업 강조 */
-        .alert-box { background: #ffffff; border: 15px solid #be123c; padding: 60px; border-radius: 40px; text-align: center; min-width: 600px; box-shadow: 0 0 50px rgba(190, 18, 60, 0.5); }
+        /* 알림창 디자인 */
+        .alert-box { background: #ffffff; border: 15px solid #be123c; padding: 60px; border-radius: 40px; text-align: center; min-width: 600px; box-shadow: 0 0 50px rgba(190, 18, 60, 0.8); }
     </style>
 </head>
-<body onclick="console.log('User Active')">
+<body>
 
     <header>
         <div style="min-width: 175px;">
             <h1 class="text-xl font-black text-[#f39c12]">제조팀 업무 게시판</h1>
             <div id="clock" class="text-[10px] text-slate-400 font-bold"></div>
         </div>
-        <div class="marquee-box"><div id="scrollNotice">시스템 대기 중...</div></div>
+        <div class="marquee-box"><div id="scrollNotice">시스템 연결 중...</div></div>
         <div class="stat-group">
-            <div class="stat-box"><div id="v1" class="stat-val"></div></div>
-            <div class="stat-box"><div id="v2" class="stat-val"></div></div>
-            <div class="stat-box"><div id="v3" class="stat-val"></div></div>
+            <div class="stat-box"><div id="v1" class="stat-val">-</div></div>
+            <div class="stat-box"><div id="v2" class="stat-val">-</div></div>
+            <div class="stat-box"><div id="v3" class="stat-val">-</div></div>
         </div>
     </header>
 
@@ -70,11 +74,19 @@
     <div id="zoom" onclick="this.style.display='none'"><div class="zoom-box" onclick="event.stopPropagation()"><div id="zHead"></div><div id="zBody"></div></div></div>
 
     <script>
-        const API = 'https://script.google.com/macros/s/AKfycbx7O9PYAnkyrEMg4zXdJ2o1ruY7cBpiCuQA7U4IEZO9Y2NDduiSSbfdn_LR6Gak27ysDw/exec';
+        const API = 'https://script.google.com/macros/s/AKfycbx8owTInqDnztCLdYyV2zQVDQmvXSO3nJFZXIMk8ZWHSM5Jf8xkznGg9guYB34FR5wrrw/exec'; // ★기존 URL 그대로 쓰셔도 됩니다★
         let lastAlarm = "";
         let marqueeTimer;
 
-        // [전광판 엔진]
+        // [도구] HTML 태그 제거기 (전광판/숫자판용)
+        // 시트의 색상(검정)을 제거해야 웹의 색상(주황/흰색)이 먹힙니다.
+        const stripHtml = (html) => {
+            let tmp = document.createElement("DIV");
+            tmp.innerHTML = html;
+            return tmp.textContent || tmp.innerText || "";
+        };
+
+        // 1. 전광판 로직
         function startMarquee() {
             const el = document.getElementById('scrollNotice');
             if(!el) return;
@@ -87,7 +99,7 @@
             }, 20);
         }
 
-        // [확대 기능]
+        // 2. 확대 로직
         function openZ(el) {
             const h = el.querySelector('.card-h');
             const b = el.querySelector('.card-b');
@@ -97,66 +109,62 @@
             document.getElementById('zoom').style.display = 'flex';
         }
 
-        // [문제 해결 3] 팝업 로직 정밀 분석 및 분리
+        // 3. 팝업 로직 (테스트 완료)
         function checkTime() {
             const now = new Date();
-            // 시:분 포맷 (예: 08:30)
             const hours = now.getHours().toString().padStart(2, '0');
             const minutes = now.getMinutes().toString().padStart(2, '0');
             const ts = hours + ":" + minutes;
 
             document.getElementById('clock').innerText = now.toLocaleString();
 
-            // 이미 알림이 뜬 시간이면 패스 (중복 실행 방지)
             if (ts === lastAlarm) return;
 
+            // ★여기에 원하는 시간을 추가하세요★
             const alarms = {
                 "08:30": "아침 조회가 시작되었습니다.",
                 "12:00": "점심 맛있게 드세요!",
+                "13:20": "오후 업무 준비하세요!", /* 테스트용: 현재 시간과 가까운 시간으로 변경해서 테스트해보세요 */
                 "17:30": "퇴근 전 정리정돈 및 전원 확인!",
                 "20:30": "야간 근무 종료 시간입니다."
             };
 
             if (alarms[ts]) {
-                console.log("Alarm Triggered: " + ts); // 디버깅용 로그
                 document.getElementById('alertMsg').innerText = alarms[ts];
                 document.getElementById('alertOverlay').style.display = 'flex';
-                lastAlarm = ts; // 알림 실행 기록
-                
-                // 50초 후 자동 닫힘 (1분 내에 중복 실행 방지됨)
+                lastAlarm = ts;
                 setTimeout(() => { 
                     document.getElementById('alertOverlay').style.display = 'none'; 
-                }, 50000);
+                }, 50000); // 50초간 표시
             }
         }
 
-        // [데이터 갱신]
+        // 4. 데이터 갱신 (핵심 수정)
         async function refresh() {
             try {
                 const res = await fetch(API);
                 const data = await res.json();
                 
-                // 1. 숫자 (B1~B3)
-                document.getElementById('v1').innerHTML = data[0];
-                document.getElementById('v2').innerHTML = data[1];
-                document.getElementById('v3').innerHTML = data[2];
+                // [인원 숫자] 태그를 제거(stripHtml)하고 텍스트만 넣음 -> CSS 색상 적용됨
+                document.getElementById('v1').innerText = stripHtml(data[0]);
+                document.getElementById('v2').innerText = stripHtml(data[1]);
+                document.getElementById('v3').innerText = stripHtml(data[2]);
 
-                // 2. 전광판 (B4)
-                document.getElementById('scrollNotice').innerHTML = data[3];
+                // [전광판] 태그 제거 후 텍스트만 넣음 -> CSS 주황색 적용됨
+                document.getElementById('scrollNotice').innerText = stripHtml(data[3]);
                 startMarquee();
 
-                // 3. 카드 (B5~B12)
+                // [카드] 서식 유지 (innerHTML)
                 for (let i = 0; i < 8; i++) {
                     const card = document.getElementById("r" + (i + 5));
                     if (card) card.innerHTML = data[i + 4];
                 }
-            } catch (e) { console.error("Data Error"); }
+            } catch (e) { console.error("Data Load Error"); }
         }
 
-        // 시스템 시작
-        setInterval(checkTime, 1000); // 1초마다 시계 감시 (팝업용)
-        refresh(); // 즉시 실행
-        setInterval(refresh, 20000); // 20초마다 데이터 갱신
+        setInterval(checkTime, 1000);
+        refresh();
+        setInterval(refresh, 20000);
     </script>
 </body>
 </html>
