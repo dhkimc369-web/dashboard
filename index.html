@@ -8,9 +8,7 @@
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
         
-        /* 기본 레이아웃 */
         body { background: #1a2a3a; font-family: 'Pretendard', sans-serif; margin: 0; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
-        
         header { background: #1a2a3a; padding: 10px 20px; display: flex; align-items: center; border-bottom: 3px solid #f39c12; gap: 15px; flex-shrink: 0; }
         
         /* [전광판] */
@@ -21,15 +19,11 @@
             top: 50%; transform: translateY(-50%); left: 100%; display: inline-block; 
         }
 
-        /* [제안 2] 긴급 상황 점멸 효과 CSS */
-        @keyframes blink-red { 
-            0%, 100% { color: #ff0000; opacity: 1; text-shadow: 0 0 10px red; } 
-            50% { color: #ffcccc; opacity: 0.8; } 
-        }
+        /* [제안 2] 긴급 모드 (빨간색 점멸) */
+        @keyframes blink-red { 0%, 100% { color: #ff0000; text-shadow: 0 0 10px red; } 50% { color: #ffcccc; } }
         .emergency-mode { 
-            color: #ff0000 !important; 
-            font-weight: 900 !important;
             animation: marquee 20s linear infinite, blink-red 1s step-end infinite !important;
+            font-weight: 900 !important;
         }
 
         /* [인원 현황] */
@@ -38,13 +32,13 @@
         .stat-label { font-size: 13px; font-weight: 700; color: #cbd5e1; margin-bottom: 2px; }
         .stat-val { font-size: 2.2rem; font-weight: 900; line-height: 1; color: #ffffff !important; }
 
-        /* [메인 카드 그리드] */
+        /* [카드 영역] */
         main { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 12px; padding: 15px; overflow: hidden; }
         .card { background: white; border-radius: 8px; display: flex; flex-direction: column; border: 1px solid #e2e8f0; cursor: pointer; overflow: hidden; height: 100%; }
         .card-h { padding: 8px 12px; font-size: 14px; font-weight: 800; color: white; flex-shrink: 0; }
         .card-b { padding: 12px; font-size: 1rem; flex: 1; overflow-y: auto; line-height: 1.8; word-break: break-all; }
         
-        /* 링크 스타일 */
+        /* 링크 강조 */
         .card-b a { transition: color 0.2s; font-weight: bold; }
         .card-b a:hover { color: #1d4ed8 !important; text-decoration-thickness: 2px; }
 
@@ -55,19 +49,19 @@
         #zBody { padding: 45px; font-size: 2.8rem; font-weight: 700; line-height: 1.5; overflow-y: auto; }
         .alert-box { background: #ffffff; border: 15px solid #be123c; padding: 60px; border-radius: 40px; text-align: center; min-width: 600px; box-shadow: 0 0 50px rgba(190, 18, 60, 0.8); }
 
-        /* [제안 3] 모바일 반응형 (화면 폭 1024px 이하일 때) */
+        /* [제안 3] 모바일 반응형 (1024px 이하) */
         @media (max-width: 1024px) {
-            body { overflow: auto; height: auto; } /* 전체 스크롤 허용 */
+            body { overflow: auto; height: auto; }
             header { flex-wrap: wrap; height: auto; padding-bottom: 15px; }
-            main { display: flex; flex-direction: column; height: auto; } /* 세로 배치 */
-            .card { min-height: 300px; flex-shrink: 0; } /* 카드 최소 높이 */
-            .marquee-box { min-width: 100%; order: 3; margin-top: 10px; } /* 전광판 줄바꿈 */
+            main { display: flex; flex-direction: column; height: auto; }
+            .card { min-height: 300px; flex-shrink: 0; }
+            .marquee-box { min-width: 100%; order: 3; margin-top: 10px; }
         }
 
-        /* [인쇄 전용 스타일] 프린트 버튼 클릭 시 적용 */
+        /* [인쇄 전용] */
         @media print {
             body { -webkit-print-color-adjust: exact; print-color-adjust: exact; overflow: visible; height: auto; }
-            #btn-print, #lastUpdate, #alertOverlay, #zoom { display: none !important; } /* 버튼 및 팝업 숨김 */
+            #btn-print, #lastUpdate, #alertOverlay, #zoom { display: none !important; }
             main { display: grid; gap: 10px; }
             .card { border: 1px solid #000; break-inside: avoid; }
             header { border-bottom: 2px solid #000; }
@@ -80,15 +74,13 @@
         <div style="width: 360px; flex-shrink: 0;">
             <div class="flex items-center gap-3">
                 <h1 class="text-3xl font-black text-[#f39c12] mb-1">제조팀 업무 게시판</h1>
-                <button id="btn-print" onclick="window.print()" class="bg-gray-700 hover:bg-gray-600 text-white px-3 py-1 rounded text-sm font-bold transition">
-                    🖨️ 인쇄
-                </button>
+                <button id="btn-print" onclick="window.print()" class="bg-gray-700 hover:bg-gray-600 text-white px-3 py-1 rounded text-sm font-bold transition">🖨️ 인쇄</button>
             </div>
             <div id="clock" class="text-xl text-slate-300 font-bold"></div>
-            <div id="lastUpdate" class="text-xs text-slate-500 mt-1 font-mono">갱신 대기 중...</div>
+            <div id="lastUpdate" class="text-xs text-slate-500 mt-1 font-mono">데이터 연결 시도 중...</div>
         </div>
         
-        <div class="marquee-box"><div id="scrollNotice">시스템 연결 중...</div></div>
+        <div class="marquee-box"><div id="scrollNotice">시스템 시작...</div></div>
         
         <div class="stat-group">
             <div class="stat-box"><div id="l1" class="stat-label"></div><div id="v1" class="stat-val">-</div></div>
@@ -119,7 +111,9 @@
     <div id="zoom" onclick="this.style.display='none'"><div class="zoom-box" onclick="event.stopPropagation()"><div id="zHead"></div><div id="zBody"></div></div></div>
 
     <script>
-        const API = '여기에_GAS_URL_입력';
+        // ★중요★ 아래 URL을 [새 배포]한 주소로 꼭 바꿔주세요!
+        const API = 'https://script.google.com/macros/s/AKfycbzkPp0oDZvQS_VPLCHuo3HjnyEcLecYRh4mTEa80j98sQZfBEepFr0pztWvMWSSX7Nb3Q/exec';
+        
         let marqueeTimer;
         let popupData = { msg: "", start: "", end: "" };
         let isClosed = false;
@@ -165,6 +159,7 @@
             const overlay = document.getElementById('alertOverlay');
             const msgBox = document.getElementById('alertMsg');
             
+            // 시트 팝업
             if (popupData.start && popupData.end && popupData.msg && !isClosed) {
                 if (ts >= popupData.start && ts <= popupData.end) {
                     if (overlay.style.display !== 'flex' || msgBox.innerText !== popupData.msg) {
@@ -175,7 +170,8 @@
                 }
             }
 
-            const fixed = { "08:50": "아침 조회", "12:57": "납품 준비", "17:50": "정리 정돈", "20:30": "야간 종료" };
+            // 고정 팝업
+            const fixed = { "08:50": "아침 조회", "12:507: "납품 준비", "17:50": "정리 정돈", "20:30": "야간 종료" };
             if (fixed[ts] && !isClosed) {
                 if (overlay.style.display !== 'flex' || msgBox.innerText !== fixed[ts]) {
                     msgBox.innerText = fixed[ts];
@@ -187,24 +183,24 @@
         }
 
         async function refresh() {
+            const updateEl = document.getElementById('lastUpdate');
             try {
                 const res = await fetch(API);
                 const data = await res.json();
                 
-                // 1. 인원
-                document.getElementById('l1').innerText = data.stats[0].label || "BBT";
-                document.getElementById('v1').innerText = stripHtml(data.stats[0].value) || "0";
-                document.getElementById('l2').innerText = data.stats[1].label || "인서트";
-                document.getElementById('v2').innerText = stripHtml(data.stats[1].value) || "0";
-                document.getElementById('l3').innerText = data.stats[2].label || "리터치";
-                document.getElementById('v3').innerText = stripHtml(data.stats[2].value) || "0";
+                // 1. 인원 (라벨 + 값)
+                document.getElementById('l1').innerText = data.stats[0].label;
+                document.getElementById('v1').innerText = stripHtml(data.stats[0].value);
+                document.getElementById('l2').innerText = data.stats[1].label;
+                document.getElementById('v2').innerText = stripHtml(data.stats[1].value);
+                document.getElementById('l3').innerText = data.stats[2].label;
+                document.getElementById('v3').innerText = stripHtml(data.stats[2].value);
 
-                // 2. 전광판 (긴급 모드 추가)
+                // 2. 전광판 (긴급 모드)
                 const noticeText = stripHtml(data.marquee);
                 const marqueeEl = document.getElementById('scrollNotice');
                 marqueeEl.innerText = noticeText;
                 
-                // "긴급", "비상", "필독" 단어 감지 시 깜빡임
                 if (noticeText.includes("긴급") || noticeText.includes("비상") || noticeText.includes("필독")) {
                     marqueeEl.classList.add("emergency-mode");
                 } else {
@@ -225,17 +221,16 @@
                     popupData.end = (data.popup.end || "").trim();
                 }
 
-                // [제안 1] 갱신 시간 표시 (성공 시 녹색)
+                // [성공] 갱신 시간 녹색 표시
                 const now = new Date();
-                const updateEl = document.getElementById('lastUpdate');
                 updateEl.innerText = "최근 갱신: " + now.toLocaleTimeString();
-                updateEl.style.color = "#4ade80"; // Green
+                updateEl.style.color = "#4ade80"; 
 
             } catch (e) { 
-                console.error("Update Fail"); 
-                // 실패 시 갱신 시간 빨간색
-                const updateEl = document.getElementById('lastUpdate');
-                updateEl.style.color = "#ef4444"; // Red
+                console.error("Update Fail", e); 
+                // [실패] 갱신 대기 중... 빨간색 표시
+                updateEl.innerText = "데이터 갱신 실패 (URL 확인 필요)";
+                updateEl.style.color = "#ef4444"; 
             }
         }
 
