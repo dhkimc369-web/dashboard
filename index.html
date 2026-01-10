@@ -2,92 +2,93 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>제조팀 업무 게시판 (레이아웃 고정형)</title>
+    <title>제조팀 업무 게시판 (완결본)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
         
-        /* 전체 화면 고정 (스크롤 방지) */
         body { 
             background: #1a2a3a; font-family: 'Pretendard', sans-serif; 
             margin: 0; padding: 0; overflow: hidden; 
             height: 100vh; display: flex; flex-direction: column; 
         }
 
+        /* 헤더 설정 */
         header { 
             background: #1a2a3a; padding: 10px 20px; display: flex; 
             align-items: center; border-bottom: 3px solid #f39c12; gap: 15px; flex-shrink: 0; 
         }
         
-        /* [복구] 전광판 애니메이션 */
+        /* 전광판: 무한 루프 최적화 */
         .marquee-box { flex: 1; background: #0f172a; height: 48px; border-radius: 4px; overflow: hidden; position: relative; border: 1px solid #334155; }
         #scrollNotice { 
             position: absolute; white-space: nowrap; font-size: 1.8rem; font-weight: 900; color: #fbbf24; 
             top: 50%; transform: translateY(-50%);
-            animation: marquee-scroll 20s linear infinite;
+            animation: marquee-scroll 25s linear infinite;
         }
         @keyframes marquee-scroll {
-            0% { left: 100%; }
-            100% { left: -150%; }
+            from { left: 100%; }
+            to { left: -150%; }
         }
 
+        /* 상단 숫자 지표 */
         .stat-group { display: flex; gap: 8px; }
         .stat-box { background: white; width: 105px; height: 55px; border-radius: 4px; text-align: center; border: 2px solid #cbd5e1; display: flex; flex-direction: column; justify-content: center; }
         .stat-label { font-size: 11px; font-weight: 800; color: #64748b; }
         .stat-val { font-size: 1.8rem; font-weight: 900; color: #1e293b; line-height: 1; }
 
-        /* [핵심] 카드 그리드 및 크기 고정 */
+        /* 메인 레이아웃: 카드 크기 고정 */
         main { 
             flex: 1; display: grid; 
             grid-template-columns: repeat(4, 1fr); 
             grid-template-rows: repeat(2, 1fr); 
-            gap: 12px; padding: 15px; overflow: hidden; /* 메인 영역 스크롤 방지 */
+            gap: 12px; padding: 15px; overflow: hidden;
         }
 
         .card { 
             background: white; border-radius: 8px; display: flex; 
             flex-direction: column; border: 1px solid #e2e8f0; 
-            cursor: pointer; overflow: hidden; height: 100%; /* 부모 격자 높이에 맞춤 */
+            cursor: pointer; overflow: hidden; height: 100%;
         }
 
         .card-h { padding: 8px 12px; font-size: 14px; font-weight: 800; color: white; flex-shrink: 0; }
 
-        /* [핵심] 카드 내용물 스크롤 적용 */
+        /* 카드 내부 스크롤 적용 */
         .card-b { 
-            padding: 12px; font-size: 0.95rem; flex: 1; 
-            overflow-y: auto; /* 내용 많으면 세로 스크롤 */
-            white-space: pre-wrap; word-break: break-all; 
-            color: #334155; line-height: 1.6; 
+            padding: 12px; font-size: 1rem; flex: 1; 
+            overflow-y: auto; white-space: pre-wrap; word-break: break-all; 
+            line-height: 1.6; color: #334155;
         }
-
-        /* 스크롤바 디자인 (깔끔하게) */
         .card-b::-webkit-scrollbar { width: 6px; }
         .card-b::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
 
-        /* 팝업 레이어 */
-        #alertPopup { 
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.8); z-index: 10000; align-items: center; justify-content: center; 
+        /* 지정 시간 알림 팝업 */
+        #alertOverlay { 
+            display: none; position: fixed; inset: 0; 
+            background: rgba(0,0,0,0.85); z-index: 100000; 
+            align-items: center; justify-content: center; 
         }
-        .popup-content { 
-            background: #fff1f2; border: 10px solid #be123c; padding: 50px; 
-            border-radius: 30px; text-align: center; min-width: 600px; 
+        .alert-box { 
+            background: #fff1f2; border: 10px solid #be123c; padding: 60px; 
+            border-radius: 40px; text-align: center; min-width: 700px;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
         }
 
-        #zoom { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; align-items: center; justify-content: center; padding: 30px; }
+        /* 카드 확대(줌) 창 */
+        #zoom { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 10000; align-items: center; justify-content: center; padding: 30px; }
         .zoom-box { background: white; width: 95%; max-height: 90vh; border-radius: 12px; display: flex; flex-direction: column; }
-        #zHead { padding: 25px 40px; font-size: 2.5rem; font-weight: 900; color: white; border-radius: 12px 12px 0 0; flex-shrink: 0; }
-        #zBody { padding: 45px; font-size: 2.2rem; font-weight: 600; line-height: 1.6; color: #1e293b; overflow-y: auto; white-space: pre-wrap; }
+        #zHead { padding: 25px 40px; font-size: 2.5rem; font-weight: 900; color: white; border-radius: 12px 12px 0 0; }
+        #zBody { padding: 45px; font-size: 2.2rem; font-weight: 600; line-height: 1.6; color: #1e293b; overflow-y: auto; }
     </style>
 </head>
-<body>
+<body onclick="enableAlarms()">
 
     <header>
         <div style="min-width: 175px;">
             <h1 class="text-xl font-black text-[#f39c12]">제조팀 업무 게시판</h1>
             <div id="clock" class="text-[10px] text-slate-400 font-bold"></div>
         </div>
-        <div class="marquee-box"><div id="scrollNotice">데이터를 불러오는 중입니다...</div></div>
+        <div class="marquee-box"><div id="scrollNotice">데이터 연동 중...</div></div>
         <div class="stat-group">
             <div class="stat-box"><div class="stat-label">BBT</div><div id="v1" class="stat-val">-</div></div>
             <div class="stat-box"><div class="stat-label">인서트</div><div id="v2" class="stat-val">-</div></div>
@@ -106,59 +107,65 @@
         <div class="card" onclick="openZ(this)"><div class="card-h bg-slate-600">⚠️ 리터치 상세</div><div class="card-b" id="r12"></div></div>
     </main>
 
-    <div id="alertPopup" onclick="this.style.display='none'">
-        <div class="popup-content">
-            <h2 class="text-5xl font-black mb-4">📢 공지</h2>
-            <p id="alertMsg" class="text-3xl font-bold"></p>
+    <div id="alertOverlay" onclick="this.style.display='none'">
+        <div class="alert-box">
+            <h2 class="text-6xl font-black text-rose-700 mb-6">📢 정기 안내</h2>
+            <p id="alertMsg" class="text-4xl font-bold text-slate-800"></p>
+            <p class="mt-12 text-gray-400 text-xl font-bold">(화면을 클릭하면 창이 닫힙니다)</p>
         </div>
     </div>
 
     <div id="zoom" onclick="this.style.display='none'"><div class="zoom-box" onclick="event.stopPropagation()"><div id="zHead"></div><div id="zBody"></div></div></div>
 
     <script>
-        const API = 'https://script.google.com/macros/s/AKfycbzyBvdU3qcpxn9PMAXIvC24rL6z9vR-Yp7HhFAdV_p4yY2TXBYFVdGkIVpFHv96xmmERg/exec';
-        let lastMin = -1;
+        const API = 'https://script.google.com/macros/s/AKfycbwdKctTM9bE2WEcWg6f1lG3bbX_D8EiexILDs5C_BRBdes1VVASsU_mB-YAM_dd5-2kEw/exec';
+        let lastAlarmTime = "";
+
+        // 알림 활성화를 위한 사용자 클릭 감지
+        function enableAlarms() { console.log("알림 시스템 가동 가능"); }
+
+        function checkAlarm() {
+            const now = new Date();
+            const time = now.getHours().toString().padStart(2, '0') + ":" + 
+                         now.getMinutes().toString().padStart(2, '0');
+            
+            if (time === lastAlarmTime) return;
+
+            const schedules = {
+                "08:30": "아침 조회가 시작되었습니다. 모두 모여주세요!",
+                "12:00": "점심 식사 시간입니다. 즐거운 식사 되세요!",
+                "17:30": "퇴근 전 기계 전원 OFF 및 정리정돈 시간입니다!",
+                "20:30": "야간 근무 종료 시간입니다. 보안 점검 후 퇴근하세요!"
+            };
+
+            if (schedules[time]) {
+                document.getElementById('alertMsg').innerText = schedules[time];
+                document.getElementById('alertOverlay').style.display = 'flex';
+                lastAlarmTime = time;
+                // 55초 후 자동 닫기
+                setTimeout(() => { document.getElementById('alertOverlay').style.display = 'none'; }, 55000);
+            }
+        }
 
         async function refresh() {
             try {
                 const res = await fetch(API);
                 const data = await res.json();
-                if (data) {
-                    const clean = (t) => t.replace(/<[^>]*>?/gm, '');
-                    document.getElementById('v1').innerText = clean(data[0]);
-                    document.getElementById('v2').innerText = clean(data[1]);
-                    document.getElementById('v3').innerText = clean(data[2]);
+                if (data && data.length >= 12) {
+                    // 상단 숫자판 (태그 제거 후 값만 표시)
+                    const cleanNum = (t) => t.replace(/<[^>]*>?/gm, '');
+                    document.getElementById('v1').innerText = cleanNum(data[0]);
+                    document.getElementById('v2').innerText = cleanNum(data[1]);
+                    document.getElementById('v3').innerText = cleanNum(data[2]);
                     
-                    // 전광판 데이터
+                    // 전광판 및 카드 (서식 포함)
                     document.getElementById('scrollNotice').innerHTML = data[3];
-                    
-                    // 카드 데이터 8개
                     for (let i = 0; i < 8; i++) {
-                        const cell = document.getElementById("r" + (i + 5));
-                        if (cell) cell.innerHTML = data[i+4] || "";
+                        const target = document.getElementById("r" + (i + 5));
+                        if (target) target.innerHTML = data[i+4] || "";
                     }
                 }
-            } catch (err) { console.log("데이터 갱신 오류"); }
-        }
-
-        function checkAlarm() {
-            const now = new Date();
-            const time = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
-            if (now.getMinutes() === lastMin) return;
-
-            const schedules = {
-                "08:30": "아침 조회가 시작되었습니다.",
-                "12:00": "즐거운 점심 시간입니다!",
-                "17:30": "퇴근 전 정리정돈을 실시합시다.",
-                "20:30": "야간 근무 종료 시간입니다."
-            };
-
-            if (schedules[time]) {
-                document.getElementById('alertMsg').innerText = schedules[time];
-                document.getElementById('alertPopup').style.display = 'flex';
-                lastMin = now.getMinutes();
-                setTimeout(() => { document.getElementById('alertPopup').style.display = 'none'; }, 55000);
-            }
+            } catch (err) { console.log("데이터 갱신 실패"); }
         }
 
         function openZ(el) {
@@ -172,11 +179,11 @@
 
         setInterval(() => { 
             document.getElementById('clock').innerText = new Date().toLocaleString();
-            checkAlarm();
+            checkAlarm(); 
         }, 1000);
 
         refresh();
-        setInterval(refresh, 20000);
+        setInterval(refresh, 20000); // 20초마다 자동 갱신
     </script>
 </body>
 </html>
