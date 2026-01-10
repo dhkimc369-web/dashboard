@@ -142,7 +142,7 @@
             }
 
             // 고정 팝업
-            const fixed = { "08:30": "아침 조회", "12:00": "점심 시간", "17:30": "정리 정돈", "20:30": "야간 종료" };
+            const fixed = { "08:50": "아침 조회", "12:58": "납품 준비", "17:50": "정리 정돈", "20:30": "야간 종료" };
             if (fixed[ts] && !isClosed) {
                 if (overlay.style.display !== 'flex' || msgBox.innerText !== fixed[ts]) {
                     msgBox.innerText = fixed[ts];
@@ -188,3 +188,4 @@
     </script>
 </body>
 </html>
+
