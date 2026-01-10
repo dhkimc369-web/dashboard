@@ -2,52 +2,53 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>제조팀 업무 현황판</title>
+    <title>제조팀 업무 게시판 (기능 완벽 복구)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
         body { background: #1a2a3a; font-family: 'Pretendard', sans-serif; margin: 0; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
         header { background: #1a2a3a; padding: 10px 20px; display: flex; align-items: center; border-bottom: 3px solid #f39c12; gap: 15px; flex-shrink: 0; }
         
-        /* [1. 전광판] 강제 애니메이션 */
+        /* 1. 전광판 복구: 끊김 없는 무한 루프 */
         .marquee-box { flex: 1; background: #0f172a; height: 50px; border-radius: 4px; overflow: hidden; position: relative; border: 1px solid #334155; }
         #scrollNotice { 
-            position: absolute; white-space: nowrap; font-size: 2rem; font-weight: 900; 
-            top: 50%; transform: translateY(-50%); animation: linear-scroll 25s linear infinite;
+            position: absolute; white-space: nowrap; font-size: 1.8rem; font-weight: 900; 
+            top: 50%; transform: translateY(-50%);
+            animation: marquee 25s linear infinite;
         }
-        @keyframes linear-scroll { 0% { left: 100%; } 100% { left: -150%; } }
+        @keyframes marquee { 0% { left: 100%; } 100% { left: -150%; } }
 
-        /* [2. 레이아웃] 카드 높이 고정 및 내부 스크롤 */
+        /* 2. 카드 및 스크롤 고정 */
         main { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 12px; padding: 15px; overflow: hidden; }
         .card { background: white; border-radius: 8px; display: flex; flex-direction: column; border: 1px solid #e2e8f0; cursor: pointer; overflow: hidden; }
         .card-h { padding: 8px 12px; font-size: 14px; font-weight: 800; color: white; flex-shrink: 0; }
-        .card-b { padding: 12px; font-size: 1.05rem; flex: 1; overflow-y: auto; line-height: 1.6; word-break: break-all; }
-        .card-b::-webkit-scrollbar { width: 6px; }
+        .card-b { padding: 12px; font-size: 0.95rem; flex: 1; overflow-y: auto; line-height: 1.6; word-break: break-all; }
+        .card-b::-webkit-scrollbar { width: 5px; }
         .card-b::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
 
-        /* [3. 팝업] 최상단 강제 레이어 */
-        #alertOverlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 100000; align-items: center; justify-content: center; }
-        .alert-box { background: #fff1f2; border: 12px solid #be123c; padding: 60px; border-radius: 40px; text-align: center; min-width: 800px; box-shadow: 0 0 100px rgba(255,0,0,0.3); }
+        /* 3. 정기 팝업 레이어 */
+        #alertOverlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 100000; align-items: center; justify-content: center; }
+        .alert-box { background: #fff1f2; border: 12px solid #be123c; padding: 50px; border-radius: 30px; text-align: center; min-width: 600px; }
 
-        /* [4. 확대 창] */
+        /* 4. 확대 창 */
         #zoom { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 9999; align-items: center; justify-content: center; padding: 40px; }
         .zoom-box { background: white; width: 95%; max-height: 90vh; border-radius: 15px; display: flex; flex-direction: column; }
-        #zHead { padding: 30px 45px; font-size: 3rem; font-weight: 900; color: white; }
-        #zBody { padding: 50px; font-size: 2.8rem; font-weight: 700; line-height: 1.5; overflow-y: auto; white-space: pre-wrap; }
+        #zHead { padding: 25px 40px; font-size: 2.5rem; font-weight: 900; color: white; }
+        #zBody { padding: 40px; font-size: 2.2rem; font-weight: 600; line-height: 1.5; overflow-y: auto; white-space: pre-wrap; }
 
         .stat-group { display: flex; gap: 8px; }
-        .stat-box { background: white; width: 105px; height: 55px; border-radius: 4px; text-align: center; border: 2px solid #cbd5e1; display: flex; flex-direction: column; justify-content: center; }
-        .stat-val { font-size: 1.8rem; font-weight: 900; color: #1e293b; line-height: 1; }
+        .stat-box { background: white; min-width: 90px; height: 55px; border-radius: 4px; text-align: center; border: 2px solid #cbd5e1; display: flex; flex-direction: column; justify-content: center; }
+        .stat-val { font-size: 2rem; font-weight: 900; color: #1e293b; }
     </style>
 </head>
-<body onclick="systemOn()">
+<body onclick="enableSystem()">
 
     <header>
         <div style="min-width: 175px;">
             <h1 class="text-xl font-black text-[#f39c12]">제조팀 업무 게시판</h1>
             <div id="clock" class="text-[10px] text-slate-400 font-bold"></div>
         </div>
-        <div class="marquee-box"><div id="scrollNotice">시스템 연결 중...</div></div>
+        <div class="marquee-box"><div id="scrollNotice"></div></div>
         <div class="stat-group">
             <div class="stat-box"><div id="v1" class="stat-val">-</div></div>
             <div class="stat-box"><div id="v2" class="stat-val">-</div></div>
@@ -68,23 +69,20 @@
 
     <div id="alertOverlay" onclick="this.style.display='none'">
         <div class="alert-box">
-            <h2 class="text-7xl font-black text-rose-700 mb-8">📢 알림</h2>
-            <p id="alertMsg" class="text-5xl font-bold text-slate-800"></p>
-            <p class="mt-12 text-gray-400 text-2xl font-bold">(클릭하면 닫힙니다)</p>
+            <h2 class="text-6xl font-black text-rose-700 mb-6">📢 알림</h2>
+            <p id="alertMsg" class="text-4xl font-bold text-slate-800"></p>
         </div>
     </div>
 
     <div id="zoom" onclick="this.style.display='none'"><div class="zoom-box" onclick="event.stopPropagation()"><div id="zHead"></div><div id="zBody"></div></div></div>
 
     <script>
-        const API = 'https://script.google.com/macros/s/AKfycbzqu0rQqCoEwS1Ov4SC5ww7GeFxymQDqgNsU5jhnczNVv9JXm70KXbne0eJQJqd0qF5Pg/exec';
+        const API = 'https://script.google.com/macros/s/AKfycbzs5XDmE5o_iMYVO9wyVbfZnUNNKyPIm1zv_icgSMOV7jy7UTUUQmy9HkO73l88HrYluA/exec';
         let lastAlarm = "";
 
-        // 팝업 허용을 위한 함수
-        function systemOn() { console.log("System Activated"); }
+        function enableSystem() { console.log("System Ready"); }
 
-        // [핵심] 시간 체크는 데이터와 별개로 1초마다 독립적으로 실행
-        function checkTime() {
+        function checkAlarm() {
             const now = new Date();
             const timeStr = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
             document.getElementById('clock').innerText = now.toLocaleString();
@@ -93,9 +91,9 @@
 
             const alarms = {
                 "08:30": "아침 조회가 시작되었습니다.",
-                "12:00": "즐거운 점심 시간입니다!",
-                "17:30": "퇴근 전 정리정돈을 실시합시다.",
-                "20:30": "야간 근무가 종료되었습니다."
+                "12:00": "점심 맛있게 드세요!",
+                "17:30": "퇴근 전 기계 전원 및 정리 확인!",
+                "20:30": "야간 근무 종료 시간입니다."
             };
 
             if (alarms[timeStr]) {
@@ -106,32 +104,26 @@
             }
         }
 
-        // [핵심] 서식을 포함한 데이터 갱신
         async function refresh() {
             try {
                 const res = await fetch(API);
                 const data = await res.json();
                 
-                // 숫자 지표
-                document.getElementById('v1').innerText = data[0].text;
-                document.getElementById('v2').innerText = data[1].text;
-                document.getElementById('v3').innerText = data[2].text;
+                // 상단 숫자 (태그 제거 후 숫자만 표시)
+                const clean = (h) => h.replace(/<[^>]*>?/gm, '');
+                document.getElementById('v1').innerText = clean(data[0]);
+                document.getElementById('v2').innerText = clean(data[1]);
+                document.getElementById('v3').innerText = clean(data[2]);
 
-                // 전광판 서식 적용
-                const marquee = document.getElementById('scrollNotice');
-                marquee.innerText = data[3].text;
-                marquee.style.color = data[3].color;
-                marquee.style.fontWeight = data[3].bold;
+                // 전광판 (서식 유지)
+                document.getElementById('scrollNotice').innerHTML = data[3];
 
-                // 카드 8개 서식 적용
+                // 카드 8개 (서식 완벽 복구)
                 for (let i = 0; i < 8; i++) {
                     const card = document.getElementById("r" + (i + 5));
-                    const d = data[i + 4];
-                    if (card) {
-                        card.innerHTML = `<div style="color:${d.color}; font-weight:${d.bold}">${d.text}</div>`;
-                    }
+                    if (card) card.innerHTML = data[i+4];
                 }
-            } catch (e) { console.error("Update error"); }
+            } catch (e) { console.log("Refresh fail"); }
         }
 
         function openZ(el) {
@@ -143,8 +135,7 @@
             document.getElementById('zoom').style.display = 'flex';
         }
 
-        // 초기 가동
-        setInterval(checkTime, 1000);
+        setInterval(checkAlarm, 1000);
         refresh();
         setInterval(refresh, 20000);
     </script>
