@@ -9,41 +9,40 @@
         body { background: #1a2a3a; font-family: 'Pretendard', sans-serif; margin: 0; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
         header { background: #1a2a3a; padding: 10px 20px; display: flex; align-items: center; border-bottom: 3px solid #f39c12; gap: 15px; flex-shrink: 0; }
         
-        /* [전광판] 어제 잘 작동하던 방식 적용 */
+        /* [전광판] 어제 성공했던 무한 루프 방식 */
         .marquee-box { flex: 1; background: #0f172a; height: 50px; border-radius: 4px; overflow: hidden; position: relative; border: 1px solid #334155; }
-        #scrollNotice { 
-            position: absolute; white-space: nowrap; font-size: 2rem; font-weight: 900; 
-            top: 50%; transform: translateY(-50%); left: 100%;
-            display: inline-block;
-        }
+        #scrollNotice { position: absolute; white-space: nowrap; font-size: 2rem; font-weight: 900; top: 50%; transform: translateY(-50%); left: 100%; display: inline-block; }
 
-        /* [카드 레이아웃] */
+        /* [숫자판] B1~B3 전용 */
+        .stat-group { display: flex; gap: 8px; }
+        .stat-box { background: white; min-width: 100px; height: 55px; border-radius: 4px; text-align: center; border: 2px solid #cbd5e1; display: flex; flex-direction: column; justify-content: center; }
+        .stat-val { font-size: 2rem; font-weight: 900; color: #1e293b; line-height: 1; }
+
+        /* [카드 영역] B5~B12 */
         main { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 12px; padding: 15px; overflow: hidden; }
         .card { background: white; border-radius: 8px; display: flex; flex-direction: column; border: 1px solid #e2e8f0; cursor: pointer; overflow: hidden; height: 100%; }
         .card-h { padding: 8px 12px; font-size: 14px; font-weight: 800; color: white; flex-shrink: 0; }
         .card-b { padding: 12px; font-size: 1rem; flex: 1; overflow-y: auto; line-height: 1.6; word-break: break-all; }
 
-        /* [숫자판] 어제 디자인 복구 */
-        .stat-group { display: flex; gap: 8px; }
-        .stat-box { background: white; min-width: 95px; height: 55px; border-radius: 4px; text-align: center; border: 2px solid #cbd5e1; display: flex; flex-direction: column; justify-content: center; }
-        .stat-val { font-size: 2rem; font-weight: 900; color: #1e293b; line-height: 1; }
+        /* [확대 창] 살아난 기능 유지 */
+        #zoom { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 9999; align-items: center; justify-content: center; padding: 40px; }
+        .zoom-box { background: white; width: 95%; max-height: 90vh; border-radius: 15px; display: flex; flex-direction: column; overflow: hidden; }
+        #zHead { padding: 25px 45px; font-size: 3rem; font-weight: 900; color: white; }
+        #zBody { padding: 45px; font-size: 2.8rem; font-weight: 700; line-height: 1.4; overflow-y: auto; }
 
-        /* [팝업/확대] */
+        /* [팝업 알림] */
         #alertOverlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 100000; align-items: center; justify-content: center; }
-        #zoom { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; align-items: center; justify-content: center; padding: 40px; }
-        .zoom-box { background: white; width: 90%; max-height: 85vh; border-radius: 15px; display: flex; flex-direction: column; overflow: hidden; }
-        #zHead { padding: 25px 40px; font-size: 2.5rem; font-weight: 900; color: white; }
-        #zBody { padding: 40px; font-size: 2.3rem; font-weight: 700; line-height: 1.4; overflow-y: auto; }
+        .alert-box { background: white; border: 10px solid #be123c; padding: 50px; border-radius: 30px; text-align: center; }
     </style>
 </head>
-<body>
+<body onclick="userTrigger()">
 
     <header>
         <div style="min-width: 175px;">
             <h1 class="text-xl font-black text-[#f39c12]">제조팀 업무 게시판</h1>
             <div id="clock" class="text-[10px] text-slate-400 font-bold"></div>
         </div>
-        <div class="marquee-box"><div id="scrollNotice">데이터 로딩 중...</div></div>
+        <div class="marquee-box"><div id="scrollNotice">연결 중...</div></div>
         <div class="stat-group">
             <div class="stat-box"><div id="v1" class="stat-val">-</div></div>
             <div class="stat-box"><div id="v2" class="stat-val">-</div></div>
@@ -63,22 +62,22 @@
     </main>
 
     <div id="alertOverlay" onclick="this.style.display='none'">
-        <div class="alert-box bg-white p-10 rounded-3xl border-8 border-rose-600 text-center">
-            <h2 class="text-5xl font-black text-rose-700 mb-4">📢 알림</h2>
-            <p id="alertMsg" class="text-3xl font-bold"></p>
-        </div>
+        <div class="alert-box"><h2 class="text-6xl font-black text-rose-700 mb-4">📢 알림</h2><p id="alertMsg" class="text-4xl font-bold"></p></div>
     </div>
 
     <div id="zoom" onclick="this.style.display='none'"><div class="zoom-box" onclick="event.stopPropagation()"><div id="zHead"></div><div id="zBody"></div></div></div>
 
     <script>
-        const API = 'https://script.google.com/macros/s/AKfycbxBHiQTjFHmGun2PG7FWzA34WrE9s4boZm4yp16wIzJibfCMquQKnrxvTFoAfoAl61xmA/exec';
+        const API = 'https://script.google.com/macros/s/AKfycbxxtM4sV9tbIXVvWY10XbzxjUJ6WYYF_7oBvPCtx5rjcnL02SkK4HAwRqdvPfBxVaf34A/exec';
         let lastAlarm = "";
         let marqueeTimer;
 
-        // [복구] 전광판 구동 엔진
+        function userTrigger() { console.log("Active"); }
+
+        // 1. 전광판 제어 (어제 검증된 방식)
         function startMarquee() {
             const el = document.getElementById('scrollNotice');
+            if(!el) return;
             let pos = el.parentElement.offsetWidth;
             clearInterval(marqueeTimer);
             marqueeTimer = setInterval(() => {
@@ -88,7 +87,7 @@
             }, 20);
         }
 
-        // [유지] 살아난 확대 기능
+        // 2. 확대 기능 (현재 성공한 방식)
         function openZ(el) {
             const h = el.querySelector('.card-h');
             const b = el.querySelector('.card-b');
@@ -98,49 +97,43 @@
             document.getElementById('zoom').style.display = 'flex';
         }
 
-        // [복구] 시간 알림 팝업
+        // 3. 알림 팝업
         function checkTime() {
             const now = new Date();
-            const timeStr = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
+            const ts = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
             document.getElementById('clock').innerText = now.toLocaleString();
-            if (timeStr === lastAlarm) return;
-            const alarms = {"08:30": "조회 시작", "12:00": "점심 시간", "17:30": "정리정돈", "20:30": "야간 종료"};
-            if (alarms[timeStr]) {
-                document.getElementById('alertMsg').innerText = alarms[timeStr];
+            if (ts === lastAlarm) return;
+            const alarms = {"08:30": "아침 조회", "12:00": "점심 시간", "17:30": "정리 정돈", "20:30": "야간 종료"};
+            if (alarms[ts]) {
+                document.getElementById('alertMsg').innerText = alarms[ts];
                 document.getElementById('alertOverlay').style.display = 'flex';
-                lastAlarm = timeStr;
-                setTimeout(() => document.getElementById('alertOverlay').style.display='none', 50000);
+                lastAlarm = ts;
+                setTimeout(() => document.getElementById('alertOverlay').style.display='none', 55000);
             }
         }
 
-        // [핵심] 통합 갱신 로직 (에러 방어막 적용)
+        // 4. 데이터 연동 (핵심)
         async function refresh() {
             try {
                 const res = await fetch(API);
                 const data = await res.json();
-                const strip = (h) => h.replace(/<[^>]*>?/gm, '');
+                
+                // 숫자판 (B1, B2, B3) - 서식 유지하며 삽입
+                document.getElementById('v1').innerHTML = data[0];
+                document.getElementById('v2').innerHTML = data[1];
+                document.getElementById('v3').innerHTML = data[2];
 
-                // 1. 숫자판 갱신
-                try {
-                    document.getElementById('v1').innerText = strip(data[0]);
-                    document.getElementById('v2').innerText = strip(data[1]);
-                    document.getElementById('v3').innerText = strip(data[2]);
-                } catch(e) { console.log("Stat Error"); }
+                // 전광판 (B4)
+                const marquee = document.getElementById('scrollNotice');
+                marquee.innerHTML = data[3];
+                startMarquee();
 
-                // 2. 전광판 갱신
-                try {
-                    document.getElementById('scrollNotice').innerHTML = data[3];
-                    startMarquee();
-                } catch(e) { console.log("Marquee Error"); }
-
-                // 3. 카드 갱신
+                // 카드 (B5~B12)
                 for (let i = 0; i < 8; i++) {
-                    try {
-                        const card = document.getElementById("r" + (i + 5));
-                        if (card) card.innerHTML = data[i + 4];
-                    } catch(e) { }
+                    const cell = document.getElementById("r" + (i + 5));
+                    if (cell) cell.innerHTML = data[i + 4];
                 }
-            } catch (e) { console.log("Fetch Fail"); }
+            } catch (e) { console.error("Refresh Error"); }
         }
 
         setInterval(checkTime, 1000);
