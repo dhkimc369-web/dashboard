@@ -2,24 +2,33 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>제조팀 통합 업무 게시판</title>
+    <title>제조팀 업무 게시판 (레이아웃 고정형)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
-        body { background: #1a2a3a; font-family: 'Pretendard', sans-serif; margin: 0; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
-        header { background: #1a2a3a; padding: 10px 20px; display: flex; align-items: center; border-bottom: 3px solid #f39c12; gap: 15px; flex-shrink: 0; }
         
-        /* 전광판 복구 로직 */
-        .marquee-container { flex: 1; background: #0f172a; height: 48px; border-radius: 4px; overflow: hidden; position: relative; border: 1px solid #334155; }
+        /* 전체 화면 고정 (스크롤 방지) */
+        body { 
+            background: #1a2a3a; font-family: 'Pretendard', sans-serif; 
+            margin: 0; padding: 0; overflow: hidden; 
+            height: 100vh; display: flex; flex-direction: column; 
+        }
+
+        header { 
+            background: #1a2a3a; padding: 10px 20px; display: flex; 
+            align-items: center; border-bottom: 3px solid #f39c12; gap: 15px; flex-shrink: 0; 
+        }
+        
+        /* [복구] 전광판 애니메이션 */
+        .marquee-box { flex: 1; background: #0f172a; height: 48px; border-radius: 4px; overflow: hidden; position: relative; border: 1px solid #334155; }
         #scrollNotice { 
             position: absolute; white-space: nowrap; font-size: 1.8rem; font-weight: 900; color: #fbbf24; 
-            top: 50%; transform: translateY(-50%); will-change: transform;
-            animation: scroll-left 30s linear infinite; 
+            top: 50%; transform: translateY(-50%);
+            animation: marquee-scroll 20s linear infinite;
         }
-        @keyframes scroll-left { 
-            0% { transform: translateY(-50%) translateX(100vw); } 
-            100% { transform: translateY(-50%) translateX(-150%); } 
+        @keyframes marquee-scroll {
+            0% { left: 100%; }
+            100% { left: -150%; }
         }
 
         .stat-group { display: flex; gap: 8px; }
@@ -27,37 +36,58 @@
         .stat-label { font-size: 11px; font-weight: 800; color: #64748b; }
         .stat-val { font-size: 1.8rem; font-weight: 900; color: #1e293b; line-height: 1; }
 
-        main { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 12px; padding: 15px; }
-        .card { background: white; border-radius: 8px; display: flex; flex-direction: column; border: 1px solid #e2e8f0; cursor: pointer; overflow: hidden; }
-        .card-h { padding: 8px 12px; font-size: 14px; font-weight: 800; color: white; }
-        .card-b { padding: 12px; font-size: 0.95rem; flex: 1; overflow-y: auto; white-space: pre-wrap; word-break: break-all; color: #334155; line-height: 1.6; }
+        /* [핵심] 카드 그리드 및 크기 고정 */
+        main { 
+            flex: 1; display: grid; 
+            grid-template-columns: repeat(4, 1fr); 
+            grid-template-rows: repeat(2, 1fr); 
+            gap: 12px; padding: 15px; overflow: hidden; /* 메인 영역 스크롤 방지 */
+        }
 
-        /* 팝업 알람 - 최상위 레이어 */
+        .card { 
+            background: white; border-radius: 8px; display: flex; 
+            flex-direction: column; border: 1px solid #e2e8f0; 
+            cursor: pointer; overflow: hidden; height: 100%; /* 부모 격자 높이에 맞춤 */
+        }
+
+        .card-h { padding: 8px 12px; font-size: 14px; font-weight: 800; color: white; flex-shrink: 0; }
+
+        /* [핵심] 카드 내용물 스크롤 적용 */
+        .card-b { 
+            padding: 12px; font-size: 0.95rem; flex: 1; 
+            overflow-y: auto; /* 내용 많으면 세로 스크롤 */
+            white-space: pre-wrap; word-break: break-all; 
+            color: #334155; line-height: 1.6; 
+        }
+
+        /* 스크롤바 디자인 (깔끔하게) */
+        .card-b::-webkit-scrollbar { width: 6px; }
+        .card-b::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+        /* 팝업 레이어 */
         #alertPopup { 
-            display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
-            background: rgba(0,0,0,0.85); z-index: 100000; align-items: center; justify-content: center; 
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.8); z-index: 10000; align-items: center; justify-content: center; 
         }
         .popup-content { 
-            background: #fff1f2; border: 12px solid #be123c; padding: 60px; border-radius: 40px; 
-            text-align: center; min-width: 700px; box-shadow: 0 0 100px rgba(0,0,0,0.5); 
+            background: #fff1f2; border: 10px solid #be123c; padding: 50px; 
+            border-radius: 30px; text-align: center; min-width: 600px; 
         }
-        .popup-content h2 { font-size: 4rem; font-weight: 900; color: #9f1239; margin-bottom: 20px; }
-        .popup-content p { font-size: 2.5rem; font-weight: 800; color: #1e293b; }
 
         #zoom { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; align-items: center; justify-content: center; padding: 30px; }
         .zoom-box { background: white; width: 95%; max-height: 90vh; border-radius: 12px; display: flex; flex-direction: column; }
-        #zHead { padding: 25px 40px; font-size: 2.5rem; font-weight: 900; color: white; border-radius: 12px 12px 0 0; }
+        #zHead { padding: 25px 40px; font-size: 2.5rem; font-weight: 900; color: white; border-radius: 12px 12px 0 0; flex-shrink: 0; }
         #zBody { padding: 45px; font-size: 2.2rem; font-weight: 600; line-height: 1.6; color: #1e293b; overflow-y: auto; white-space: pre-wrap; }
     </style>
 </head>
-<body onclick="enableAudio()">
+<body>
 
     <header>
         <div style="min-width: 175px;">
             <h1 class="text-xl font-black text-[#f39c12]">제조팀 업무 게시판</h1>
             <div id="clock" class="text-[10px] text-slate-400 font-bold"></div>
         </div>
-        <div class="marquee-container"><div id="scrollNotice">데이터 연동 중...</div></div>
+        <div class="marquee-box"><div id="scrollNotice">데이터를 불러오는 중입니다...</div></div>
         <div class="stat-group">
             <div class="stat-box"><div class="stat-label">BBT</div><div id="v1" class="stat-val">-</div></div>
             <div class="stat-box"><div class="stat-label">인서트</div><div id="v2" class="stat-val">-</div></div>
@@ -78,39 +108,16 @@
 
     <div id="alertPopup" onclick="this.style.display='none'">
         <div class="popup-content">
-            <h2>📢 업무 공지</h2>
-            <p id="alertMsg"></p>
-            <p class="mt-8 text-gray-400 text-lg font-bold">(클릭하면 닫힙니다)</p>
+            <h2 class="text-5xl font-black mb-4">📢 공지</h2>
+            <p id="alertMsg" class="text-3xl font-bold"></p>
         </div>
     </div>
 
     <div id="zoom" onclick="this.style.display='none'"><div class="zoom-box" onclick="event.stopPropagation()"><div id="zHead"></div><div id="zBody"></div></div></div>
 
     <script>
-        const API = 'https://script.google.com/macros/s/AKfycbxjDmBi5yj-gdBhi8UFrfDtf9iLVGzK5bOOinBMJzPXBFGMXR4_j07_sUnlJ4NDwGiGtQ/exec';
-        let lastAlarmMin = -1;
-
-        function checkAlarm() {
-            const now = new Date();
-            const time = now.getHours().toString().padStart(2, '0') + ":" + 
-                         now.getMinutes().toString().padStart(2, '0');
-            
-            if (now.getMinutes() === lastAlarmMin) return;
-
-            const schedules = {
-                "08:30": "아침 조회가 시작됩니다. 모여주세요!",
-                "12:00": "점심 시간입니다. 식사 맛있게 하세요!",
-                "17:30": "퇴근 전 기계 전원 OFF 및 정리정돈 확인!",
-                "20:30": "야간 근무 종료 시간입니다. 고생하셨습니다!"
-            };
-
-            if (schedules[time]) {
-                document.getElementById('alertMsg').innerText = schedules[time];
-                document.getElementById('alertPopup').style.display = 'flex';
-                lastAlarmMin = now.getMinutes();
-                setTimeout(() => { document.getElementById('alertPopup').style.display = 'none'; }, 55000);
-            }
-        }
+        const API = 'https://script.google.com/macros/s/AKfycbzyBvdU3qcpxn9PMAXIvC24rL6z9vR-Yp7HhFAdV_p4yY2TXBYFVdGkIVpFHv96xmmERg/exec';
+        let lastMin = -1;
 
         async function refresh() {
             try {
@@ -122,17 +129,36 @@
                     document.getElementById('v2').innerText = clean(data[1]);
                     document.getElementById('v3').innerText = clean(data[2]);
                     
-                    // 전광판 복구
-                    const noticeEl = document.getElementById('scrollNotice');
-                    noticeEl.innerHTML = data[3];
+                    // 전광판 데이터
+                    document.getElementById('scrollNotice').innerHTML = data[3];
                     
-                    // 카드 데이터 (서식 포함)
+                    // 카드 데이터 8개
                     for (let i = 0; i < 8; i++) {
                         const cell = document.getElementById("r" + (i + 5));
                         if (cell) cell.innerHTML = data[i+4] || "";
                     }
                 }
-            } catch (err) { console.log("데이터 수신 중..."); }
+            } catch (err) { console.log("데이터 갱신 오류"); }
+        }
+
+        function checkAlarm() {
+            const now = new Date();
+            const time = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
+            if (now.getMinutes() === lastMin) return;
+
+            const schedules = {
+                "08:30": "아침 조회가 시작되었습니다.",
+                "12:00": "즐거운 점심 시간입니다!",
+                "17:30": "퇴근 전 정리정돈을 실시합시다.",
+                "20:30": "야간 근무 종료 시간입니다."
+            };
+
+            if (schedules[time]) {
+                document.getElementById('alertMsg').innerText = schedules[time];
+                document.getElementById('alertPopup').style.display = 'flex';
+                lastMin = now.getMinutes();
+                setTimeout(() => { document.getElementById('alertPopup').style.display = 'none'; }, 55000);
+            }
         }
 
         function openZ(el) {
@@ -144,14 +170,13 @@
             document.getElementById('zoom').style.display = 'flex';
         }
 
-        function enableAudio() { console.log("System Activated"); }
-
         setInterval(() => { 
             document.getElementById('clock').innerText = new Date().toLocaleString();
-            checkAlarm(); 
+            checkAlarm();
         }, 1000);
 
-        window.onload = () => { refresh(); setInterval(refresh, 20000); };
+        refresh();
+        setInterval(refresh, 20000);
     </script>
 </body>
 </html>
