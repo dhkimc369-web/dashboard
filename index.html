@@ -24,26 +24,29 @@
         .stat-label { font-size: 13px; font-weight: 700; color: #cbd5e1; margin-bottom: 2px; }
         .stat-val { font-size: 2.2rem; font-weight: 900; line-height: 1; color: #ffffff !important; }
 
+        /* [카드] */
         main { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 12px; padding: 15px; overflow: hidden; }
         .card { background: white; border-radius: 8px; display: flex; flex-direction: column; border: 1px solid #e2e8f0; cursor: pointer; overflow: hidden; height: 100%; }
         .card-h { padding: 8px 12px; font-size: 14px; font-weight: 800; color: white; flex-shrink: 0; }
-        .card-b { padding: 12px; font-size: 1rem; flex: 1; overflow-y: auto; line-height: 1.6; word-break: break-all; }
+        /* 줄 간격을 1.8로 늘려 링크가 많아도 클릭하기 편하게 조정 */
+        .card-b { padding: 12px; font-size: 1rem; flex: 1; overflow-y: auto; line-height: 1.8; word-break: break-all; }
+        
+        /* [링크 스타일 강조] */
+        .card-b a { transition: color 0.2s; font-weight: bold; }
+        .card-b a:hover { color: #1d4ed8 !important; text-decoration-thickness: 2px; }
 
-        /* 링크 스타일 (자료공유용) */
-        .card-b a:hover { opacity: 0.7; }
-
-        /* 팝업 및 확대 */
+        /* [팝업/확대] */
         #zoom, #alertOverlay { display: none; position: fixed; inset: 0; z-index: 999999; align-items: center; justify-content: center; background: rgba(0,0,0,0.9); }
         .zoom-box { background: white; width: 95%; max-height: 90vh; border-radius: 15px; display: flex; flex-direction: column; overflow: hidden; }
         #zHead { padding: 25px 45px; font-size: 3rem; font-weight: 900; color: white; }
-        #zBody { padding: 45px; font-size: 2.8rem; font-weight: 700; line-height: 1.4; overflow-y: auto; }
+        #zBody { padding: 45px; font-size: 2.8rem; font-weight: 700; line-height: 1.5; overflow-y: auto; }
         .alert-box { background: #ffffff; border: 15px solid #be123c; padding: 60px; border-radius: 40px; text-align: center; min-width: 600px; box-shadow: 0 0 50px rgba(190, 18, 60, 0.8); }
     </style>
 </head>
 <body onclick="closePopupManual()">
 
     <header>
-        <div style="width: 320px; flex-shrink: 0;">
+        <div style="width: 350px; flex-shrink: 0;">
             <h1 class="text-3xl font-black text-[#f39c12] mb-1">제조팀 업무 게시판</h1>
             <div id="clock" class="text-xl text-slate-300 font-bold"></div>
         </div>
@@ -81,7 +84,7 @@
     <div id="zoom" onclick="this.style.display='none'"><div class="zoom-box" onclick="event.stopPropagation()"><div id="zHead"></div><div id="zBody"></div></div></div>
 
     <script>
-        const API = 'https://script.google.com/macros/s/AKfycbzq6xQgodaopUjqSh6181VQ_ccnCLNRnU73YiYWltlr40Naeg-JmhZCe8TOkl5drC-YDw/exec';
+        const API = 'https://script.google.com/macros/s/AKfycbw_dqtCcbFGsrc8LJYGmeqrW87aSoPmHXlp49gIRHaZCuL2VCM3HdfcfaePXJvH2DUlkA/exec';
         let marqueeTimer;
         let popupData = { msg: "", start: "", end: "" };
         let isClosed = false;
