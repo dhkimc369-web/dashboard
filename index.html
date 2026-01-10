@@ -2,46 +2,39 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>제조팀 업무 게시판 (기능 완벽 복구)</title>
+    <title>제조팀 업무 게시판</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
         body { background: #1a2a3a; font-family: 'Pretendard', sans-serif; margin: 0; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
         header { background: #1a2a3a; padding: 10px 20px; display: flex; align-items: center; border-bottom: 3px solid #f39c12; gap: 15px; flex-shrink: 0; }
         
-        /* 1. 전광판 복구: 끊김 없는 무한 루프 */
+        /* 1. 전광판: 데이터 유무와 상관없이 흐르도록 설정 */
         .marquee-box { flex: 1; background: #0f172a; height: 50px; border-radius: 4px; overflow: hidden; position: relative; border: 1px solid #334155; }
         #scrollNotice { 
-            position: absolute; white-space: nowrap; font-size: 1.8rem; font-weight: 900; 
+            position: absolute; white-space: nowrap; font-size: 2rem; font-weight: 900; 
             top: 50%; transform: translateY(-50%);
-            animation: marquee 25s linear infinite;
+            animation: marquee 30s linear infinite; /* 속도 조절 가능 */
         }
         @keyframes marquee { 0% { left: 100%; } 100% { left: -150%; } }
 
-        /* 2. 카드 및 스크롤 고정 */
+        /* 2. 레이아웃 고정 및 인원 현황(카드) 스크롤 */
         main { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 12px; padding: 15px; overflow: hidden; }
         .card { background: white; border-radius: 8px; display: flex; flex-direction: column; border: 1px solid #e2e8f0; cursor: pointer; overflow: hidden; }
         .card-h { padding: 8px 12px; font-size: 14px; font-weight: 800; color: white; flex-shrink: 0; }
         .card-b { padding: 12px; font-size: 0.95rem; flex: 1; overflow-y: auto; line-height: 1.6; word-break: break-all; }
-        .card-b::-webkit-scrollbar { width: 5px; }
-        .card-b::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
 
-        /* 3. 정기 팝업 레이어 */
+        /* 3. 팝업 알림: 최우선 레이어 */
         #alertOverlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 100000; align-items: center; justify-content: center; }
-        .alert-box { background: #fff1f2; border: 12px solid #be123c; padding: 50px; border-radius: 30px; text-align: center; min-width: 600px; }
+        .alert-box { background: #fff1f2; border: 10px solid #be123c; padding: 50px; border-radius: 30px; text-align: center; min-width: 600px; }
 
-        /* 4. 확대 창 */
-        #zoom { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 9999; align-items: center; justify-content: center; padding: 40px; }
-        .zoom-box { background: white; width: 95%; max-height: 90vh; border-radius: 15px; display: flex; flex-direction: column; }
-        #zHead { padding: 25px 40px; font-size: 2.5rem; font-weight: 900; color: white; }
-        #zBody { padding: 40px; font-size: 2.2rem; font-weight: 600; line-height: 1.5; overflow-y: auto; white-space: pre-wrap; }
-
+        /* 상단 지표 */
         .stat-group { display: flex; gap: 8px; }
         .stat-box { background: white; min-width: 90px; height: 55px; border-radius: 4px; text-align: center; border: 2px solid #cbd5e1; display: flex; flex-direction: column; justify-content: center; }
         .stat-val { font-size: 2rem; font-weight: 900; color: #1e293b; }
     </style>
 </head>
-<body onclick="enableSystem()">
+<body onclick="initSystem()">
 
     <header>
         <div style="min-width: 175px;">
@@ -57,32 +50,31 @@
     </header>
 
     <main>
-        <div class="card" onclick="openZ(this)"><div class="card-h bg-red-500">📢 공지 사항</div><div class="card-b" id="r5"></div></div>
-        <div class="card" onclick="openZ(this)"><div class="card-h bg-purple-500">👥 근태 현황</div><div class="card-b" id="r6"></div></div>
-        <div class="card" onclick="openZ(this)"><div class="card-h bg-green-600">📦 납품 목록</div><div class="card-b" id="r7"></div></div>
-        <div class="card" onclick="openZ(this)"><div class="card-h bg-blue-600">✅ 업무 공유</div><div class="card-b" id="r8"></div></div>
-        <div class="card" onclick="openZ(this)"><div class="card-h bg-teal-600">📊 진행 현황</div><div class="card-b" id="r9"></div></div>
-        <div class="card" onclick="openZ(this)"><div class="card-h bg-orange-500">🔍 BBT 상세</div><div class="card-b" id="r10"></div></div>
-        <div class="card" onclick="openZ(this)"><div class="card-h bg-indigo-600">🔧 인서트 상세</div><div class="card-b" id="r11"></div></div>
-        <div class="card" onclick="openZ(this)"><div class="card-h bg-slate-600">⚠️ 리터치 상세</div><div class="card-b" id="r12"></div></div>
+        <div class="card"><div class="card-h bg-red-500">📢 공지 사항</div><div class="card-b" id="r5"></div></div>
+        <div class="card"><div class="card-h bg-purple-500">👥 근태 현황</div><div class="card-b" id="r6"></div></div>
+        <div class="card"><div class="card-h bg-green-600">📦 납품 목록</div><div class="card-b" id="r7"></div></div>
+        <div class="card"><div class="card-h bg-blue-600">✅ 업무 공유</div><div class="card-b" id="r8"></div></div>
+        <div class="card"><div class="card-h bg-teal-600">📊 진행 현황</div><div class="card-b" id="r9"></div></div>
+        <div class="card"><div class="card-h bg-orange-500">🔍 BBT 상세</div><div class="card-b" id="r10"></div></div>
+        <div class="card"><div class="card-h bg-indigo-600">🔧 인서트 상세</div><div class="card-b" id="r11"></div></div>
+        <div class="card"><div class="card-h bg-slate-600">⚠️ 리터치 상세</div><div class="card-b" id="r12"></div></div>
     </main>
 
     <div id="alertOverlay" onclick="this.style.display='none'">
         <div class="alert-box">
-            <h2 class="text-6xl font-black text-rose-700 mb-6">📢 알림</h2>
+            <h2 class="text-6xl font-black text-rose-700 mb-6">📢 정기 알림</h2>
             <p id="alertMsg" class="text-4xl font-bold text-slate-800"></p>
         </div>
     </div>
 
-    <div id="zoom" onclick="this.style.display='none'"><div class="zoom-box" onclick="event.stopPropagation()"><div id="zHead"></div><div id="zBody"></div></div></div>
-
     <script>
-        const API = 'https://script.google.com/macros/s/AKfycbzs5XDmE5o_iMYVO9wyVbfZnUNNKyPIm1zv_icgSMOV7jy7UTUUQmy9HkO73l88HrYluA/exec';
+        const API = 'https://script.google.com/macros/s/AKfycbzqvHb0LmF0jeWpl10ctQaFOmBedzx9l1QvIPtPB-enKoul9lzpYCQCcKap0vHB5vaMLA/exec';
         let lastAlarm = "";
 
-        function enableSystem() { console.log("System Ready"); }
+        function initSystem() { console.log("System Ready"); }
 
-        function checkAlarm() {
+        // [복구] 시간 지정 팝업 로직 (1초마다 독립 체크)
+        function checkTime() {
             const now = new Date();
             const timeStr = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
             document.getElementById('clock').innerText = now.toLocaleString();
@@ -91,8 +83,8 @@
 
             const alarms = {
                 "08:30": "아침 조회가 시작되었습니다.",
-                "12:00": "점심 맛있게 드세요!",
-                "17:30": "퇴근 전 기계 전원 및 정리 확인!",
+                "12:00": "즐거운 점심 시간입니다!",
+                "17:30": "퇴근 전 전원 확인 및 정리정돈!",
                 "20:30": "야간 근무 종료 시간입니다."
             };
 
@@ -104,40 +96,34 @@
             }
         }
 
+        // [복구] 데이터 및 전광판 연동
         async function refresh() {
             try {
                 const res = await fetch(API);
                 const data = await res.json();
                 
-                // 상단 숫자 (태그 제거 후 숫자만 표시)
-                const clean = (h) => h.replace(/<[^>]*>?/gm, '');
-                document.getElementById('v1').innerText = clean(data[0]);
-                document.getElementById('v2').innerText = clean(data[1]);
-                document.getElementById('v3').innerText = clean(data[2]);
+                // HTML 태그 제거 함수 (숫자판용)
+                const strip = (html) => html.replace(/<[^>]*>?/gm, '');
 
-                // 전광판 (서식 유지)
+                // 상단 숫자 (B1, B2, B3)
+                document.getElementById('v1').innerText = strip(data[0]);
+                document.getElementById('v2').innerText = strip(data[1]);
+                document.getElementById('v3').innerText = strip(data[2]);
+
+                // 전광판 (B4)
                 document.getElementById('scrollNotice').innerHTML = data[3];
 
-                // 카드 8개 (서식 완벽 복구)
+                // 카드 8개 (B5 ~ B12) - 인원 현황 포함
                 for (let i = 0; i < 8; i++) {
-                    const card = document.getElementById("r" + (i + 5));
-                    if (card) card.innerHTML = data[i+4];
+                    const cardBody = document.getElementById("r" + (i + 5));
+                    if (cardBody) cardBody.innerHTML = data[i + 4];
                 }
-            } catch (e) { console.log("Refresh fail"); }
+            } catch (e) { console.error("Update error"); }
         }
 
-        function openZ(el) {
-            const h = el.querySelector('.card-h');
-            const b = el.querySelector('.card-b');
-            document.getElementById('zHead').innerText = h.innerText;
-            document.getElementById('zHead').style.backgroundColor = getComputedStyle(h).backgroundColor;
-            document.getElementById('zBody').innerHTML = b.innerHTML; 
-            document.getElementById('zoom').style.display = 'flex';
-        }
-
-        setInterval(checkAlarm, 1000);
+        setInterval(checkTime, 1000);
         refresh();
-        setInterval(refresh, 20000);
+        setInterval(refresh, 20000); // 20초마다 데이터 갱신
     </script>
 </body>
 </html>
