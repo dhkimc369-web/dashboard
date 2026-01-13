@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>제조팀 통합 게시판 (순환+자동스크롤)</title>
+    <title>제조팀 통합 게시판 (지능형 순환)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -37,11 +37,10 @@
         .stat-label { font-size: 13px; font-weight: 700; color: #cbd5e1; margin-bottom: 2px; }
         .stat-val { font-size: 2.2rem; font-weight: 900; line-height: 1; color: #ffffff !important; }
 
-        /* 카드 그리드 */
+        /* 메인 그리드 */
         main { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 12px; padding: 15px; overflow: hidden; }
         .card { background: white; border-radius: 8px; display: flex; flex-direction: column; border: 1px solid #e2e8f0; cursor: pointer; overflow: hidden; height: 100%; }
         .card-h { padding: 8px 12px; font-size: 14px; font-weight: 800; color: white; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; }
-        /* 자동 스크롤을 위해 overflow hidden (JS 제어) */
         .card-b { padding: 12px; font-size: 1rem; flex: 1; overflow-y: hidden; line-height: 1.8; word-break: break-all; position: relative; }
         .card-b:hover { overflow-y: auto; }
         .card-b a { transition: color 0.2s; font-weight: bold; }
@@ -51,7 +50,6 @@
         #zoom, #alertOverlay { display: none; position: fixed; inset: 0; z-index: 999999; align-items: center; justify-content: center; background: rgba(0,0,0,0.9); }
         .zoom-box { background: white; width: 95%; max-height: 90vh; border-radius: 15px; display: flex; flex-direction: column; overflow: hidden; }
         #zHead { padding: 25px 45px; font-size: 3rem; font-weight: 900; color: white; }
-        /* 확대창 내용도 자동 스크롤을 위해 hidden */
         #zBody { padding: 45px; font-size: 2.8rem; font-weight: 700; line-height: 1.5; overflow-y: hidden; flex: 1; }
         .alert-box { background: #ffffff; border: 15px solid #be123c; padding: 60px; border-radius: 40px; text-align: center; min-width: 600px; box-shadow: 0 0 50px rgba(190, 18, 60, 0.8); }
 
@@ -135,9 +133,10 @@
 
     <script>
         const API = 'https://script.google.com/macros/s/AKfycbxFzasNda1FF06VEVxCU4G8DMI7ijR4nKJWwYSMZ0saeZeYmxcxCjAULDov68QI0rwQ_w/exec'; 
-        
-        // ★ [설정] NEW 뱃지 유지 시간 (밀리초 단위, 60000 = 1분)
-        const BADGE_TIME = 60000; 
+
+        // ★ 설정 변수
+        const BADGE_TIME = 60000; // NEW 뱃지 유지 시간 (1분)
+        const SHORT_CONTENT_TIME = 7000; // 내용이 짧을 때 보여주는 시간 (7초)
 
         let marqueeTimer;
         let popupData = { msg: "", start: "", end: "" };
@@ -146,7 +145,7 @@
         let scrollIntervals = [];
 
         // 순환 모드 변수
-        let carouselInterval;
+        let carouselTimeout; // setTimeout으로 변경 (가변 시간 제어)
         let carouselIndex = 0;
         let isCarouselOn = false;
 
@@ -176,13 +175,12 @@
             document.getElementById('zBody').innerHTML = b.innerHTML;
             document.getElementById('zoom').style.display = 'flex';
             
-            // [추가] 확대 창도 자동 스크롤 적용
+            // 확대창 스크롤 시작
             setupAutoScroll('zBody');
         }
 
         function closeZ() {
             document.getElementById('zoom').style.display = 'none';
-            // 확대 창 닫으면 스크롤 타이머 해제
             if (scrollIntervals['zBody']) clearInterval(scrollIntervals['zBody']);
         }
 
@@ -192,7 +190,7 @@
             setTimeout(() => { isClosed = false; }, 60000);
         }
 
-        // [순환 모드]
+        // [지능형 순환 모드 로직]
         function toggleCarousel() {
             isCarouselOn = !isCarouselOn;
             const btn = document.getElementById('btn-carousel');
@@ -201,32 +199,42 @@
                 btn.innerText = "🔄 순환 모드 ON";
                 btn.classList.replace('bg-gray-700', 'bg-green-600');
                 btn.classList.replace('hover:bg-gray-600', 'hover:bg-green-500');
-                
                 runCarouselStep();
-                carouselInterval = setInterval(runCarouselStep, 10000); // 10초
             } else {
                 btn.innerText = "🔄 순환 모드 OFF";
                 btn.classList.replace('bg-green-600', 'bg-gray-700');
                 btn.classList.replace('hover:bg-green-500', 'hover:bg-gray-600');
-                
-                clearInterval(carouselInterval);
+                clearTimeout(carouselTimeout); // 타이머 해제
                 closeZ();
             }
         }
 
         function runCarouselStep() {
+            if (!isCarouselOn) return;
+
             const cards = document.querySelectorAll('.card');
             if (carouselIndex >= cards.length) carouselIndex = 0;
+            
             openZ(cards[carouselIndex]);
             carouselIndex++;
+
+            // ★ 다음 전환 시간 결정 로직
+            const zBody = document.getElementById('zBody');
+            
+            // 스크롤이 필요 없는 짧은 내용인 경우
+            if (zBody.scrollHeight <= zBody.clientHeight) {
+                // 기본 시간(7초) 뒤에 넘어감
+                carouselTimeout = setTimeout(runCarouselStep, SHORT_CONTENT_TIME);
+            } 
+            // 스크롤이 필요한 긴 내용인 경우 -> setupAutoScroll에서 바닥에 닿으면 runCarouselStep 호출함
         }
 
-        // [자동 스크롤 엔진]
+        // [자동 스크롤 엔진 (순환 모드 연동)]
         function setupAutoScroll(elementId) {
             const el = document.getElementById(elementId);
             if (!el) return;
             
-            // 내용이 충분히 길지 않으면 스크롤 안함
+            // 내용이 짧으면 스크롤 안 함
             if (el.scrollHeight <= el.clientHeight) return;
 
             let scrollTop = 0;
@@ -235,20 +243,34 @@
             if (scrollIntervals[elementId]) clearInterval(scrollIntervals[elementId]);
 
             scrollIntervals[elementId] = setInterval(() => {
-                // 마우스 오버 시 일시정지 (확대 창은 예외로 할 수도 있으나 통일감 위해 유지)
-                if (el.matches(':hover')) return; 
+                if (el.matches(':hover')) return; // 마우스 오버 시 정지
 
-                if (pause > 0) { pause--; return; }
+                if (pause > 0) { 
+                    pause--; 
+                    
+                    // [핵심] 순환 모드 중이고, 확대창(zBody)이며, pause가 0이 되어 대기가 끝났는데 바닥에 있었다면?
+                    // -> 스크롤 완료로 판단하고 다음 카드로 넘어감
+                    if (pause === 0 && elementId === 'zBody' && isCarouselOn && scrollTop > 0) {
+                        clearInterval(scrollIntervals[elementId]); // 현재 스크롤 중지
+                        runCarouselStep(); // 다음 카드로 이동
+                        return;
+                    }
+                    return; 
+                }
 
-                scrollTop += 1; // 1px씩 이동
+                scrollTop += 1;
                 el.scrollTop = scrollTop;
 
                 // 바닥에 닿으면
                 if (scrollTop + el.clientHeight >= el.scrollHeight) {
-                    pause = 100; // 약 2~3초 대기
-                    scrollTop = 0; // 다시 위로
+                    pause = 80; // 바닥에서 약 3초 대기 (40ms * 80)
+                    // 순환 모드가 아닐 때는 다시 위로 보냄
+                    if (!isCarouselOn || elementId !== 'zBody') {
+                        scrollTop = 0; 
+                    }
+                    // 순환 모드일 때는 위 pause 체크 로직에서 다음으로 넘어감
                 }
-            }, 40); // 속도 (낮을수록 빠름)
+            }, 40); // 스크롤 속도
         }
 
         function checkTime() {
@@ -269,7 +291,6 @@
                 }
             }
 
-            // [요청하신 알람 시간 반영]
             const fixed = { 
                 "08:50": "아침 조회", 
                 "12:57": "납품 준비", 
@@ -329,6 +350,7 @@
                             }, BADGE_TIME); 
                         }
                     }
+                    // 일반 카드 상태일 때도 스크롤 적용
                     setupAutoScroll(id);
                 }
 
