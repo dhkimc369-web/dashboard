@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>제조팀 통합 게시판 (완벽 순환)</title>
+    <title>제조팀 통합 게시판 (최종완성)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -11,19 +11,26 @@
         body { background: #1a2a3a; font-family: 'Pretendard', sans-serif; margin: 0; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
         header { background: #1a2a3a; padding: 10px 20px; display: flex; align-items: center; border-bottom: 3px solid #f39c12; gap: 15px; flex-shrink: 0; }
         
-        /* NEW 뱃지 */
+        /* [NEW 뱃지 스타일] - 확실하게 보이도록 디자인 강화 */
         .new-badge {
-            background-color: #ff0000; color: white; font-size: 0.7rem; font-weight: 900;
-            padding: 2px 6px; border-radius: 4px; margin-left: 8px;
-            animation: pulse-badge 1s infinite; display: none;
+            background-color: #ff0000; color: white; 
+            font-size: 0.8rem; font-weight: 900;
+            padding: 2px 8px; border-radius: 99px; 
+            margin-left: 10px; box-shadow: 0 0 10px rgba(255, 0, 0, 0.8);
+            animation: pulse-badge 0.5s infinite alternate; 
+            display: none; /* 기본은 숨김 */
         }
         @keyframes pulse-badge {
-            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7); }
-            70% { transform: scale(1.1); box-shadow: 0 0 0 5px rgba(255, 0, 0, 0); }
-            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); }
+            from { transform: scale(1); opacity: 0.9; }
+            to { transform: scale(1.1); opacity: 1; }
         }
-        .header-update { animation: flash-header 2s infinite; }
-        @keyframes flash-header { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.3); } }
+        
+        /* 헤더 깜빡임 효과 */
+        .header-update { animation: flash-header 1s infinite; }
+        @keyframes flash-header { 
+            0%, 100% { filter: brightness(1); } 
+            50% { filter: brightness(1.5); text-shadow: 0 0 10px white; } 
+        }
 
         /* 전광판 */
         .marquee-box { flex: 1; background: #000000; height: 50px; border-radius: 4px; overflow: hidden; position: relative; border: none; }
@@ -49,7 +56,7 @@
         /* 팝업 및 확대 */
         #zoom, #alertOverlay { display: none; position: fixed; inset: 0; z-index: 999999; align-items: center; justify-content: center; background: rgba(0,0,0,0.9); }
         .zoom-box { background: white; width: 95%; max-height: 90vh; border-radius: 15px; display: flex; flex-direction: column; overflow: hidden; }
-        #zHead { padding: 25px 45px; font-size: 3rem; font-weight: 900; color: white; }
+        #zHead { padding: 25px 45px; font-size: 3rem; font-weight: 900; color: white; display: flex; align-items: center; justify-content: space-between;}
         #zBody { padding: 45px; font-size: 2.8rem; font-weight: 700; line-height: 1.5; overflow-y: hidden; flex: 1; }
         .alert-box { background: #ffffff; border: 15px solid #be123c; padding: 60px; border-radius: 40px; text-align: center; min-width: 600px; box-shadow: 0 0 50px rgba(190, 18, 60, 0.8); }
 
@@ -134,8 +141,8 @@
     <script>
         const API = 'https://script.google.com/macros/s/AKfycbxFzasNda1FF06VEVxCU4G8DMI7ijR4nKJWwYSMZ0saeZeYmxcxCjAULDov68QI0rwQ_w/exec'; 
 
-        const BADGE_TIME = 60000; // NEW 뱃지 유지 시간
-        const SHORT_CONTENT_TIME = 7000; // 짧은 내용일 때 보여줄 시간
+        const BADGE_TIME = 60000; // NEW 뱃지 유지 시간 (1분)
+        const SHORT_CONTENT_TIME = 7000; // 짧은 내용 대기 시간
 
         let marqueeTimer;
         let popupData = { msg: "", start: "", end: "" };
@@ -143,7 +150,6 @@
         let previousData = [];
         let scrollIntervals = [];
 
-        // 순환 모드 변수
         let carouselTimeout;
         let carouselIndex = 0;
         let isCarouselOn = false;
@@ -169,10 +175,14 @@
         function openZ(el) {
             const h = el.querySelector('.card-h span:first-child');
             const b = el.querySelector('.card-b');
-            document.getElementById('zHead').innerText = h.innerText;
-            document.getElementById('zHead').style.backgroundColor = getComputedStyle(el.querySelector('.card-h')).backgroundColor;
+            const zHead = document.getElementById('zHead');
+            
+            zHead.innerHTML = `<span>${h.innerText}</span>`; // 제목
+            zHead.style.backgroundColor = getComputedStyle(el.querySelector('.card-h')).backgroundColor;
             document.getElementById('zBody').innerHTML = b.innerHTML;
             document.getElementById('zoom').style.display = 'flex';
+            
+            setupAutoScroll('zBody');
         }
 
         function closeZ() {
@@ -186,11 +196,9 @@
             setTimeout(() => { isClosed = false; }, 60000);
         }
 
-        // [핵심] 순환 모드 로직 (스크롤 완료 후 전환)
         function toggleCarousel() {
             isCarouselOn = !isCarouselOn;
             const btn = document.getElementById('btn-carousel');
-            
             if (isCarouselOn) {
                 btn.innerText = "🔄 순환 모드 ON";
                 btn.classList.replace('bg-gray-700', 'bg-green-600');
@@ -208,54 +216,42 @@
         function runCarouselStep() {
             if (!isCarouselOn) return;
 
-            // 1. 기존 타이머 및 스크롤 정리
             clearTimeout(carouselTimeout);
             if (scrollIntervals['zBody']) clearInterval(scrollIntervals['zBody']);
 
-            // 2. 다음 카드 열기
             const cards = document.querySelectorAll('.card');
             if (carouselIndex >= cards.length) carouselIndex = 0;
             openZ(cards[carouselIndex]);
             carouselIndex++;
 
-            // 3. 내용 길이 판단
             const zBody = document.getElementById('zBody');
-            
-            // ★ 중요: 스크롤 위치 초기화
             zBody.scrollTop = 0;
 
             if (zBody.scrollHeight > zBody.clientHeight) {
-                // [긴 내용] 스크롤 엔진에 위임 (끝나면 거기서 다음 단계 호출)
                 setupAutoScroll('zBody', true); 
             } else {
-                // [짧은 내용] 시간 지나면 넘어가기
                 carouselTimeout = setTimeout(runCarouselStep, SHORT_CONTENT_TIME);
             }
         }
 
-        // [자동 스크롤 엔진]
-        // isCarouselMode: true면 바닥에 닿았을 때 다음 화면으로 전환
         function setupAutoScroll(elementId, isCarouselMode = false) {
             const el = document.getElementById(elementId);
             if (!el) return;
             if (el.scrollHeight <= el.clientHeight) return;
 
             let scrollTop = 0;
-            let pause = 50; // 초기 대기
+            let pause = 50;
 
             if (scrollIntervals[elementId]) clearInterval(scrollIntervals[elementId]);
 
             scrollIntervals[elementId] = setInterval(() => {
-                // 마우스 오버 시 정지 (단, 순환모드 확대창은 마우스가 없어도 돌아가야 하니 제외 가능하지만 안전 위해 유지)
                 if (el.matches(':hover')) return;
 
                 if (pause > 0) { 
                     pause--; 
-                    
-                    // [대기 끝] -> 순환 모드라면 다음 화면으로!
                     if (pause === 0 && isCarouselMode) {
-                        clearInterval(scrollIntervals[elementId]); // 스크롤 중지
-                        runCarouselStep(); // ★ 다음 카드로 강제 이동
+                        clearInterval(scrollIntervals[elementId]);
+                        runCarouselStep();
                         return;
                     }
                     return; 
@@ -264,17 +260,11 @@
                 scrollTop += 1;
                 el.scrollTop = scrollTop;
 
-                // [바닥 감지] (브라우저 확대/축소 오차 방지 위해 Math.ceil 사용)
                 if (Math.ceil(scrollTop) + el.clientHeight >= el.scrollHeight) {
-                    pause = 100; // 바닥에서 약 4초 대기 (40ms * 100)
-                    
-                    if (!isCarouselMode) {
-                        // 순환 모드가 아니면 다시 위로 (무한 반복)
-                        scrollTop = 0;
-                    }
-                    // 순환 모드면 위 pause 체크 로직에서 runCarouselStep() 호출됨
+                    pause = 100;
+                    if (!isCarouselMode) scrollTop = 0;
                 }
-            }, 40); // 스크롤 속도
+            }, 40);
         }
 
         function checkTime() {
@@ -295,13 +285,7 @@
                 }
             }
 
-            const fixed = { 
-                "08:50": "아침 조회", 
-                "12:57": "납품 준비", 
-                "17:50": "정리 정돈", 
-                "20:30": "업무 종료" 
-            };
-            
+            const fixed = { "08:50": "아침 조회", "12:57": "납품 준비", "17:50": "정리 정돈", "20:30": "업무 종료" };
             if (fixed[ts] && !isClosed) {
                 if (overlay.style.display !== 'flex' || msgBox.innerText !== fixed[ts]) {
                     msgBox.innerText = fixed[ts];
@@ -341,23 +325,30 @@
                     const badge = cardHeader.querySelector('.new-badge');
                     
                     const newContent = data.cards[i] || "";
-                    const oldContent = previousData[i] || "";
+                    const oldContent = previousData[i] || ""; // 이전 데이터
 
+                    // 내용이 다를 때만 업데이트
                     if (newContent !== cardBody.innerHTML) {
                         cardBody.innerHTML = newContent;
+
+                        // ★ NEW 뱃지 로직: 이전 데이터가 존재하고(=첫로딩 아님), 내용이 다르면 표시
                         if (previousData.length > 0 && newContent !== oldContent) {
                             badge.style.display = "inline-block";
                             cardHeader.classList.add("header-update");
+                            
+                            // 일정 시간 후 제거
                             setTimeout(() => { 
                                 badge.style.display = "none"; 
                                 cardHeader.classList.remove("header-update");
                             }, BADGE_TIME); 
                         }
                     }
-                    // 일반 카드 상태 스크롤 (순환 모드 아님)
+                    
+                    // 스크롤 엔진 갱신
                     setupAutoScroll(id, false);
                 }
 
+                // 현재 데이터를 이전 데이터 변수에 저장 (다음 비교를 위해)
                 previousData = [...data.cards];
 
                 if (data.popup) {
