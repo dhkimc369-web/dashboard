@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>제조팀 통합 게시판 (지능형 순환)</title>
+    <title>제조팀 통합 게시판 (완벽 순환)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -134,9 +134,8 @@
     <script>
         const API = 'https://script.google.com/macros/s/AKfycbxFzasNda1FF06VEVxCU4G8DMI7ijR4nKJWwYSMZ0saeZeYmxcxCjAULDov68QI0rwQ_w/exec'; 
 
-        // ★ 설정 변수
-        const BADGE_TIME = 60000; // NEW 뱃지 유지 시간 (1분)
-        const SHORT_CONTENT_TIME = 7000; // 내용이 짧을 때 보여주는 시간 (7초)
+        const BADGE_TIME = 60000; // NEW 뱃지 유지 시간
+        const SHORT_CONTENT_TIME = 7000; // 짧은 내용일 때 보여줄 시간
 
         let marqueeTimer;
         let popupData = { msg: "", start: "", end: "" };
@@ -145,7 +144,7 @@
         let scrollIntervals = [];
 
         // 순환 모드 변수
-        let carouselTimeout; // setTimeout으로 변경 (가변 시간 제어)
+        let carouselTimeout;
         let carouselIndex = 0;
         let isCarouselOn = false;
 
@@ -174,9 +173,6 @@
             document.getElementById('zHead').style.backgroundColor = getComputedStyle(el.querySelector('.card-h')).backgroundColor;
             document.getElementById('zBody').innerHTML = b.innerHTML;
             document.getElementById('zoom').style.display = 'flex';
-            
-            // 확대창 스크롤 시작
-            setupAutoScroll('zBody');
         }
 
         function closeZ() {
@@ -190,7 +186,7 @@
             setTimeout(() => { isClosed = false; }, 60000);
         }
 
-        // [지능형 순환 모드 로직]
+        // [핵심] 순환 모드 로직 (스크롤 완료 후 전환)
         function toggleCarousel() {
             isCarouselOn = !isCarouselOn;
             const btn = document.getElementById('btn-carousel');
@@ -204,7 +200,7 @@
                 btn.innerText = "🔄 순환 모드 OFF";
                 btn.classList.replace('bg-green-600', 'bg-gray-700');
                 btn.classList.replace('hover:bg-green-500', 'hover:bg-gray-600');
-                clearTimeout(carouselTimeout); // 타이머 해제
+                clearTimeout(carouselTimeout);
                 closeZ();
             }
         }
@@ -212,29 +208,36 @@
         function runCarouselStep() {
             if (!isCarouselOn) return;
 
+            // 1. 기존 타이머 및 스크롤 정리
+            clearTimeout(carouselTimeout);
+            if (scrollIntervals['zBody']) clearInterval(scrollIntervals['zBody']);
+
+            // 2. 다음 카드 열기
             const cards = document.querySelectorAll('.card');
             if (carouselIndex >= cards.length) carouselIndex = 0;
-            
             openZ(cards[carouselIndex]);
             carouselIndex++;
 
-            // ★ 다음 전환 시간 결정 로직
+            // 3. 내용 길이 판단
             const zBody = document.getElementById('zBody');
             
-            // 스크롤이 필요 없는 짧은 내용인 경우
-            if (zBody.scrollHeight <= zBody.clientHeight) {
-                // 기본 시간(7초) 뒤에 넘어감
+            // ★ 중요: 스크롤 위치 초기화
+            zBody.scrollTop = 0;
+
+            if (zBody.scrollHeight > zBody.clientHeight) {
+                // [긴 내용] 스크롤 엔진에 위임 (끝나면 거기서 다음 단계 호출)
+                setupAutoScroll('zBody', true); 
+            } else {
+                // [짧은 내용] 시간 지나면 넘어가기
                 carouselTimeout = setTimeout(runCarouselStep, SHORT_CONTENT_TIME);
-            } 
-            // 스크롤이 필요한 긴 내용인 경우 -> setupAutoScroll에서 바닥에 닿으면 runCarouselStep 호출함
+            }
         }
 
-        // [자동 스크롤 엔진 (순환 모드 연동)]
-        function setupAutoScroll(elementId) {
+        // [자동 스크롤 엔진]
+        // isCarouselMode: true면 바닥에 닿았을 때 다음 화면으로 전환
+        function setupAutoScroll(elementId, isCarouselMode = false) {
             const el = document.getElementById(elementId);
             if (!el) return;
-            
-            // 내용이 짧으면 스크롤 안 함
             if (el.scrollHeight <= el.clientHeight) return;
 
             let scrollTop = 0;
@@ -243,16 +246,16 @@
             if (scrollIntervals[elementId]) clearInterval(scrollIntervals[elementId]);
 
             scrollIntervals[elementId] = setInterval(() => {
-                if (el.matches(':hover')) return; // 마우스 오버 시 정지
+                // 마우스 오버 시 정지 (단, 순환모드 확대창은 마우스가 없어도 돌아가야 하니 제외 가능하지만 안전 위해 유지)
+                if (el.matches(':hover')) return;
 
                 if (pause > 0) { 
                     pause--; 
                     
-                    // [핵심] 순환 모드 중이고, 확대창(zBody)이며, pause가 0이 되어 대기가 끝났는데 바닥에 있었다면?
-                    // -> 스크롤 완료로 판단하고 다음 카드로 넘어감
-                    if (pause === 0 && elementId === 'zBody' && isCarouselOn && scrollTop > 0) {
-                        clearInterval(scrollIntervals[elementId]); // 현재 스크롤 중지
-                        runCarouselStep(); // 다음 카드로 이동
+                    // [대기 끝] -> 순환 모드라면 다음 화면으로!
+                    if (pause === 0 && isCarouselMode) {
+                        clearInterval(scrollIntervals[elementId]); // 스크롤 중지
+                        runCarouselStep(); // ★ 다음 카드로 강제 이동
                         return;
                     }
                     return; 
@@ -261,14 +264,15 @@
                 scrollTop += 1;
                 el.scrollTop = scrollTop;
 
-                // 바닥에 닿으면
-                if (scrollTop + el.clientHeight >= el.scrollHeight) {
-                    pause = 80; // 바닥에서 약 3초 대기 (40ms * 80)
-                    // 순환 모드가 아닐 때는 다시 위로 보냄
-                    if (!isCarouselOn || elementId !== 'zBody') {
-                        scrollTop = 0; 
+                // [바닥 감지] (브라우저 확대/축소 오차 방지 위해 Math.ceil 사용)
+                if (Math.ceil(scrollTop) + el.clientHeight >= el.scrollHeight) {
+                    pause = 100; // 바닥에서 약 4초 대기 (40ms * 100)
+                    
+                    if (!isCarouselMode) {
+                        // 순환 모드가 아니면 다시 위로 (무한 반복)
+                        scrollTop = 0;
                     }
-                    // 순환 모드일 때는 위 pause 체크 로직에서 다음으로 넘어감
+                    // 순환 모드면 위 pause 체크 로직에서 runCarouselStep() 호출됨
                 }
             }, 40); // 스크롤 속도
         }
@@ -350,8 +354,8 @@
                             }, BADGE_TIME); 
                         }
                     }
-                    // 일반 카드 상태일 때도 스크롤 적용
-                    setupAutoScroll(id);
+                    // 일반 카드 상태 스크롤 (순환 모드 아님)
+                    setupAutoScroll(id, false);
                 }
 
                 previousData = [...data.cards];
