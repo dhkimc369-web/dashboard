@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>제조팀 통합 게시판 (최종완성)</title>
+    <title>제조팀 통합 게시판 (안정화 버전)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -11,26 +11,19 @@
         body { background: #1a2a3a; font-family: 'Pretendard', sans-serif; margin: 0; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
         header { background: #1a2a3a; padding: 10px 20px; display: flex; align-items: center; border-bottom: 3px solid #f39c12; gap: 15px; flex-shrink: 0; }
         
-        /* [NEW 뱃지 스타일] - 확실하게 보이도록 디자인 강화 */
+        /* NEW 뱃지 */
         .new-badge {
-            background-color: #ff0000; color: white; 
-            font-size: 0.8rem; font-weight: 900;
-            padding: 2px 8px; border-radius: 99px; 
-            margin-left: 10px; box-shadow: 0 0 10px rgba(255, 0, 0, 0.8);
-            animation: pulse-badge 0.5s infinite alternate; 
-            display: none; /* 기본은 숨김 */
+            background-color: #ff0000; color: white; font-size: 0.7rem; font-weight: 900;
+            padding: 2px 6px; border-radius: 4px; margin-left: 8px;
+            animation: pulse-badge 1s infinite; display: none;
         }
         @keyframes pulse-badge {
-            from { transform: scale(1); opacity: 0.9; }
-            to { transform: scale(1.1); opacity: 1; }
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7); }
+            70% { transform: scale(1.1); box-shadow: 0 0 0 5px rgba(255, 0, 0, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); }
         }
-        
-        /* 헤더 깜빡임 효과 */
-        .header-update { animation: flash-header 1s infinite; }
-        @keyframes flash-header { 
-            0%, 100% { filter: brightness(1); } 
-            50% { filter: brightness(1.5); text-shadow: 0 0 10px white; } 
-        }
+        .header-update { animation: flash-header 2s infinite; }
+        @keyframes flash-header { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.3); } }
 
         /* 전광판 */
         .marquee-box { flex: 1; background: #000000; height: 50px; border-radius: 4px; overflow: hidden; position: relative; border: none; }
@@ -56,7 +49,7 @@
         /* 팝업 및 확대 */
         #zoom, #alertOverlay { display: none; position: fixed; inset: 0; z-index: 999999; align-items: center; justify-content: center; background: rgba(0,0,0,0.9); }
         .zoom-box { background: white; width: 95%; max-height: 90vh; border-radius: 15px; display: flex; flex-direction: column; overflow: hidden; }
-        #zHead { padding: 25px 45px; font-size: 3rem; font-weight: 900; color: white; display: flex; align-items: center; justify-content: space-between;}
+        #zHead { padding: 25px 45px; font-size: 3rem; font-weight: 900; color: white; }
         #zBody { padding: 45px; font-size: 2.8rem; font-weight: 700; line-height: 1.5; overflow-y: hidden; flex: 1; }
         .alert-box { background: #ffffff; border: 15px solid #be123c; padding: 60px; border-radius: 40px; text-align: center; min-width: 600px; box-shadow: 0 0 50px rgba(190, 18, 60, 0.8); }
 
@@ -142,7 +135,7 @@
         const API = 'https://script.google.com/macros/s/AKfycbxFzasNda1FF06VEVxCU4G8DMI7ijR4nKJWwYSMZ0saeZeYmxcxCjAULDov68QI0rwQ_w/exec'; 
 
         const BADGE_TIME = 60000; // NEW 뱃지 유지 시간 (1분)
-        const SHORT_CONTENT_TIME = 7000; // 짧은 내용 대기 시간
+        const SHORT_CONTENT_TIME = 7000; // 짧은 내용 대기 시간 (7초)
 
         let marqueeTimer;
         let popupData = { msg: "", start: "", end: "" };
@@ -175,13 +168,12 @@
         function openZ(el) {
             const h = el.querySelector('.card-h span:first-child');
             const b = el.querySelector('.card-b');
-            const zHead = document.getElementById('zHead');
-            
-            zHead.innerHTML = `<span>${h.innerText}</span>`; // 제목
-            zHead.style.backgroundColor = getComputedStyle(el.querySelector('.card-h')).backgroundColor;
+            document.getElementById('zHead').innerText = h.innerText;
+            document.getElementById('zHead').style.backgroundColor = getComputedStyle(el.querySelector('.card-h')).backgroundColor;
             document.getElementById('zBody').innerHTML = b.innerHTML;
             document.getElementById('zoom').style.display = 'flex';
             
+            // 확대창 스크롤 시작
             setupAutoScroll('zBody');
         }
 
@@ -225,8 +217,9 @@
             carouselIndex++;
 
             const zBody = document.getElementById('zBody');
-            zBody.scrollTop = 0;
+            zBody.scrollTop = 0; // 초기화
 
+            // 내용이 길면 스크롤 완료 후 이동, 짧으면 시간 뒤 이동
             if (zBody.scrollHeight > zBody.clientHeight) {
                 setupAutoScroll('zBody', true); 
             } else {
@@ -325,30 +318,24 @@
                     const badge = cardHeader.querySelector('.new-badge');
                     
                     const newContent = data.cards[i] || "";
-                    const oldContent = previousData[i] || ""; // 이전 데이터
+                    const oldContent = previousData[i] || "";
 
-                    // 내용이 다를 때만 업데이트
                     if (newContent !== cardBody.innerHTML) {
                         cardBody.innerHTML = newContent;
-
-                        // ★ NEW 뱃지 로직: 이전 데이터가 존재하고(=첫로딩 아님), 내용이 다르면 표시
+                        // ★ NEW 뱃지 표시 로직 (안정화)
                         if (previousData.length > 0 && newContent !== oldContent) {
                             badge.style.display = "inline-block";
                             cardHeader.classList.add("header-update");
-                            
-                            // 일정 시간 후 제거
                             setTimeout(() => { 
                                 badge.style.display = "none"; 
                                 cardHeader.classList.remove("header-update");
                             }, BADGE_TIME); 
                         }
                     }
-                    
-                    // 스크롤 엔진 갱신
+                    // 일반 카드 자동 스크롤
                     setupAutoScroll(id, false);
                 }
 
-                // 현재 데이터를 이전 데이터 변수에 저장 (다음 비교를 위해)
                 previousData = [...data.cards];
 
                 if (data.popup) {
