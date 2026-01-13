@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>제조팀 통합 게시판 (순환 모드 탑재)</title>
+    <title>제조팀 통합 게시판 (순환+자동스크롤)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -11,7 +11,7 @@
         body { background: #1a2a3a; font-family: 'Pretendard', sans-serif; margin: 0; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
         header { background: #1a2a3a; padding: 10px 20px; display: flex; align-items: center; border-bottom: 3px solid #f39c12; gap: 15px; flex-shrink: 0; }
         
-        /* [NEW 뱃지] */
+        /* NEW 뱃지 */
         .new-badge {
             background-color: #ff0000; color: white; font-size: 0.7rem; font-weight: 900;
             padding: 2px 6px; border-radius: 4px; margin-left: 8px;
@@ -25,32 +25,34 @@
         .header-update { animation: flash-header 2s infinite; }
         @keyframes flash-header { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.3); } }
 
-        /* [전광판] */
+        /* 전광판 */
         .marquee-box { flex: 1; background: #000000; height: 50px; border-radius: 4px; overflow: hidden; position: relative; border: none; }
         #scrollNotice { position: absolute; white-space: nowrap; font-size: 2rem; font-weight: 400; color: #f39c12; top: 50%; transform: translateY(-50%); left: 100%; display: inline-block; }
-        @keyframes blink-red { 0%, 100% { color: #ff0000; opacity: 1; text-shadow: 0 0 10px red; } 50% { color: #ffcccc; opacity: 0.8; } }
         .emergency-mode { color: #ff0000 !important; font-weight: 900 !important; animation: marquee 20s linear infinite, blink-red 1s step-end infinite !important; }
+        @keyframes blink-red { 0%, 100% { color: #ff0000; opacity: 1; text-shadow: 0 0 10px red; } 50% { color: #ffcccc; opacity: 0.8; } }
 
-        /* [인원 현황] */
+        /* 인원 현황 */
         .stat-group { display: flex; gap: 8px; }
         .stat-box { background: #000000; min-width: 110px; height: 55px; border-radius: 4px; text-align: center; border: 2px solid #cbd5e1; display: flex; flex-direction: column; justify-content: center; }
         .stat-label { font-size: 13px; font-weight: 700; color: #cbd5e1; margin-bottom: 2px; }
         .stat-val { font-size: 2.2rem; font-weight: 900; line-height: 1; color: #ffffff !important; }
 
-        /* [메인 카드] */
+        /* 카드 그리드 */
         main { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 12px; padding: 15px; overflow: hidden; }
         .card { background: white; border-radius: 8px; display: flex; flex-direction: column; border: 1px solid #e2e8f0; cursor: pointer; overflow: hidden; height: 100%; }
         .card-h { padding: 8px 12px; font-size: 14px; font-weight: 800; color: white; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; }
+        /* 자동 스크롤을 위해 overflow hidden (JS 제어) */
         .card-b { padding: 12px; font-size: 1rem; flex: 1; overflow-y: hidden; line-height: 1.8; word-break: break-all; position: relative; }
-        .card-b:hover { overflow-y: auto; } /* 마우스 올리면 수동 스크롤 가능 */
+        .card-b:hover { overflow-y: auto; }
         .card-b a { transition: color 0.2s; font-weight: bold; }
         .card-b a:hover { color: #1d4ed8 !important; text-decoration: underline; }
 
-        /* [팝업/확대] */
+        /* 팝업 및 확대 */
         #zoom, #alertOverlay { display: none; position: fixed; inset: 0; z-index: 999999; align-items: center; justify-content: center; background: rgba(0,0,0,0.9); }
         .zoom-box { background: white; width: 95%; max-height: 90vh; border-radius: 15px; display: flex; flex-direction: column; overflow: hidden; }
         #zHead { padding: 25px 45px; font-size: 3rem; font-weight: 900; color: white; }
-        #zBody { padding: 45px; font-size: 2.8rem; font-weight: 700; line-height: 1.5; overflow-y: auto; }
+        /* 확대창 내용도 자동 스크롤을 위해 hidden */
+        #zBody { padding: 45px; font-size: 2.8rem; font-weight: 700; line-height: 1.5; overflow-y: hidden; flex: 1; }
         .alert-box { background: #ffffff; border: 15px solid #be123c; padding: 60px; border-radius: 40px; text-align: center; min-width: 600px; box-shadow: 0 0 50px rgba(190, 18, 60, 0.8); }
 
         @media (max-width: 1024px) {
@@ -132,8 +134,11 @@
     <div id="zoom" onclick="closeZ()"><div class="zoom-box" onclick="event.stopPropagation()"><div id="zHead"></div><div id="zBody"></div></div></div>
 
     <script>
-        const API = 'https://script.google.com/macros/s/AKfycbwgVmUpYPRt-LVgBkwL29xqIH22t5AnCqY-mEHPBY60Jk3h_0RfTZgQRqeifm_ixregPA/exec'; // 여기에 GAS URL을 넣어주세요.
+        const API = 'https://script.google.com/macros/s/AKfycbxFzasNda1FF06VEVxCU4G8DMI7ijR4nKJWwYSMZ0saeZeYmxcxCjAULDov68QI0rwQ_w/exec'; 
         
+        // ★ [설정] NEW 뱃지 유지 시간 (밀리초 단위, 60000 = 1분)
+        const BADGE_TIME = 60000; 
+
         let marqueeTimer;
         let popupData = { msg: "", start: "", end: "" };
         let isClosed = false;
@@ -170,10 +175,15 @@
             document.getElementById('zHead').style.backgroundColor = getComputedStyle(el.querySelector('.card-h')).backgroundColor;
             document.getElementById('zBody').innerHTML = b.innerHTML;
             document.getElementById('zoom').style.display = 'flex';
+            
+            // [추가] 확대 창도 자동 스크롤 적용
+            setupAutoScroll('zBody');
         }
 
         function closeZ() {
             document.getElementById('zoom').style.display = 'none';
+            // 확대 창 닫으면 스크롤 타이머 해제
+            if (scrollIntervals['zBody']) clearInterval(scrollIntervals['zBody']);
         }
 
         function closePopupManual() {
@@ -182,7 +192,7 @@
             setTimeout(() => { isClosed = false; }, 60000);
         }
 
-        // [순환 모드 로직]
+        // [순환 모드]
         function toggleCarousel() {
             isCarouselOn = !isCarouselOn;
             const btn = document.getElementById('btn-carousel');
@@ -192,8 +202,8 @@
                 btn.classList.replace('bg-gray-700', 'bg-green-600');
                 btn.classList.replace('hover:bg-gray-600', 'hover:bg-green-500');
                 
-                runCarouselStep(); // 즉시 실행
-                carouselInterval = setInterval(runCarouselStep, 10000); // 10초마다
+                runCarouselStep();
+                carouselInterval = setInterval(runCarouselStep, 10000); // 10초
             } else {
                 btn.innerText = "🔄 순환 모드 OFF";
                 btn.classList.replace('bg-green-600', 'bg-gray-700');
@@ -215,25 +225,30 @@
         function setupAutoScroll(elementId) {
             const el = document.getElementById(elementId);
             if (!el) return;
+            
+            // 내용이 충분히 길지 않으면 스크롤 안함
             if (el.scrollHeight <= el.clientHeight) return;
 
             let scrollTop = 0;
-            let pause = 0;
+            let pause = 50; // 초기 대기
 
             if (scrollIntervals[elementId]) clearInterval(scrollIntervals[elementId]);
 
             scrollIntervals[elementId] = setInterval(() => {
-                if (el.matches(':hover')) return; // 마우스 오버 시 정지
+                // 마우스 오버 시 일시정지 (확대 창은 예외로 할 수도 있으나 통일감 위해 유지)
+                if (el.matches(':hover')) return; 
+
                 if (pause > 0) { pause--; return; }
 
-                scrollTop += 1;
+                scrollTop += 1; // 1px씩 이동
                 el.scrollTop = scrollTop;
 
+                // 바닥에 닿으면
                 if (scrollTop + el.clientHeight >= el.scrollHeight) {
-                    pause = 100; // 2초 대기
-                    scrollTop = 0;
+                    pause = 100; // 약 2~3초 대기
+                    scrollTop = 0; // 다시 위로
                 }
-            }, 50);
+            }, 40); // 속도 (낮을수록 빠름)
         }
 
         function checkTime() {
@@ -254,7 +269,7 @@
                 }
             }
 
-            // [수정된 알람 시간]
+            // [요청하신 알람 시간 반영]
             const fixed = { 
                 "08:50": "아침 조회", 
                 "12:57": "납품 준비", 
@@ -311,7 +326,7 @@
                             setTimeout(() => { 
                                 badge.style.display = "none"; 
                                 cardHeader.classList.remove("header-update");
-                            }, 60000); 
+                            }, BADGE_TIME); 
                         }
                     }
                     setupAutoScroll(id);
