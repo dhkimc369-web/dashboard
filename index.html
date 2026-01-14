@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>제조팀 통합 게시판 (최종보완)</title>
+    <title>제조팀 통합 게시판 (스크롤 해결)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -18,9 +18,7 @@
             box-shadow: 0 0 5px rgba(255,0,0,0.8);
             animation: pulse-badge 1s infinite; display: none; cursor: pointer;
         }
-        @keyframes pulse-badge {
-            0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); }
-        }
+        @keyframes pulse-badge { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
         .header-update { animation: flash-header 1.5s infinite; }
         @keyframes flash-header { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.3); text-shadow: 0 0 5px white; } }
 
@@ -45,11 +43,21 @@
         .card-b a { transition: color 0.2s; font-weight: bold; }
         .card-b a:hover { color: #1d4ed8 !important; text-decoration: underline; }
 
-        /* 팝업 및 확대 */
+        /* [수정] 팝업 및 확대창 CSS 변경 */
         #zoom, #alertOverlay { display: none; position: fixed; inset: 0; z-index: 999999; align-items: center; justify-content: center; background: rgba(0,0,0,0.9); }
         .zoom-box { background: white; width: 95%; max-height: 90vh; border-radius: 15px; display: flex; flex-direction: column; overflow: hidden; }
         #zHead { padding: 25px 45px; font-size: 3rem; font-weight: 900; color: white; }
-        #zBody { padding: 45px; font-size: 2.8rem; font-weight: 700; line-height: 1.5; overflow-y: hidden; flex: 1; }
+        
+        /* [중요] 수동 스크롤 가능하도록 auto 설정 + 스크롤바 숨김 */
+        #zBody { 
+            padding: 45px; font-size: 2.8rem; font-weight: 700; line-height: 1.5; 
+            flex: 1; 
+            overflow-y: auto; /* 수동 스크롤 허용 */
+            -ms-overflow-style: none; /* IE, Edge 스크롤바 숨김 */
+            scrollbar-width: none; /* Firefox 스크롤바 숨김 */
+        }
+        #zBody::-webkit-scrollbar { display: none; /* Chrome, Safari 스크롤바 숨김 */ }
+
         .alert-box { background: #ffffff; border: 15px solid #be123c; padding: 60px; border-radius: 40px; text-align: center; min-width: 600px; box-shadow: 0 0 50px rgba(190, 18, 60, 0.8); }
 
         @media (max-width: 1024px) {
@@ -133,7 +141,7 @@
     <script>
         const API = 'https://script.google.com/macros/s/AKfycbxFzasNda1FF06VEVxCU4G8DMI7ijR4nKJWwYSMZ0saeZeYmxcxCjAULDov68QI0rwQ_w/exec'; 
 
-        const SHORT_CONTENT_TIME = 7000; // 순환 모드 시 짧은 내용 대기 시간
+        const SHORT_CONTENT_TIME = 7000; 
 
         let marqueeTimer;
         let popupData = { msg: "", start: "", end: "" };
@@ -162,34 +170,34 @@
             }, 20);
         }
 
-        // [확대 기능] isAuto가 false면(사람이 클릭하면) 읽음 처리
+        // isAuto: true(순환모드), false(수동클릭)
         function openZ(el, isAuto = false) {
             const h = el.querySelector('.card-h span:first-child');
             const b = el.querySelector('.card-b');
             const zHead = document.getElementById('zHead');
             
-            // 제목 및 내용 복사
             zHead.innerText = h.innerText;
             zHead.style.backgroundColor = getComputedStyle(el.querySelector('.card-h')).backgroundColor;
-            document.getElementById('zBody').innerHTML = b.innerHTML;
+            const zBody = document.getElementById('zBody');
+            zBody.innerHTML = b.innerHTML;
             document.getElementById('zoom').style.display = 'flex';
             
-            // 사람이 직접 클릭했을 때만 '읽음 처리' (NEW 뱃지 제거)
+            // 수동 클릭 시 읽음 처리 (NEW 제거)
             if (!isAuto) {
-                const cardId = b.id; // r5, r6...
+                const cardId = b.id; 
                 const currentContent = b.innerHTML;
-                
-                // 로컬 스토리지에 현재 내용 저장 (다음에 비교 시 같으면 안 뜸)
                 localStorage.setItem('read_' + cardId, currentContent);
                 
-                // UI 즉시 반영 (뱃지 숨김)
                 const badge = el.querySelector('.new-badge');
                 badge.style.display = 'none';
                 el.querySelector('.card-h').classList.remove('header-update');
             }
 
-            // 확대창 자동 스크롤 시작
-            setupAutoScroll('zBody', true);
+            // [중요] 내용이 로드된 후 스크롤 로직 실행 (0.1초 딜레이)
+            setTimeout(() => {
+                // 순환 모드일 경우에만 바닥 감지 후 다음 전환 기능 켬
+                setupAutoScroll('zBody', isAuto);
+            }, 100);
         }
 
         function closeZ() {
@@ -203,7 +211,6 @@
             setTimeout(() => { isClosed = false; }, 60000);
         }
 
-        // [순환 모드 제어]
         function toggleCarousel() {
             isCarouselOn = !isCarouselOn;
             const btn = document.getElementById('btn-carousel');
@@ -230,64 +237,60 @@
             const cards = document.querySelectorAll('.card');
             if (carouselIndex >= cards.length) carouselIndex = 0;
             
-            // 자동 실행이므로 isAuto = true 전달
-            openZ(cards[carouselIndex], true);
+            openZ(cards[carouselIndex], true); // 자동 열기
             carouselIndex++;
 
             const zBody = document.getElementById('zBody');
-            zBody.scrollTop = 0; // 스크롤 초기화
+            zBody.scrollTop = 0; 
 
-            // 내용 길이에 따른 분기
-            if (zBody.scrollHeight > zBody.clientHeight) {
-                // 긴 내용: setupAutoScroll에서 바닥 감지 후 다음 호출
-                setupAutoScroll('zBody', true); 
-            } else {
-                // 짧은 내용: 7초 뒤 다음 호출
-                carouselTimeout = setTimeout(runCarouselStep, SHORT_CONTENT_TIME);
-            }
+            // 0.2초 뒤 높이 측정 (렌더링 안정화)
+            setTimeout(() => {
+                if (zBody.scrollHeight > zBody.clientHeight) {
+                    // 긴 내용: setupAutoScroll이 돌아가다가 바닥 닿으면 runCarouselStep 호출
+                } else {
+                    // 짧은 내용: 시간 뒤 다음 호출
+                    carouselTimeout = setTimeout(runCarouselStep, SHORT_CONTENT_TIME);
+                }
+            }, 200);
         }
 
-        // [자동 스크롤 엔진]
-        // isZoomWindow: 확대창(순환모드)인 경우 바닥 닿으면 다음 전환
+        // [스크롤 엔진]
         function setupAutoScroll(elementId, isZoomWindow = false) {
             const el = document.getElementById(elementId);
             if (!el) return;
+            // 스크롤이 필요 없으면 중단
             if (el.scrollHeight <= el.clientHeight) return;
 
             let scrollTop = 0;
-            let pause = 50;
+            let pause = 50; // 초기 대기
 
             if (scrollIntervals[elementId]) clearInterval(scrollIntervals[elementId]);
 
             scrollIntervals[elementId] = setInterval(() => {
-                // 마우스 오버 시 정지 (확대창은 순환 중에도 마우스 올리면 멈춰서 읽기 가능)
+                // 마우스 오버 시 정지 (수동으로 읽을 때 방해 안 되게)
                 if (el.matches(':hover')) return;
 
                 if (pause > 0) { 
                     pause--; 
-                    
-                    // 대기 종료 후 로직
-                    if (pause === 0) {
-                        // 순환 모드 중이고, 확대창이면 -> 다음 카드로 넘어감
-                        if (isZoomWindow && isCarouselOn) {
-                            clearInterval(scrollIntervals[elementId]);
-                            runCarouselStep();
-                            return;
-                        }
+                    // 대기 끝, 순환모드 확대창이면 다음으로 이동
+                    if (pause === 0 && isZoomWindow && isCarouselOn) {
+                        clearInterval(scrollIntervals[elementId]);
+                        runCarouselStep();
+                        return;
                     }
                     return; 
                 }
 
+                // 스크롤 이동
                 scrollTop += 1;
                 el.scrollTop = scrollTop;
 
-                // 바닥 감지
+                // 바닥 감지 (오차 범위 1px)
                 if (Math.ceil(scrollTop) + el.clientHeight >= el.scrollHeight) {
                     pause = 100; // 바닥에서 약 4초 대기
                     if (!isZoomWindow) scrollTop = 0; // 작은 카드는 무한 반복
-                    // 확대창은 위 pause 체크 로직에서 처리됨
                 }
-            }, 40);
+            }, 40); // 속도
         }
 
         function checkTime() {
@@ -348,13 +351,11 @@
                     const badge = cardHeader.querySelector('.new-badge');
                     
                     const newContent = data.cards[i] || "";
-                    
                     if (newContent !== cardBody.innerHTML) {
                         cardBody.innerHTML = newContent;
                     }
 
-                    // ★ NEW 뱃지 로직 (Local Storage 기반)
-                    // 저장된(읽은) 내용과 현재 내용이 다르면 뱃지 표시
+                    // NEW 뱃지 (읽음 여부 체크)
                     const savedContent = localStorage.getItem('read_' + id);
                     if (newContent && newContent !== savedContent) {
                         badge.style.display = "inline-block";
@@ -364,7 +365,6 @@
                         cardHeader.classList.remove("header-update");
                     }
                     
-                    // 일반 카드 자동 스크롤
                     setupAutoScroll(id, false);
                 }
 
@@ -379,12 +379,7 @@
                 updateEl.innerText = "최근 갱신: " + now.toLocaleTimeString();
                 updateEl.style.color = "#4ade80";
 
-            } catch (e) { 
-                console.error("Update Fail"); 
-                const updateEl = document.getElementById('lastUpdate');
-                updateEl.innerText = "갱신 실패 (재시도 중...)";
-                updateEl.style.color = "#ef4444"; 
-            }
+            } catch (e) { console.error("Update Fail"); }
         }
 
         setInterval(checkTime, 1000);
