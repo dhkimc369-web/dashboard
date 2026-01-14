@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>제조팀 통합 게시판 (완벽동작)</title>
+    <title>제조팀 통합 게시판 (스크롤완벽수정)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -48,7 +48,7 @@
         .zoom-box { background: white; width: 95%; max-height: 90vh; border-radius: 15px; display: flex; flex-direction: column; overflow: hidden; }
         #zHead { padding: 25px 45px; font-size: 3rem; font-weight: 900; color: white; }
         
-        /* [중요] 수동 스크롤 허용 (overflow-y: auto) */
+        /* [중요] 수동 스크롤 허용 (auto) */
         #zBody { 
             padding: 45px; font-size: 2.8rem; font-weight: 700; line-height: 1.5; 
             flex: 1; overflow-y: auto; 
@@ -144,7 +144,7 @@
         let marqueeTimer;
         let popupData = { msg: "", start: "", end: "" };
         let isClosed = false;
-        let scrollInterval; // 단일 인터벌로 변경 (충돌 방지)
+        let scrollInterval; // 단일 인터벌
 
         let carouselTimeout;
         let carouselIndex = 0;
@@ -195,12 +195,13 @@
             clearTimeout(carouselTimeout);
             clearInterval(scrollInterval);
 
-            // [핵심] 0.5초 뒤 스크롤 판단 (렌더링 시간 확보)
+            // [핵심] 화면이 그려지고 0.5초 뒤 스크롤 판단
             setTimeout(() => {
-                zBody.scrollTop = 0; // 초기화
+                zBody.scrollTop = 0; // 강제 초기화 (매우 중요)
                 
                 // 순환 모드일 경우에만 자동 스크롤/넘김 로직 실행
                 if (isAuto && isCarouselOn) {
+                    // 스크롤이 실제로 필요한지 다시 정밀 측정
                     if (zBody.scrollHeight > zBody.clientHeight) {
                         // 긴 내용: 스크롤 시작
                         startAutoScroll(zBody);
@@ -212,13 +213,15 @@
             }, 500);
         }
 
-        // [순환 모드 전용] 강제 스크롤 엔진
+        // [강제 스크롤 엔진]
         function startAutoScroll(el) {
             clearInterval(scrollInterval);
+            el.scrollTop = 0; // 시작 전 다시 0점 조절
+            
             let pause = 30; // 0.5초 딜레이 후 시작
 
             scrollInterval = setInterval(() => {
-                // 마우스 오버 시 일시 정지 (순환 중이어도 읽을 수 있게)
+                // 마우스 오버 시 일시 정지
                 if (el.matches(':hover')) return;
 
                 if (pause > 0) {
@@ -229,13 +232,14 @@
                 // 스크롤 이동
                 el.scrollTop += 1;
 
-                // 바닥 감지 (오차범위 1px)
-                if (el.scrollTop + el.clientHeight >= el.scrollHeight - 1) {
+                // [바닥 감지 수정] 스크롤이 끝까지 갔는지 확인
+                // Math.ceil과 -1 오차범위를 두어 인식률 높임
+                if (Math.ceil(el.scrollTop) + el.clientHeight >= el.scrollHeight - 1) {
                     clearInterval(scrollInterval);
                     // 바닥 도착 후 3초 뒤 다음 카드로
                     setTimeout(runCarouselStep, 3000);
                 }
-            }, 40); // 속도
+            }, 40); // 속도 (작을수록 빠름)
         }
 
         function closeZ() {
@@ -276,18 +280,14 @@
             carouselIndex++;
         }
 
-        // 일반 카드용(작은 박스) 자동 스크롤 - 단순 반복
+        // 일반 카드용(작은 박스) 자동 스크롤
         function setupMiniCardScroll(elementId) {
             const el = document.getElementById(elementId);
             if (!el || el.scrollHeight <= el.clientHeight) return;
-
-            // 기존 인터벌이 있다면 클리어 (전역 배열 사용 안함, 요소 자체에 저장하거나 단순 실행)
-            // 여기서는 간단하게 새로 고침 시마다 재설정되므로 둡니다.
             
             let scrollTop = 0;
             let pause = 50;
 
-            // ID별로 인터벌 관리하기 위해 속성에 저장
             if (el.dataset.scrollInterval) clearInterval(el.dataset.scrollInterval);
 
             const interval = setInterval(() => {
@@ -299,7 +299,7 @@
 
                 if (Math.ceil(scrollTop) + el.clientHeight >= el.scrollHeight) {
                     pause = 100;
-                    scrollTop = 0; // 무한 반복
+                    scrollTop = 0; 
                 }
             }, 50);
             
@@ -379,7 +379,6 @@
                         cardHeader.classList.remove("header-update");
                     }
                     
-                    // 작은 박스 스크롤
                     setupMiniCardScroll(id);
                 }
 
