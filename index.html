@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>제조팀 통합 게시판 (최종_완결)</title>
+    <title>제조팀 통합 게시판 (완벽동작)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -48,7 +48,7 @@
         .zoom-box { background: white; width: 95%; max-height: 90vh; border-radius: 15px; display: flex; flex-direction: column; overflow: hidden; }
         #zHead { padding: 25px 45px; font-size: 3rem; font-weight: 900; color: white; }
         
-        /* [중요] 수동 스크롤 허용 (auto) */
+        /* [중요] 수동 스크롤 허용 (overflow-y: auto) */
         #zBody { 
             padding: 45px; font-size: 2.8rem; font-weight: 700; line-height: 1.5; 
             flex: 1; overflow-y: auto; 
@@ -139,12 +139,12 @@
     <script>
         const API = 'https://script.google.com/macros/s/AKfycbxFzasNda1FF06VEVxCU4G8DMI7ijR4nKJWwYSMZ0saeZeYmxcxCjAULDov68QI0rwQ_w/exec'; 
 
-        const SHORT_CONTENT_TIME = 7000; // 짧은 내용 대기 시간
+        const SHORT_CONTENT_TIME = 7000; // 짧은 내용일 때 대기 시간 (7초)
 
         let marqueeTimer;
         let popupData = { msg: "", start: "", end: "" };
         let isClosed = false;
-        let scrollIntervals = [];
+        let scrollInterval; // 단일 인터벌로 변경 (충돌 방지)
 
         let carouselTimeout;
         let carouselIndex = 0;
@@ -168,8 +168,7 @@
             }, 20);
         }
 
-        // [핵심] 확대창 열기
-        // isAuto: true(순환모드 자동열림), false(사용자 클릭)
+        // isAuto: true(순환모드), false(사용자클릭)
         function openZ(el, isAuto = false) {
             const h = el.querySelector('.card-h span:first-child');
             const b = el.querySelector('.card-b');
@@ -181,42 +180,67 @@
             zBody.innerHTML = b.innerHTML;
             document.getElementById('zoom').style.display = 'flex';
             
-            // ★ 수동 클릭 시: 원본 데이터(data-raw)를 읽음 처리 저장
+            // 수동 클릭 시 NEW 뱃지 제거
             if (!isAuto) {
                 const cardId = b.id; 
-                const rawContent = b.getAttribute('data-raw') || ""; // 원본 데이터 가져오기
-                
-                localStorage.setItem('read_' + cardId, rawContent); // 원본을 저장
+                const rawContent = b.getAttribute('data-raw') || "";
+                localStorage.setItem('read_' + cardId, rawContent);
                 
                 const badge = el.querySelector('.new-badge');
                 badge.style.display = 'none';
                 el.querySelector('.card-h').classList.remove('header-update');
             }
 
-            // 기존 타이머/스크롤 정리
+            // 모든 타이머 초기화
             clearTimeout(carouselTimeout);
-            if (scrollIntervals['zBody']) clearInterval(scrollIntervals['zBody']);
+            clearInterval(scrollInterval);
 
-            // [안전 장치] 화면 렌더링 후 스크롤 로직 판단 (0.3초)
+            // [핵심] 0.5초 뒤 스크롤 판단 (렌더링 시간 확보)
             setTimeout(() => {
-                zBody.scrollTop = 0; 
-                // 내용이 길면 스크롤 시작
-                if (zBody.scrollHeight > zBody.clientHeight) {
-                    setupAutoScroll('zBody', isAuto);
-                } 
-                // 내용이 짧으면
-                else {
-                    // 순환 모드일 때만 다음으로 넘어감
-                    if (isAuto && isCarouselOn) {
+                zBody.scrollTop = 0; // 초기화
+                
+                // 순환 모드일 경우에만 자동 스크롤/넘김 로직 실행
+                if (isAuto && isCarouselOn) {
+                    if (zBody.scrollHeight > zBody.clientHeight) {
+                        // 긴 내용: 스크롤 시작
+                        startAutoScroll(zBody);
+                    } else {
+                        // 짧은 내용: 7초 뒤 다음
                         carouselTimeout = setTimeout(runCarouselStep, SHORT_CONTENT_TIME);
                     }
                 }
-            }, 300);
+            }, 500);
+        }
+
+        // [순환 모드 전용] 강제 스크롤 엔진
+        function startAutoScroll(el) {
+            clearInterval(scrollInterval);
+            let pause = 30; // 0.5초 딜레이 후 시작
+
+            scrollInterval = setInterval(() => {
+                // 마우스 오버 시 일시 정지 (순환 중이어도 읽을 수 있게)
+                if (el.matches(':hover')) return;
+
+                if (pause > 0) {
+                    pause--;
+                    return;
+                }
+
+                // 스크롤 이동
+                el.scrollTop += 1;
+
+                // 바닥 감지 (오차범위 1px)
+                if (el.scrollTop + el.clientHeight >= el.scrollHeight - 1) {
+                    clearInterval(scrollInterval);
+                    // 바닥 도착 후 3초 뒤 다음 카드로
+                    setTimeout(runCarouselStep, 3000);
+                }
+            }, 40); // 속도
         }
 
         function closeZ() {
             document.getElementById('zoom').style.display = 'none';
-            if (scrollIntervals['zBody']) clearInterval(scrollIntervals['zBody']);
+            clearInterval(scrollInterval);
             clearTimeout(carouselTimeout); 
         }
 
@@ -252,41 +276,34 @@
             carouselIndex++;
         }
 
-        // [스크롤 엔진]
-        function setupAutoScroll(elementId, isZoomWindow = false) {
+        // 일반 카드용(작은 박스) 자동 스크롤 - 단순 반복
+        function setupMiniCardScroll(elementId) {
             const el = document.getElementById(elementId);
-            if (!el) return;
+            if (!el || el.scrollHeight <= el.clientHeight) return;
 
+            // 기존 인터벌이 있다면 클리어 (전역 배열 사용 안함, 요소 자체에 저장하거나 단순 실행)
+            // 여기서는 간단하게 새로 고침 시마다 재설정되므로 둡니다.
+            
             let scrollTop = 0;
-            let pause = 50; // 초기 대기
+            let pause = 50;
 
-            if (scrollIntervals[elementId]) clearInterval(scrollIntervals[elementId]);
+            // ID별로 인터벌 관리하기 위해 속성에 저장
+            if (el.dataset.scrollInterval) clearInterval(el.dataset.scrollInterval);
 
-            scrollIntervals[elementId] = setInterval(() => {
-                // 마우스 오버 시 정지 (수동 조작 허용)
+            const interval = setInterval(() => {
                 if (el.matches(':hover')) return;
+                if (pause > 0) { pause--; return; }
 
-                if (pause > 0) { 
-                    pause--; 
-                    // 대기 끝, 순환모드면 다음 이동
-                    if (pause === 0 && isZoomWindow && isCarouselOn) {
-                        clearInterval(scrollIntervals[elementId]);
-                        runCarouselStep();
-                        return;
-                    }
-                    return; 
-                }
-
-                // 스크롤 이동
                 scrollTop += 1;
                 el.scrollTop = scrollTop;
 
-                // 바닥 감지
                 if (Math.ceil(scrollTop) + el.clientHeight >= el.scrollHeight) {
-                    pause = 100; // 바닥에서 대기
-                    if (!isZoomWindow) scrollTop = 0; 
+                    pause = 100;
+                    scrollTop = 0; // 무한 반복
                 }
-            }, 40); 
+            }, 50);
+            
+            el.dataset.scrollInterval = interval;
         }
 
         function checkTime() {
@@ -348,13 +365,11 @@
                     
                     const newContent = data.cards[i] || "";
                     
-                    // 내용 업데이트 시, 원본 데이터(data-raw)도 속성에 저장
                     if (newContent !== cardBody.innerHTML) {
                         cardBody.innerHTML = newContent;
-                        cardBody.setAttribute('data-raw', newContent); // ★ 원본 저장
+                        cardBody.setAttribute('data-raw', newContent);
                     }
 
-                    // NEW 뱃지 로직: 원본 데이터(newContent) vs 로컬스토리지 저장된 원본 비교
                     const savedContent = localStorage.getItem('read_' + id);
                     if (newContent && newContent !== savedContent) {
                         badge.style.display = "inline-block";
@@ -364,7 +379,8 @@
                         cardHeader.classList.remove("header-update");
                     }
                     
-                    setupAutoScroll(id, false);
+                    // 작은 박스 스크롤
+                    setupMiniCardScroll(id);
                 }
 
                 if (data.popup) {
