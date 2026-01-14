@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>제조팀 통합 게시판 (스크롤 해결)</title>
+    <title>제조팀 통합 게시판 (최종_완결)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -43,20 +43,18 @@
         .card-b a { transition: color 0.2s; font-weight: bold; }
         .card-b a:hover { color: #1d4ed8 !important; text-decoration: underline; }
 
-        /* [수정] 팝업 및 확대창 CSS 변경 */
+        /* 팝업 및 확대 */
         #zoom, #alertOverlay { display: none; position: fixed; inset: 0; z-index: 999999; align-items: center; justify-content: center; background: rgba(0,0,0,0.9); }
         .zoom-box { background: white; width: 95%; max-height: 90vh; border-radius: 15px; display: flex; flex-direction: column; overflow: hidden; }
         #zHead { padding: 25px 45px; font-size: 3rem; font-weight: 900; color: white; }
         
-        /* [중요] 수동 스크롤 가능하도록 auto 설정 + 스크롤바 숨김 */
+        /* [중요] 수동 스크롤 허용 (auto) */
         #zBody { 
             padding: 45px; font-size: 2.8rem; font-weight: 700; line-height: 1.5; 
-            flex: 1; 
-            overflow-y: auto; /* 수동 스크롤 허용 */
-            -ms-overflow-style: none; /* IE, Edge 스크롤바 숨김 */
-            scrollbar-width: none; /* Firefox 스크롤바 숨김 */
+            flex: 1; overflow-y: auto; 
+            -ms-overflow-style: none; scrollbar-width: none; 
         }
-        #zBody::-webkit-scrollbar { display: none; /* Chrome, Safari 스크롤바 숨김 */ }
+        #zBody::-webkit-scrollbar { display: none; }
 
         .alert-box { background: #ffffff; border: 15px solid #be123c; padding: 60px; border-radius: 40px; text-align: center; min-width: 600px; box-shadow: 0 0 50px rgba(190, 18, 60, 0.8); }
 
@@ -141,7 +139,7 @@
     <script>
         const API = 'https://script.google.com/macros/s/AKfycbxFzasNda1FF06VEVxCU4G8DMI7ijR4nKJWwYSMZ0saeZeYmxcxCjAULDov68QI0rwQ_w/exec'; 
 
-        const SHORT_CONTENT_TIME = 7000; 
+        const SHORT_CONTENT_TIME = 7000; // 짧은 내용 대기 시간
 
         let marqueeTimer;
         let popupData = { msg: "", start: "", end: "" };
@@ -170,7 +168,8 @@
             }, 20);
         }
 
-        // isAuto: true(순환모드), false(수동클릭)
+        // [핵심] 확대창 열기
+        // isAuto: true(순환모드 자동열림), false(사용자 클릭)
         function openZ(el, isAuto = false) {
             const h = el.querySelector('.card-h span:first-child');
             const b = el.querySelector('.card-b');
@@ -182,27 +181,43 @@
             zBody.innerHTML = b.innerHTML;
             document.getElementById('zoom').style.display = 'flex';
             
-            // 수동 클릭 시 읽음 처리 (NEW 제거)
+            // ★ 수동 클릭 시: 원본 데이터(data-raw)를 읽음 처리 저장
             if (!isAuto) {
                 const cardId = b.id; 
-                const currentContent = b.innerHTML;
-                localStorage.setItem('read_' + cardId, currentContent);
+                const rawContent = b.getAttribute('data-raw') || ""; // 원본 데이터 가져오기
+                
+                localStorage.setItem('read_' + cardId, rawContent); // 원본을 저장
                 
                 const badge = el.querySelector('.new-badge');
                 badge.style.display = 'none';
                 el.querySelector('.card-h').classList.remove('header-update');
             }
 
-            // [중요] 내용이 로드된 후 스크롤 로직 실행 (0.1초 딜레이)
+            // 기존 타이머/스크롤 정리
+            clearTimeout(carouselTimeout);
+            if (scrollIntervals['zBody']) clearInterval(scrollIntervals['zBody']);
+
+            // [안전 장치] 화면 렌더링 후 스크롤 로직 판단 (0.3초)
             setTimeout(() => {
-                // 순환 모드일 경우에만 바닥 감지 후 다음 전환 기능 켬
-                setupAutoScroll('zBody', isAuto);
-            }, 100);
+                zBody.scrollTop = 0; 
+                // 내용이 길면 스크롤 시작
+                if (zBody.scrollHeight > zBody.clientHeight) {
+                    setupAutoScroll('zBody', isAuto);
+                } 
+                // 내용이 짧으면
+                else {
+                    // 순환 모드일 때만 다음으로 넘어감
+                    if (isAuto && isCarouselOn) {
+                        carouselTimeout = setTimeout(runCarouselStep, SHORT_CONTENT_TIME);
+                    }
+                }
+            }, 300);
         }
 
         function closeZ() {
             document.getElementById('zoom').style.display = 'none';
             if (scrollIntervals['zBody']) clearInterval(scrollIntervals['zBody']);
+            clearTimeout(carouselTimeout); 
         }
 
         function closePopupManual() {
@@ -223,7 +238,6 @@
                 btn.innerText = "🔄 순환 모드 OFF";
                 btn.classList.replace('bg-green-600', 'bg-gray-700');
                 btn.classList.replace('hover:bg-green-500', 'hover:bg-gray-600');
-                clearTimeout(carouselTimeout);
                 closeZ();
             }
         }
@@ -231,35 +245,17 @@
         function runCarouselStep() {
             if (!isCarouselOn) return;
 
-            clearTimeout(carouselTimeout);
-            if (scrollIntervals['zBody']) clearInterval(scrollIntervals['zBody']);
-
             const cards = document.querySelectorAll('.card');
             if (carouselIndex >= cards.length) carouselIndex = 0;
             
-            openZ(cards[carouselIndex], true); // 자동 열기
+            openZ(cards[carouselIndex], true); 
             carouselIndex++;
-
-            const zBody = document.getElementById('zBody');
-            zBody.scrollTop = 0; 
-
-            // 0.2초 뒤 높이 측정 (렌더링 안정화)
-            setTimeout(() => {
-                if (zBody.scrollHeight > zBody.clientHeight) {
-                    // 긴 내용: setupAutoScroll이 돌아가다가 바닥 닿으면 runCarouselStep 호출
-                } else {
-                    // 짧은 내용: 시간 뒤 다음 호출
-                    carouselTimeout = setTimeout(runCarouselStep, SHORT_CONTENT_TIME);
-                }
-            }, 200);
         }
 
         // [스크롤 엔진]
         function setupAutoScroll(elementId, isZoomWindow = false) {
             const el = document.getElementById(elementId);
             if (!el) return;
-            // 스크롤이 필요 없으면 중단
-            if (el.scrollHeight <= el.clientHeight) return;
 
             let scrollTop = 0;
             let pause = 50; // 초기 대기
@@ -267,12 +263,12 @@
             if (scrollIntervals[elementId]) clearInterval(scrollIntervals[elementId]);
 
             scrollIntervals[elementId] = setInterval(() => {
-                // 마우스 오버 시 정지 (수동으로 읽을 때 방해 안 되게)
+                // 마우스 오버 시 정지 (수동 조작 허용)
                 if (el.matches(':hover')) return;
 
                 if (pause > 0) { 
                     pause--; 
-                    // 대기 끝, 순환모드 확대창이면 다음으로 이동
+                    // 대기 끝, 순환모드면 다음 이동
                     if (pause === 0 && isZoomWindow && isCarouselOn) {
                         clearInterval(scrollIntervals[elementId]);
                         runCarouselStep();
@@ -285,12 +281,12 @@
                 scrollTop += 1;
                 el.scrollTop = scrollTop;
 
-                // 바닥 감지 (오차 범위 1px)
+                // 바닥 감지
                 if (Math.ceil(scrollTop) + el.clientHeight >= el.scrollHeight) {
-                    pause = 100; // 바닥에서 약 4초 대기
-                    if (!isZoomWindow) scrollTop = 0; // 작은 카드는 무한 반복
+                    pause = 100; // 바닥에서 대기
+                    if (!isZoomWindow) scrollTop = 0; 
                 }
-            }, 40); // 속도
+            }, 40); 
         }
 
         function checkTime() {
@@ -351,11 +347,14 @@
                     const badge = cardHeader.querySelector('.new-badge');
                     
                     const newContent = data.cards[i] || "";
+                    
+                    // 내용 업데이트 시, 원본 데이터(data-raw)도 속성에 저장
                     if (newContent !== cardBody.innerHTML) {
                         cardBody.innerHTML = newContent;
+                        cardBody.setAttribute('data-raw', newContent); // ★ 원본 저장
                     }
 
-                    // NEW 뱃지 (읽음 여부 체크)
+                    // NEW 뱃지 로직: 원본 데이터(newContent) vs 로컬스토리지 저장된 원본 비교
                     const savedContent = localStorage.getItem('read_' + id);
                     if (newContent && newContent !== savedContent) {
                         badge.style.display = "inline-block";
