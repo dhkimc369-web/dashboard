@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>제조팀 통합 게시판 (스크롤완벽수정)</title>
+    <title>제조팀 통합 게시판 (최종_스크롤분리)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -48,7 +48,7 @@
         .zoom-box { background: white; width: 95%; max-height: 90vh; border-radius: 15px; display: flex; flex-direction: column; overflow: hidden; }
         #zHead { padding: 25px 45px; font-size: 3rem; font-weight: 900; color: white; }
         
-        /* [중요] 수동 스크롤 허용 (auto) */
+        /* 수동 스크롤 허용 */
         #zBody { 
             padding: 45px; font-size: 2.8rem; font-weight: 700; line-height: 1.5; 
             flex: 1; overflow-y: auto; 
@@ -139,12 +139,12 @@
     <script>
         const API = 'https://script.google.com/macros/s/AKfycbxFzasNda1FF06VEVxCU4G8DMI7ijR4nKJWwYSMZ0saeZeYmxcxCjAULDov68QI0rwQ_w/exec'; 
 
-        const SHORT_CONTENT_TIME = 7000; // 짧은 내용일 때 대기 시간 (7초)
+        const SHORT_CONTENT_TIME = 7000; 
 
         let marqueeTimer;
         let popupData = { msg: "", start: "", end: "" };
         let isClosed = false;
-        let scrollInterval; // 단일 인터벌
+        let scrollInterval; 
 
         let carouselTimeout;
         let carouselIndex = 0;
@@ -168,7 +168,6 @@
             }, 20);
         }
 
-        // isAuto: true(순환모드), false(사용자클릭)
         function openZ(el, isAuto = false) {
             const h = el.querySelector('.card-h span:first-child');
             const b = el.querySelector('.card-b');
@@ -180,48 +179,43 @@
             zBody.innerHTML = b.innerHTML;
             document.getElementById('zoom').style.display = 'flex';
             
-            // 수동 클릭 시 NEW 뱃지 제거
+            // 수동 클릭 시 NEW 뱃지 읽음 처리
             if (!isAuto) {
                 const cardId = b.id; 
                 const rawContent = b.getAttribute('data-raw') || "";
                 localStorage.setItem('read_' + cardId, rawContent);
-                
                 const badge = el.querySelector('.new-badge');
                 badge.style.display = 'none';
                 el.querySelector('.card-h').classList.remove('header-update');
             }
 
-            // 모든 타이머 초기화
+            // 기존 타이머 정리
             clearTimeout(carouselTimeout);
             clearInterval(scrollInterval);
 
-            // [핵심] 화면이 그려지고 0.5초 뒤 스크롤 판단
+            // [핵심 로직]
             setTimeout(() => {
-                zBody.scrollTop = 0; // 강제 초기화 (매우 중요)
-                
-                // 순환 모드일 경우에만 자동 스크롤/넘김 로직 실행
-                if (isAuto && isCarouselOn) {
-                    // 스크롤이 실제로 필요한지 다시 정밀 측정
-                    if (zBody.scrollHeight > zBody.clientHeight) {
-                        // 긴 내용: 스크롤 시작
-                        startAutoScroll(zBody);
-                    } else {
-                        // 짧은 내용: 7초 뒤 다음
-                        carouselTimeout = setTimeout(runCarouselStep, SHORT_CONTENT_TIME);
-                    }
+                zBody.scrollTop = 0; 
+
+                // 내용이 길면 무조건 스크롤 시작
+                if (zBody.scrollHeight > zBody.clientHeight) {
+                    startAutoScroll(zBody, isAuto);
+                } 
+                // 내용이 짧은데 순환 모드면 -> 그냥 시간 대기 후 넘김
+                else if (isAuto && isCarouselOn) {
+                    carouselTimeout = setTimeout(runCarouselStep, SHORT_CONTENT_TIME);
                 }
             }, 500);
         }
 
-        // [강제 스크롤 엔진]
-        function startAutoScroll(el) {
+        // [스크롤 엔진] - isCarouselMode(순환여부)에 따라 행동 분기
+        function startAutoScroll(el, isCarouselMode) {
             clearInterval(scrollInterval);
-            el.scrollTop = 0; // 시작 전 다시 0점 조절
+            el.scrollTop = 0;
             
-            let pause = 30; // 0.5초 딜레이 후 시작
+            let pause = 30; // 0.5초 대기
 
             scrollInterval = setInterval(() => {
-                // 마우스 오버 시 일시 정지
                 if (el.matches(':hover')) return;
 
                 if (pause > 0) {
@@ -229,17 +223,25 @@
                     return;
                 }
 
-                // 스크롤 이동
                 el.scrollTop += 1;
 
-                // [바닥 감지 수정] 스크롤이 끝까지 갔는지 확인
-                // Math.ceil과 -1 오차범위를 두어 인식률 높임
+                // 바닥 감지
                 if (Math.ceil(el.scrollTop) + el.clientHeight >= el.scrollHeight - 1) {
                     clearInterval(scrollInterval);
-                    // 바닥 도착 후 3초 뒤 다음 카드로
-                    setTimeout(runCarouselStep, 3000);
+                    
+                    // 바닥 도착 후 분기점
+                    if (isCarouselMode && isCarouselOn) {
+                        // 순환 모드면: 3초 뒤 다음 카드로
+                        setTimeout(runCarouselStep, 3000);
+                    } else {
+                        // 수동 모드면: 3초 뒤 맨 위로 복귀 후 다시 스크롤 (무한 루프)
+                        setTimeout(() => {
+                            el.scrollTop = 0;
+                            startAutoScroll(el, false);
+                        }, 3000);
+                    }
                 }
-            }, 40); // 속도 (작을수록 빠름)
+            }, 40);
         }
 
         function closeZ() {
@@ -280,7 +282,7 @@
             carouselIndex++;
         }
 
-        // 일반 카드용(작은 박스) 자동 스크롤
+        // 작은 박스용 스크롤
         function setupMiniCardScroll(elementId) {
             const el = document.getElementById(elementId);
             if (!el || el.scrollHeight <= el.clientHeight) return;
